@@ -4,12 +4,790 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Mizan Diabetes Care</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone@7.23.2/babel.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Outfit',sans-serif;background:#f0f6ff;}
+    ::-webkit-scrollbar{width:6px;}
+    ::-webkit-scrollbar-thumb{background:#b8d4ee;border-radius:3px;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+    @keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+    .fadeUp{animation:fadeUp 0.45s ease forwards;}
+    .fadeUp1{animation:fadeUp 0.45s 0.08s ease both;}
+    .fadeUp2{animation:fadeUp 0.45s 0.16s ease both;}
+    .fadeUp3{animation:fadeUp 0.45s 0.24s ease both;}
+    input:focus{outline:none;}
+    button{font-family:'Outfit',sans-serif;cursor:pointer;}
+  </style>
 </head>
-<body style="margin:0;padding:0;background:#f0f6ff;">
-  <div id="root"></div>
-  <script type="text/babel" src="app.js"></script>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState, useEffect} = React;
+
+const C = {
+  p900:"#0a3d6b",p800:"#0d5299",p700:"#0f67b8",p600:"#1278d4",p500:"#2190f0",
+  p400:"#60b3f8",p300:"#a8d5fc",p200:"#d4ebfe",p100:"#eaf4ff",p50:"#f5faff",
+  g900:"#0a3d22",g800:"#0d5230",g700:"#108242",g600:"#14a854",g500:"#18c965",
+  g300:"#97ecb8",g200:"#c8f5d8",g100:"#e8faf0",g50:"#f4fdf7",
+  r500:"#e8344a",r100:"#fde8eb",r50:"#fff5f6",
+  o500:"#f0831a",o100:"#fef0e0",o50:"#fffaf4",
+  dark:"#0d1f35",mid:"#3a5570",muted:"#7a9bb5",border:"#cde2f5",
+  bg:"#f0f6ff",white:"#ffffff",
+};
+
+const PATIENTS = [
+  {id:1,name:"Almaz Tadesse",age:54,type:"Type 2",risk:"high",glucose:312,hba1c:9.2,lastVisit:"2025-04-10",nextVisit:"2025-04-24",adherence:42,phone:"+251-911-234567",sub:"standard",alerts:["Glucose >300","Missed 2 visits"]},
+  {id:2,name:"Bekele Haile",age:62,type:"Type 2",risk:"high",glucose:287,hba1c:8.8,lastVisit:"2025-04-22",nextVisit:"2025-05-06",adherence:58,phone:"+251-921-345678",sub:"basic",alerts:["Glucose >250"]},
+  {id:3,name:"Tigist Worku",age:41,type:"Type 1",risk:"medium",glucose:168,hba1c:7.4,lastVisit:"2025-05-01",nextVisit:"2025-06-01",adherence:78,phone:"+251-931-456789",sub:"premium",alerts:[]},
+  {id:4,name:"Dawit Mengiste",age:48,type:"Type 2",risk:"low",glucose:126,hba1c:6.8,lastVisit:"2025-05-10",nextVisit:"2025-06-10",adherence:91,phone:"+251-941-567890",sub:"premium",alerts:[]},
+  {id:5,name:"Selamawit Girma",age:37,type:"Type 2",risk:"medium",glucose:194,hba1c:7.9,lastVisit:"2025-04-15",nextVisit:"2025-05-29",adherence:65,phone:"+251-951-678901",sub:"standard",alerts:["Adherence <70%"]},
+  {id:6,name:"Yohannes Assefa",age:71,type:"Type 2",risk:"high",glucose:341,hba1c:10.1,lastVisit:"2025-03-20",nextVisit:"2025-04-20",adherence:31,phone:"+251-911-789012",sub:"basic",alerts:["Glucose >300","HbA1c >10","Missed 3 visits"]},
+];
+
+const WEEK = [
+  {d:"Mon",f:142,r:198},{d:"Tue",f:156,r:221},{d:"Wed",f:138,r:187},
+  {d:"Thu",f:163,r:234},{d:"Fri",f:147,r:205},{d:"Sat",f:129,r:176},{d:"Sun",f:134,r:189},
+];
+
+const PLANS = [
+  {name:"Basic",price:3,color:C.muted,inc:["Glucose logging","Medication reminders","Basic education","Monthly check-in"],exc:["Teleconsultation","Complication screening","Product delivery"]},
+  {name:"Standard",price:7,color:C.p600,popular:true,inc:["Everything in Basic","Teleconsultation ×2/mo","Complication screening","Dietitian access"],exc:["Product delivery"]},
+  {name:"Premium",price:12,color:C.g700,inc:["Everything in Standard","Unlimited teleconsultation","Product delivery","Home visit ×1/mo","Priority support"],exc:[]},
+];
+
+const EDU = [
+  {icon:"💉",cat:"Basics",title:"Understanding Blood Sugar",time:"5 min"},
+  {icon:"🦶",cat:"Prevention",title:"Daily Foot Care Guide",time:"4 min"},
+  {icon:"🥗",cat:"Nutrition",title:"Eating Well in Ethiopia",time:"7 min"},
+  {icon:"🚶",cat:"Lifestyle",title:"Exercise & Glucose Control",time:"6 min"},
+  {icon:"💊",cat:"Medication",title:"Why Adherence Matters",time:"3 min"},
+  {icon:"🧠",cat:"Mental Health",title:"Stress & Blood Sugar",time:"5 min"},
+];
+
+const gStatus = v => {
+  if(v<70) return {label:"LOW",c:C.r500,bg:C.r100,icon:"🔴",advice:"Eat something sweet immediately and call the clinic."};
+  if(v<=140) return {label:"NORMAL",c:C.g600,bg:C.g100,icon:"🟢",advice:"Great control! Keep following your care plan."};
+  if(v<=200) return {label:"ELEVATED",c:C.o500,bg:C.o100,icon:"🟡",advice:"Avoid sugary foods. Monitor closely today."};
+  return {label:"HIGH",c:C.r500,bg:C.r100,icon:"🔴",advice:"Dangerously high. Contact Mizan clinic immediately."};
+};
+const riskC = r => r==="high"?C.r500:r==="medium"?C.o500:C.g600;
+const riskBg = r => r==="high"?C.r100:r==="medium"?C.o100:C.g100;
+const aiRec = p => {
+  if(p.glucose>300) return {msg:"Urgent consultation needed. Consider insulin adjustment.",lvl:"danger"};
+  if(p.adherence<50) return {msg:"Poor adherence. Send education reminder and schedule counseling.",lvl:"warn"};
+  if(new Date(p.nextVisit)<new Date()) return {msg:"Overdue follow-up. Call patient to reschedule.",lvl:"warn"};
+  return {msg:"Patient on track. Continue current care plan.",lvl:"ok"};
+};
+
+const Pill = ({label,c,bg})=>(
+  <span style={{background:bg,color:c,borderRadius:20,padding:"3px 10px",fontSize:12,fontWeight:700}}>{label}</span>
+);
+
+const Btn = ({children,onClick,v="primary",full,disabled,style={}})=>{
+  const vs={
+    primary:{background:`linear-gradient(135deg,${C.p600},${C.p900})`,color:"#fff",border:"none",boxShadow:`0 4px 12px ${C.p300}`},
+    green:{background:`linear-gradient(135deg,${C.g600},${C.g900})`,color:"#fff",border:"none"},
+    outline:{background:"transparent",color:C.p600,border:`2px solid ${C.p600}`},
+    ghost:{background:C.p100,color:C.p700,border:"none"},
+    danger:{background:C.r100,color:C.r500,border:"none"},
+    muted:{background:C.bg,color:C.muted,border:`1.5px solid ${C.border}`},
+  };
+  return(
+    <button onClick={onClick} disabled={disabled} style={{...vs[v],padding:"12px 22px",borderRadius:12,fontWeight:700,fontSize:14,width:full?"100%":"auto",opacity:disabled?0.6:1,transition:"all 0.2s",...style}}>{children}</button>
+  );
+};
+
+const Field = ({label,type="text",value,onChange,placeholder,icon})=>(
+  <div style={{marginBottom:14}}>
+    {label&&<label style={{display:"block",marginBottom:5,fontSize:13,fontWeight:700,color:C.dark}}>{label}</label>}
+    <div style={{position:"relative"}}>
+      {icon&&<span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:16}}>{icon}</span>}
+      <input type={type} value={value} onChange={onChange} placeholder={placeholder}
+        style={{width:"100%",padding:icon?"12px 12px 12px 40px":"12px 14px",borderRadius:10,border:`1.5px solid ${C.border}`,fontSize:14,color:C.dark,background:C.bg,boxSizing:"border-box",fontFamily:"'Outfit',sans-serif"}}
+        onFocus={e=>{e.target.style.border=`1.5px solid ${C.p600}`;}}
+        onBlur={e=>{e.target.style.border=`1.5px solid ${C.border}`;}}/>
+    </div>
+  </div>
+);
+
+const Toast = ({msg,type,onClose})=>(
+  <div style={{position:"fixed",top:20,right:16,zIndex:9999,background:type==="error"?C.r500:type==="warn"?C.o500:C.g700,color:"#fff",padding:"12px 18px",borderRadius:12,fontWeight:600,fontSize:13,boxShadow:"0 8px 24px rgba(0,0,0,0.2)",maxWidth:300,display:"flex",gap:10,alignItems:"center",animation:"slideIn 0.3s ease"}}>
+    <span>{type==="error"?"❌":type==="warn"?"⚠️":"✅"}</span>
+    <span style={{flex:1}}>{msg}</span>
+    <button onClick={onClose} style={{background:"none",border:"none",color:"rgba(255,255,255,0.8)",fontSize:18,padding:0}}>×</button>
+  </div>
+);
+
+const Chart = ({data})=>{
+  const H=140,W=300,pad=16,max=300;
+  const x=i=>pad+(i/(data.length-1))*(W-pad*2);
+  const y=v=>H-pad-(v/max)*(H-pad*2);
+  const path=key=>data.map((d,i)=>`${i===0?"M":"L"}${x(i)},${y(d[key])}`).join(" ");
+  return(
+    <div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:150}} preserveAspectRatio="xMidYMid meet">
+        {[70,140,200].map(v=>(
+          <line key={v} x1={pad} y1={y(v)} x2={W-pad} y2={y(v)} stroke={C.border} strokeWidth="0.8" strokeDasharray="4,4"/>
+        ))}
+        <path d={path("f")} fill="none" stroke={C.p600} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d={path("r")} fill="none" stroke={C.g600} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+        {data.map((d,i)=>(
+          <g key={i}>
+            <circle cx={x(i)} cy={y(d.f)} r="4" fill={C.white} stroke={C.p600} strokeWidth="2"/>
+            <circle cx={x(i)} cy={y(d.r)} r="4" fill={C.white} stroke={C.g600} strokeWidth="2"/>
+            <text x={x(i)} y={H-2} textAnchor="middle" fontSize="8" fill={C.muted}>{d.d}</text>
+          </g>
+        ))}
+      </svg>
+      <div style={{display:"flex",gap:16,justifyContent:"center",marginTop:6}}>
+        {[{c:C.p600,l:"Fasting"},{c:C.g600,l:"Random"}].map(({c,l})=>(
+          <div key={l} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:C.mid}}>
+            <div style={{width:16,height:3,borderRadius:2,background:c}}/>{l}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// AUTH
+function Auth({onLogin}){
+  const [mode,setMode]=useState("login");
+  const [role,setRole]=useState("patient");
+  const [email,setEmail]=useState("");
+  const [pass,setPass]=useState("");
+  const [loading,setLoading]=useState(false);
+  const [toast,setToast]=useState(null);
+
+  const submit=()=>{
+    if(!email){setToast({msg:"Please enter your email",type:"error"});return;}
+    setLoading(true);
+    setTimeout(()=>{setLoading(false);onLogin(role);},1000);
+  };
+
+  return(
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"stretch",fontFamily:"'Outfit',sans-serif"}}>
+      {toast&&<Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
+      <div style={{flex:"0 0 45%",background:`linear-gradient(145deg,${C.p900},${C.p700} 50%,${C.g700})`,display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",padding:40}}>
+        <div style={{textAlign:"center",color:"#fff"}}>
+          <div style={{fontSize:56,marginBottom:16}}>⚕️</div>
+          <h1 style={{fontSize:28,fontWeight:900,marginBottom:8,letterSpacing:-0.5}}>Mizan Diabetes Care</h1>
+          <p style={{opacity:0.75,fontSize:15,marginBottom:32,fontStyle:"italic"}}>Balanced Care · Healthier Lives</p>
+          {["Continuous diabetes follow-up","Early complication detection","Affordable structured care","Digital + onsite hybrid"].map(f=>(
+            <div key={f} style={{display:"flex",alignItems:"center",gap:10,marginBottom:10,fontSize:14,opacity:0.9,textAlign:"left"}}>
+              <div style={{width:20,height:20,borderRadius:6,background:C.g500,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,flexShrink:0}}>✓</div>{f}
+            </div>
+          ))}
+          <p style={{marginTop:24,fontSize:11,opacity:0.4}}>Serving Gondar & Peri-Urban Ethiopia</p>
+        </div>
+      </div>
+      <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:32,background:C.bg}}>
+        <div style={{width:"100%",maxWidth:380}} className="fadeUp">
+          <h2 style={{fontSize:24,fontWeight:800,color:C.dark,marginBottom:4}}>Welcome back 👋</h2>
+          <p style={{color:C.muted,fontSize:14,marginBottom:24}}>Sign in to your Mizan account</p>
+          <div style={{display:"flex",background:C.white,borderRadius:12,padding:4,marginBottom:20,border:`1.5px solid ${C.border}`}}>
+            {[{id:"patient",label:"👤 Patient"},{id:"clinic",label:"🏥 Clinic"}].map(r=>(
+              <button key={r.id} onClick={()=>setRole(r.id)} style={{flex:1,padding:"10px 0",borderRadius:10,border:"none",background:role===r.id?`linear-gradient(135deg,${C.p600},${C.p800})`:"transparent",color:role===r.id?"#fff":C.muted,fontWeight:700,fontSize:14,transition:"all 0.2s"}}>{r.label}</button>
+            ))}
+          </div>
+          <div style={{display:"flex",borderBottom:`2px solid ${C.border}`,marginBottom:20}}>
+            {["login","signup","forgot"].map(m=>(
+              <button key={m} onClick={()=>setMode(m)} style={{flex:1,padding:"9px 0",border:"none",background:"transparent",color:mode===m?C.p600:C.muted,fontWeight:700,fontSize:13,borderBottom:mode===m?`2px solid ${C.p600}`:"2px solid transparent",marginBottom:-2,transition:"all 0.2s"}}>
+                {m==="forgot"?"Reset":m[0].toUpperCase()+m.slice(1)}
+              </button>
+            ))}
+          </div>
+          <Field label="Email Address" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" icon="✉️"/>
+          {mode!=="forgot"&&<Field label="Password" type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" icon="🔒"/>}
+          <Btn onClick={submit} full disabled={loading} style={{marginBottom:14,fontSize:15,padding:"14px"}}>
+            {loading?"Signing in...":mode==="login"?"Sign In →":mode==="signup"?"Create Account →":"Send Reset Link →"}
+          </Btn>
+          <div style={{padding:"10px 14px",background:C.p100,borderRadius:10,fontSize:13,color:C.p700,textAlign:"center"}}>
+            <strong>Demo:</strong> Enter any email and tap Sign In
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// PATIENT APP
+function PatientApp({onLogout}){
+  const [tab,setTab]=useState("home");
+  const [fasting,setFasting]=useState("");
+  const [random,setRandom]=useState("");
+  const [plan,setPlan]=useState("standard");
+  const [toast,setToast]=useState(null);
+  const [emerg,setEmerg]=useState(false);
+  const todayG=168;
+  const st=gStatus(todayG);
+  const notify=(msg,type="ok")=>{setToast({msg,type});setTimeout(()=>setToast(null),3000);};
+
+  const logGlucose=()=>{
+    const f=parseInt(fasting),r=parseInt(random);
+    if(!f&&!r){notify("Enter at least one value","error");return;}
+    if((f&&f>400)||(r&&r>400)){setEmerg(true);return;}
+    notify("Glucose saved ✓");setFasting("");setRandom("");
+  };
+
+  const NAV=[
+    {id:"home",icon:"🏠",label:"Home"},{id:"glucose",icon:"📊",label:"Glucose"},
+    {id:"meds",icon:"💊",label:"Meds"},{id:"visits",icon:"📅",label:"Visits"},
+    {id:"learn",icon:"📚",label:"Learn"},{id:"plans",icon:"⭐",label:"Plans"},
+  ];
+
+  return(
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Outfit',sans-serif",maxWidth:500,margin:"0 auto",position:"relative"}}>
+      {toast&&<Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
+
+      {emerg&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:900,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+          <div style={{background:C.white,borderRadius:20,padding:28,maxWidth:360,textAlign:"center"}}>
+            <div style={{fontSize:52,marginBottom:12,animation:"pulse 1s infinite"}}>🚨</div>
+            <h2 style={{color:C.r500,fontSize:20,fontWeight:800,marginBottom:10}}>Critical Glucose Alert!</h2>
+            <p style={{color:C.dark,lineHeight:1.7,marginBottom:16,fontSize:14}}>Your glucose is dangerously high. Seek immediate medical attention.</p>
+            <div style={{background:C.r50,borderRadius:10,padding:14,marginBottom:16,textAlign:"left"}}>
+              {["Call Mizan Clinic: +251-911-000000","Take emergency medication if prescribed","Go to nearest clinic immediately"].map((s,i)=>(
+                <div key={i} style={{fontSize:13,color:C.dark,marginBottom:6}}>{i+1}. {s}</div>
+              ))}
+            </div>
+            <Btn onClick={()=>setEmerg(false)} v="danger" full>I understand — seeking help now</Btn>
+          </div>
+        </div>
+      )}
+
+      <div style={{background:`linear-gradient(135deg,${C.p900},${C.p700} 60%,${C.g700})`,padding:"20px 18px 28px",position:"sticky",top:0,zIndex:50}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <p style={{color:"rgba(255,255,255,0.65)",fontSize:12,marginBottom:2}}>Good morning ☀️</p>
+            <h2 style={{color:"#fff",fontSize:20,fontWeight:800}}>Tigist Worku</h2>
+          </div>
+          <button onClick={onLogout} style={{background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.25)",color:"#fff",borderRadius:10,padding:"8px 14px",fontSize:13,fontWeight:600}}>Exit</button>
+        </div>
+      </div>
+
+      <div style={{padding:"16px 16px 90px"}}>
+        {tab==="home"&&(
+          <div>
+            <div className="fadeUp" style={{background:`linear-gradient(135deg,${C.white},${st.bg})`,border:`1.5px solid ${st.c}25`,borderRadius:20,padding:20,marginBottom:14,boxShadow:`0 4px 16px ${st.c}15`}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+                <div>
+                  <p style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:1,marginBottom:6}}>TODAY'S GLUCOSE</p>
+                  <div style={{display:"flex",alignItems:"baseline",gap:6}}>
+                    <span style={{fontSize:52,fontWeight:900,color:st.c,lineHeight:1}}>{todayG}</span>
+                    <span style={{fontSize:15,color:C.muted}}>mg/dL</span>
+                  </div>
+                </div>
+                <Pill label={st.label} c={st.c} bg={st.bg}/>
+              </div>
+              <div style={{background:`${st.c}12`,borderRadius:10,padding:"10px 14px",fontSize:13,color:st.c,fontWeight:600,lineHeight:1.5,marginBottom:12}}>
+                {st.icon} {st.advice}
+              </div>
+              <Btn onClick={()=>setTab("glucose")} full style={{background:`linear-gradient(135deg,${C.p600},${C.p800})`,color:"#fff",border:"none"}}>+ Log Today's Reading</Btn>
+            </div>
+
+            <div className="fadeUp1" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+              {[
+                {label:"Next Visit",value:"May 28",icon:"📅",c:C.p600,bg:C.p100},
+                {label:"Adherence",value:"78%",icon:"💊",c:C.g600,bg:C.g100},
+                {label:"Active Plan",value:"Standard",icon:"⭐",c:C.o500,bg:C.o100},
+                {label:"Log Streak",value:"12 days",icon:"🔥",c:C.r500,bg:C.r100},
+              ].map(s=>(
+                <div key={s.label} style={{background:C.white,borderRadius:16,padding:16,border:`1.5px solid ${C.border}`}}>
+                  <div style={{width:34,height:34,borderRadius:10,background:s.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,marginBottom:8}}>{s.icon}</div>
+                  <div style={{fontSize:20,fontWeight:800,color:s.c}}>{s.value}</div>
+                  <div style={{fontSize:11,color:C.muted,fontWeight:600,marginTop:2}}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="fadeUp2" style={{background:C.white,borderRadius:20,padding:20,marginBottom:14,border:`1.5px solid ${C.border}`}}>
+              <h3 style={{fontSize:15,fontWeight:800,color:C.dark,marginBottom:14}}>Today's Reminders</h3>
+              {[
+                {time:"07:00",label:"Metformin 500mg",done:true,icon:"💊"},
+                {time:"07:30",label:"Log fasting glucose",done:true,icon:"📊"},
+                {time:"13:00",label:"Metformin 500mg",done:false,icon:"💊"},
+                {time:"19:30",label:"Log evening glucose",done:false,icon:"📊"},
+                {time:"21:00",label:"Insulin Glargine",done:false,icon:"💉"},
+              ].map((r,i,arr)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none"}}>
+                  <div style={{width:36,height:36,borderRadius:10,background:r.done?C.g100:C.p100,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{r.done?"✅":r.icon}</div>
+                  <div style={{flex:1}}>
+                    <p style={{margin:0,fontSize:14,fontWeight:600,color:r.done?C.muted:C.dark,textDecoration:r.done?"line-through":"none"}}>{r.label}</p>
+                    <p style={{margin:0,fontSize:12,color:C.muted}}>{r.time}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="fadeUp3" style={{background:`linear-gradient(135deg,${C.g50},${C.p50})`,border:`1.5px solid ${C.g300}`,borderRadius:20,padding:18}}>
+              <p style={{fontSize:11,fontWeight:700,color:C.g700,letterSpacing:1,marginBottom:8}}>💡 HEALTH TIP</p>
+              <p style={{fontSize:14,color:C.dark,lineHeight:1.7,margin:0}}>Walking for <strong>30 minutes after meals</strong> can reduce blood sugar by up to 22%.</p>
+            </div>
+          </div>
+        )}
+
+        {tab==="glucose"&&(
+          <div>
+            <h2 className="fadeUp" style={{fontSize:22,fontWeight:900,color:C.dark,marginBottom:16}}>Glucose Tracker</h2>
+            <div style={{background:C.white,borderRadius:20,padding:20,marginBottom:14,border:`1.5px solid ${C.border}`}}>
+              <h3 style={{fontSize:15,fontWeight:800,color:C.dark,marginBottom:16}}>Log New Reading</h3>
+              <Field label="Fasting Glucose (mg/dL)" type="number" value={fasting} onChange={e=>setFasting(e.target.value)} placeholder="e.g. 126" icon="🌅"/>
+              <Field label="Random Glucose (mg/dL)" type="number" value={random} onChange={e=>setRandom(e.target.value)} placeholder="e.g. 180" icon="⏰"/>
+              <div style={{background:C.o50,borderRadius:10,padding:"10px 14px",marginBottom:14,fontSize:13,color:C.o500}}>⚠️ Values above 400 mg/dL trigger emergency alert</div>
+              <Btn onClick={logGlucose} v="green" full>Save Reading →</Btn>
+            </div>
+            <div style={{background:C.white,borderRadius:20,padding:20,border:`1.5px solid ${C.border}`}}>
+              <h3 style={{fontSize:15,fontWeight:800,color:C.dark,marginBottom:16}}>7-Day Trend</h3>
+              <Chart data={WEEK}/>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginTop:14}}>
+                {[{l:"Avg Fasting",v:"144",c:C.p600},{l:"Avg Random",v:"201",c:C.g600},{l:"In Range",v:"43%",c:C.o500}].map(s=>(
+                  <div key={s.l} style={{textAlign:"center",background:C.bg,borderRadius:10,padding:"10px 6px"}}>
+                    <div style={{fontSize:18,fontWeight:800,color:s.c}}>{s.v}</div>
+                    <div style={{fontSize:11,color:C.muted,fontWeight:600,marginTop:2}}>{s.l}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab==="meds"&&(
+          <div>
+            <h2 className="fadeUp" style={{fontSize:22,fontWeight:900,color:C.dark,marginBottom:16}}>Medications</h2>
+            {[
+              {name:"Metformin 500mg",cat:"Tablet",freq:"Twice daily",times:["07:00","13:00"],taken:1,total:2,c:C.p600,bg:C.p100,icon:"💊"},
+              {name:"Glibenclamide 5mg",cat:"Tablet",freq:"Once daily",times:["07:00"],taken:1,total:1,c:C.g700,bg:C.g100,icon:"💊"},
+              {name:"Insulin Glargine 20u",cat:"Injection",freq:"Once nightly",times:["21:00"],taken:0,total:1,c:C.o500,bg:C.o100,icon:"💉"},
+            ].map((m,i)=>(
+              <div key={i} style={{background:C.white,borderRadius:20,padding:20,marginBottom:12,border:`1.5px solid ${C.border}`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+                  <div style={{display:"flex",gap:12,alignItems:"center"}}>
+                    <div style={{width:44,height:44,borderRadius:12,background:m.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{m.icon}</div>
+                    <div>
+                      <h4 style={{margin:0,fontSize:15,fontWeight:800,color:C.dark}}>{m.name}</h4>
+                      <p style={{margin:"2px 0 0",fontSize:12,color:C.muted}}>{m.cat} · {m.freq}</p>
+                    </div>
+                  </div>
+                  <Pill label={m.taken===m.total?"Done ✓":`${m.taken}/${m.total}`} c={m.taken===m.total?C.g700:C.o500} bg={m.taken===m.total?C.g100:C.o100}/>
+                </div>
+                <div style={{display:"flex",gap:8,marginBottom:12}}>
+                  {m.times.map(t=>(
+                    <div key={t} style={{background:C.bg,borderRadius:8,padding:"5px 12px",fontSize:12,color:C.mid,fontWeight:600}}>⏰ {t}</div>
+                  ))}
+                </div>
+                <div style={{height:6,background:C.bg,borderRadius:3}}>
+                  <div style={{height:"100%",width:`${(m.taken/m.total)*100}%`,background:m.c,borderRadius:3}}/>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {tab==="visits"&&(
+          <div>
+            <h2 className="fadeUp" style={{fontSize:22,fontWeight:900,color:C.dark,marginBottom:16}}>Appointments</h2>
+            <div style={{background:`linear-gradient(135deg,${C.p900},${C.p600})`,borderRadius:20,padding:22,marginBottom:14,color:"#fff"}}>
+              <p style={{fontSize:11,fontWeight:700,opacity:0.65,letterSpacing:1,marginBottom:8}}>NEXT APPOINTMENT</p>
+              <h3 style={{fontSize:18,fontWeight:800,marginBottom:10}}>Follow-up Consultation</h3>
+              <div style={{display:"flex",gap:16,marginBottom:16,flexWrap:"wrap"}}>
+                <span style={{fontSize:13,opacity:0.85}}>📅 May 28, 2025</span>
+                <span style={{fontSize:13,opacity:0.85}}>⏰ 10:00 AM</span>
+                <span style={{fontSize:13,opacity:0.85}}>📍 Mizan Clinic, Gondar</span>
+              </div>
+              <div style={{display:"flex",gap:10}}>
+                <button onClick={()=>notify("Confirmed! ✓")} style={{flex:1,padding:"10px",background:"rgba(255,255,255,0.2)",border:"1px solid rgba(255,255,255,0.3)",color:"#fff",borderRadius:10,fontWeight:700,fontSize:13}}>✓ Confirm</button>
+                <button onClick={()=>notify("Reschedule request sent")} style={{flex:1,padding:"10px",background:"transparent",border:"1px solid rgba(255,255,255,0.3)",color:"#fff",borderRadius:10,fontWeight:700,fontSize:13}}>Reschedule</button>
+              </div>
+            </div>
+            <div style={{background:C.white,borderRadius:20,padding:20,border:`1.5px solid ${C.border}`}}>
+              <h3 style={{fontSize:15,fontWeight:800,color:C.dark,marginBottom:16}}>Request Appointment</h3>
+              <Field label="Reason for Visit" placeholder="e.g. Glucose review..." icon="📝" value="" onChange={()=>{}}/>
+              <Field label="Preferred Date" type="date" value="" onChange={()=>{}}/>
+              <Btn onClick={()=>notify("Request sent! Clinic will confirm soon.")} full>Request Appointment →</Btn>
+            </div>
+          </div>
+        )}
+
+        {tab==="learn"&&(
+          <div>
+            <h2 className="fadeUp" style={{fontSize:22,fontWeight:900,color:C.dark,marginBottom:16}}>Learn & Manage</h2>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              {EDU.map((e,i)=>(
+                <div key={e.title} onClick={()=>notify(`Opening: ${e.title}`)} style={{background:C.white,borderRadius:18,padding:16,border:`1.5px solid ${C.border}`,cursor:"pointer"}}>
+                  <div style={{fontSize:28,marginBottom:8}}>{e.icon}</div>
+                  <Pill label={e.cat} c={C.p600} bg={C.p100}/>
+                  <h4 style={{margin:"8px 0 4px",fontSize:13,fontWeight:700,color:C.dark,lineHeight:1.4}}>{e.title}</h4>
+                  <p style={{margin:0,fontSize:12,color:C.g600,fontWeight:600}}>▶ {e.time}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {tab==="plans"&&(
+          <div>
+            <h2 className="fadeUp" style={{fontSize:22,fontWeight:900,color:C.dark,marginBottom:6}}>Care Plans</h2>
+            <p style={{color:C.muted,fontSize:14,marginBottom:20}}>Affordable monthly plans for Ethiopian patients</p>
+            {PLANS.map(p=>(
+              <div key={p.name} onClick={()=>setPlan(p.name.toLowerCase())} style={{background:plan===p.name.toLowerCase()?`${p.color}08`:C.white,borderRadius:20,padding:22,marginBottom:14,cursor:"pointer",position:"relative",border:plan===p.name.toLowerCase()?`2px solid ${p.color}`:`1.5px solid ${C.border}`}}>
+                {p.popular&&<div style={{position:"absolute",top:-10,right:16,background:`linear-gradient(135deg,${C.p600},${C.p900})`,color:"#fff",fontSize:11,fontWeight:700,padding:"3px 12px",borderRadius:20}}>MOST POPULAR</div>}
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+                  <h3 style={{margin:0,fontSize:20,fontWeight:900,color:p.color}}>{p.name}</h3>
+                  <div><span style={{fontSize:32,fontWeight:900,color:p.color}}>${p.price}</span><span style={{fontSize:13,color:C.muted}}>/mo</span></div>
+                </div>
+                {p.inc.map((f,j)=>(
+                  <div key={j} style={{display:"flex",gap:8,alignItems:"center",marginBottom:7,fontSize:13,color:C.dark}}>
+                    <div style={{width:18,height:18,borderRadius:5,background:`${p.color}20`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:p.color,fontWeight:800,flexShrink:0}}>✓</div>{f}
+                  </div>
+                ))}
+              </div>
+            ))}
+            <Btn onClick={()=>notify("Plan confirmed! Clinic notified.")} full style={{fontSize:15,padding:"14px"}}>Confirm Plan →</Btn>
+          </div>
+        )}
+      </div>
+
+      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:500,background:C.white,borderTop:`1px solid ${C.border}`,display:"flex",zIndex:50,boxShadow:"0 -4px 20px rgba(10,80,160,0.08)"}}>
+        {NAV.map(n=>(
+          <button key={n.id} onClick={()=>setTab(n.id)} style={{flex:1,padding:"10px 0 8px",border:"none",background:"transparent",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+            <span style={{fontSize:20}}>{n.icon}</span>
+            <span style={{fontSize:9,fontWeight:tab===n.id?800:500,color:tab===n.id?C.p600:C.muted}}>{n.label}</span>
+            {tab===n.id&&<div style={{width:20,height:3,background:`linear-gradient(90deg,${C.p600},${C.g600})`,borderRadius:2}}/>}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// CLINIC
+function Clinic({onLogout}){
+  const [view,setView]=useState("overview");
+  const [patient,setPatient]=useState(null);
+  const [filter,setFilter]=useState("all");
+  const [toast,setToast]=useState(null);
+  const notify=(msg,type="ok")=>{setToast({msg,type});setTimeout(()=>setToast(null),3000);};
+  const filtered=filter==="all"?PATIENTS:PATIENTS.filter(p=>p.risk===filter);
+  const high=PATIENTS.filter(p=>p.risk==="high").length;
+  const overdue=PATIENTS.filter(p=>new Date(p.nextVisit)<new Date()).length;
+  const totalRev=PATIENTS.reduce((s,p)=>s+(p.sub==="premium"?12:p.sub==="standard"?7:3),0);
+
+  const NAV2=[
+    {id:"overview",icon:"📊",label:"Overview"},
+    {id:"patients",icon:"👥",label:"Patients"},
+    {id:"analytics",icon:"📈",label:"Analytics"},
+    {id:"followup",icon:"🔔",label:"Follow-up"},
+  ];
+
+  return(
+    <div style={{minHeight:"100vh",fontFamily:"'Outfit',sans-serif",display:"flex",background:C.bg}}>
+      {toast&&<Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
+
+      <div style={{width:220,background:`linear-gradient(180deg,${C.p900},#071a2e)`,display:"flex",flexDirection:"column",position:"sticky",top:0,height:"100vh",flexShrink:0}}>
+        <div style={{padding:"24px 18px 20px",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:24}}>⚕️</span>
+            <div>
+              <h2 style={{color:"#fff",margin:0,fontSize:13,fontWeight:800}}>Mizan Diabetes</h2>
+              <p style={{color:"rgba(255,255,255,0.4)",margin:0,fontSize:11}}>Clinic Dashboard</p>
+            </div>
+          </div>
+        </div>
+        <nav style={{padding:"14px 10px",flex:1}}>
+          {NAV2.map(n=>(
+            <button key={n.id} onClick={()=>{setView(n.id);setPatient(null);}} style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"11px 12px",borderRadius:10,border:"none",background:view===n.id?"rgba(255,255,255,0.13)":"transparent",color:view===n.id?"#fff":"rgba(255,255,255,0.55)",marginBottom:3,fontSize:14,fontWeight:view===n.id?700:500,textAlign:"left",borderLeft:view===n.id?`3px solid ${C.g500}`:"3px solid transparent"}}>
+              <span style={{fontSize:18}}>{n.icon}</span>{n.label}
+            </button>
+          ))}
+        </nav>
+        <div style={{padding:"0 10px 20px"}}>
+          <div style={{background:"rgba(255,255,255,0.07)",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
+            <p style={{color:"#fff",margin:0,fontSize:13,fontWeight:700}}>Dr. Ayenachew</p>
+            <p style={{color:"rgba(255,255,255,0.4)",margin:"2px 0 0",fontSize:11}}>CEO & Founder</p>
+          </div>
+          <button onClick={onLogout} style={{width:"100%",padding:"10px",borderRadius:10,border:"1px solid rgba(255,255,255,0.15)",background:"transparent",color:"rgba(255,255,255,0.6)",fontSize:13,fontWeight:600}}>← Sign Out</button>
+        </div>
+      </div>
+
+      <div style={{flex:1,padding:28,overflow:"auto",maxHeight:"100vh"}}>
+
+        {view==="overview"&&!patient&&(
+          <div>
+            <div className="fadeUp" style={{marginBottom:24}}>
+              <h1 style={{fontSize:26,fontWeight:900,color:C.dark,margin:0}}>Good morning, Dr. Ayenachew 👋</h1>
+              <p style={{color:C.muted,margin:"4px 0 0",fontSize:14}}>Gondar Clinic · {PATIENTS.length} patients enrolled</p>
+            </div>
+            <div className="fadeUp1" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:22}}>
+              {[
+                {l:"Total Patients",v:PATIENTS.length,i:"👥",c:C.p600,bg:C.p100},
+                {l:"Subscriptions",v:PATIENTS.length,i:"⭐",c:C.g700,bg:C.g100},
+                {l:"High Risk",v:high,i:"🚨",c:C.r500,bg:C.r100},
+                {l:"Monthly Revenue",v:`$${totalRev}`,i:"💰",c:C.o500,bg:C.o100},
+              ].map(k=>(
+                <div key={k.l} style={{background:C.white,borderRadius:18,padding:20,border:`1.5px solid ${C.border}`}}>
+                  <div style={{width:42,height:42,borderRadius:12,background:k.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,marginBottom:12}}>{k.i}</div>
+                  <div style={{fontSize:34,fontWeight:900,color:k.c,lineHeight:1}}>{k.v}</div>
+                  <div style={{fontSize:12,fontWeight:700,color:C.dark,margin:"6px 0 0"}}>{k.l}</div>
+                </div>
+              ))}
+            </div>
+            <div className="fadeUp2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
+              <div style={{background:C.white,borderRadius:20,padding:22,border:`1.5px solid ${C.border}`}}>
+                <h3 style={{fontSize:15,fontWeight:800,color:C.dark,margin:"0 0 14px"}}>🚨 High Risk Patients</h3>
+                {PATIENTS.filter(p=>p.risk==="high").map((p,i,arr)=>(
+                  <div key={p.id} onClick={()=>{setPatient(p);setView("patients");}} style={{padding:"12px 0",borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none",cursor:"pointer"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                      <span style={{fontSize:14,fontWeight:700,color:C.dark}}>{p.name}</span>
+                      <Pill label={`${p.glucose} mg/dL`} c={C.r500} bg={C.r100}/>
+                    </div>
+                    <p style={{margin:0,fontSize:12,color:C.mid}}>🤖 {aiRec(p).msg.substring(0,55)}…</p>
+                  </div>
+                ))}
+              </div>
+              <div style={{background:C.white,borderRadius:20,padding:22,border:`1.5px solid ${C.border}`}}>
+                <h3 style={{fontSize:15,fontWeight:800,color:C.dark,margin:"0 0 14px"}}>⏰ Overdue Follow-ups</h3>
+                {PATIENTS.filter(p=>new Date(p.nextVisit)<new Date()).map((p,i,arr)=>(
+                  <div key={p.id} style={{padding:"12px 0",borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                      <span style={{fontSize:14,fontWeight:700,color:C.dark}}>{p.name}</span>
+                      <Pill label="OVERDUE" c={C.o500} bg={C.o100}/>
+                    </div>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <p style={{margin:0,fontSize:12,color:C.muted}}>Due: {p.nextVisit}</p>
+                      <button onClick={()=>notify(`SMS sent to ${p.name} ✓`)} style={{background:C.p100,border:"none",color:C.p600,borderRadius:8,padding:"5px 10px",fontSize:12,fontWeight:700}}>Send SMS</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {view==="patients"&&!patient&&(
+          <div>
+            <div className="fadeUp" style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22}}>
+              <h1 style={{fontSize:26,fontWeight:900,color:C.dark,margin:0}}>Patient Registry</h1>
+              <Btn v="primary">+ Enroll Patient</Btn>
+            </div>
+            <div style={{display:"flex",gap:8,marginBottom:18,flexWrap:"wrap"}}>
+              {["all","high","medium","low"].map(f=>(
+                <button key={f} onClick={()=>setFilter(f)} style={{padding:"8px 16px",borderRadius:20,border:filter===f?"none":`1.5px solid ${C.border}`,background:filter===f?`linear-gradient(135deg,${C.p600},${C.p900})`:"white",color:filter===f?"#fff":C.mid,fontWeight:700,fontSize:13}}>
+                  {f==="all"?"All":f[0].toUpperCase()+f.slice(1)+" Risk"}
+                </button>
+              ))}
+            </div>
+            <div style={{background:C.white,borderRadius:20,border:`1.5px solid ${C.border}`,overflow:"hidden"}}>
+              <table style={{width:"100%",borderCollapse:"collapse"}}>
+                <thead>
+                  <tr style={{background:C.bg}}>
+                    {["Patient","Type","Risk","Glucose","Adherence","Next Visit",""].map(h=>(
+                      <th key={h} style={{padding:"13px 16px",textAlign:"left",fontSize:11,fontWeight:700,color:C.muted,letterSpacing:0.8}}>{h.toUpperCase()}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(p=>(
+                    <tr key={p.id} style={{borderTop:`1px solid ${C.border}`,cursor:"pointer"}}
+                      onMouseEnter={e=>e.currentTarget.style.background=C.bg}
+                      onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                      onClick={()=>setPatient(p)}>
+                      <td style={{padding:"13px 16px"}}>
+                        <div style={{fontWeight:700,fontSize:14,color:C.dark}}>{p.name}</div>
+                        <div style={{fontSize:12,color:C.muted}}>Age {p.age}</div>
+                      </td>
+                      <td style={{padding:"13px 16px",fontSize:13,color:C.mid}}>{p.type}</td>
+                      <td style={{padding:"13px 16px"}}><Pill label={p.risk.toUpperCase()} c={riskC(p.risk)} bg={riskBg(p.risk)}/></td>
+                      <td style={{padding:"13px 16px"}}>
+                        <span style={{fontSize:16,fontWeight:800,color:gStatus(p.glucose).c}}>{p.glucose}</span>
+                        <span style={{fontSize:11,color:C.muted}}> mg/dL</span>
+                      </td>
+                      <td style={{padding:"13px 16px"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <div style={{width:50,height:5,background:C.border,borderRadius:3}}>
+                            <div style={{height:"100%",width:`${p.adherence}%`,background:p.adherence>70?C.g600:p.adherence>50?C.o500:C.r500,borderRadius:3}}/>
+                          </div>
+                          <span style={{fontSize:12,fontWeight:700,color:p.adherence>70?C.g600:C.r500}}>{p.adherence}%</span>
+                        </div>
+                      </td>
+                      <td style={{padding:"13px 16px",fontSize:13,color:new Date(p.nextVisit)<new Date()?C.r500:C.mid}}>{p.nextVisit}</td>
+                      <td style={{padding:"13px 16px"}}>
+                        <button style={{background:C.p100,border:"none",color:C.p600,borderRadius:8,padding:"6px 12px",fontSize:13,fontWeight:700}}>View →</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {patient&&(
+          <div>
+            <button onClick={()=>setPatient(null)} style={{background:"none",border:"none",color:C.p600,fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:20,display:"flex",alignItems:"center",gap:6}}>← Back</button>
+            <div style={{display:"grid",gridTemplateColumns:"280px 1fr",gap:18}}>
+              <div>
+                <div style={{background:C.white,borderRadius:20,padding:22,border:`1.5px solid ${C.border}`,marginBottom:14,textAlign:"center"}}>
+                  <div style={{width:64,height:64,borderRadius:"50%",background:`linear-gradient(135deg,${C.p100},${C.g100})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,margin:"0 auto 12px"}}>👤</div>
+                  <h2 style={{fontSize:18,fontWeight:800,color:C.dark,margin:"0 0 4px"}}>{patient.name}</h2>
+                  <p style={{fontSize:12,color:C.muted,marginBottom:10}}>{patient.type} · Age {patient.age}</p>
+                  <Pill label={patient.risk.toUpperCase()+" RISK"} c={riskC(patient.risk)} bg={riskBg(patient.risk)}/>
+                  <div style={{marginTop:14,textAlign:"left"}}>
+                    {[{l:"Phone",v:patient.phone,i:"📞"},{l:"Plan",v:patient.sub,i:"⭐"},{l:"Next Visit",v:patient.nextVisit,i:"📅"}].map(f=>(
+                      <div key={f.l} style={{display:"flex",gap:8,padding:"8px 0",borderBottom:`1px solid ${C.border}`}}>
+                        <span>{f.i}</span>
+                        <div>
+                          <div style={{fontSize:10,color:C.muted,fontWeight:700}}>{f.l.toUpperCase()}</div>
+                          <div style={{fontSize:13,color:C.dark,fontWeight:600,textTransform:"capitalize"}}>{f.v}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{background:aiRec(patient).lvl==="danger"?C.r50:aiRec(patient).lvl==="warn"?C.o50:C.g50,borderRadius:16,padding:18,border:`1.5px solid ${C.border}`}}>
+                  <p style={{fontSize:11,fontWeight:700,color:C.mid,marginBottom:8}}>🤖 AI RECOMMENDATION</p>
+                  <p style={{fontSize:13,color:C.dark,lineHeight:1.7,margin:"0 0 12px"}}>{aiRec(patient).msg}</p>
+                  <Btn onClick={()=>notify(`Action taken for ${patient.name}`)} full style={{fontSize:13,padding:"10px"}}>Take Action →</Btn>
+                </div>
+              </div>
+              <div>
+                <div style={{background:C.white,borderRadius:20,padding:22,border:`1.5px solid ${C.border}`,marginBottom:14}}>
+                  <h3 style={{fontSize:15,fontWeight:800,color:C.dark,margin:"0 0 16px"}}>Health Overview</h3>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:18}}>
+                    {[
+                      {l:"Glucose",v:patient.glucose,u:"mg/dL",c:gStatus(patient.glucose).c},
+                      {l:"HbA1c",v:`${patient.hba1c}%`,c:patient.hba1c>8?C.r500:C.g700},
+                      {l:"Adherence",v:`${patient.adherence}%`,c:patient.adherence>70?C.g600:C.r500},
+                    ].map(s=>(
+                      <div key={s.l} style={{textAlign:"center",background:C.bg,borderRadius:12,padding:"12px 8px"}}>
+                        <div style={{fontSize:24,fontWeight:900,color:s.c}}>{s.v}</div>
+                        <div style={{fontSize:11,color:C.muted,fontWeight:600,marginTop:3}}>{s.l.toUpperCase()}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <Chart data={WEEK}/>
+                </div>
+                <div style={{background:C.white,borderRadius:20,padding:22,border:`1.5px solid ${C.border}`}}>
+                  <h3 style={{fontSize:15,fontWeight:800,color:C.dark,margin:"0 0 14px"}}>Quick Actions</h3>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                    {[
+                      {l:"📅 Book Appointment",a:()=>notify("Appointment booked")},
+                      {l:"📱 Send SMS",a:()=>notify(`SMS sent to ${patient.name}`)},
+                      {l:"💊 Update Medications",a:()=>notify("Medication updated")},
+                      {l:"📋 Add Clinical Note",a:()=>notify("Note saved")},
+                    ].map(a=>(
+                      <button key={a.l} onClick={a.a} style={{padding:"12px",background:C.bg,border:`1.5px solid ${C.border}`,borderRadius:10,color:C.dark,fontWeight:600,fontSize:13,textAlign:"left"}}>{a.l}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {view==="analytics"&&(
+          <div>
+            <h1 className="fadeUp" style={{fontSize:26,fontWeight:900,color:C.dark,margin:"0 0 22px"}}>Analytics</h1>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:18}}>
+              <div style={{background:C.white,borderRadius:20,padding:22,border:`1.5px solid ${C.border}`}}>
+                <h3 style={{fontSize:15,fontWeight:800,color:C.dark,margin:"0 0 18px"}}>Risk Distribution</h3>
+                {[{l:"High Risk",n:3,pct:50,c:C.r500},{l:"Medium Risk",n:2,pct:33,c:C.o500},{l:"Low Risk",n:1,pct:17,c:C.g600}].map(r=>(
+                  <div key={r.l} style={{marginBottom:14}}>
+                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                      <span style={{fontSize:13,fontWeight:600,color:C.dark}}>{r.l}</span>
+                      <span style={{fontSize:13,fontWeight:700,color:r.c}}>{r.n} ({r.pct}%)</span>
+                    </div>
+                    <div style={{height:7,background:C.bg,borderRadius:4}}>
+                      <div style={{height:"100%",width:`${r.pct}%`,background:r.c,borderRadius:4}}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{background:C.white,borderRadius:20,padding:22,border:`1.5px solid ${C.border}`}}>
+                <h3 style={{fontSize:15,fontWeight:800,color:C.dark,margin:"0 0 18px"}}>Revenue Breakdown</h3>
+                {[{plan:"Premium ($12)",n:2,rev:24,c:C.g700},{plan:"Standard ($7)",n:2,rev:14,c:C.p600},{plan:"Basic ($3)",n:2,rev:6,c:C.muted}].map((s,i)=>(
+                  <div key={s.plan} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",borderBottom:i<2?`1px solid ${C.border}`:"none"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{width:10,height:10,borderRadius:"50%",background:s.c}}/>
+                      <span style={{fontSize:13,fontWeight:600,color:C.dark}}>{s.plan}</span>
+                    </div>
+                    <span style={{fontSize:14,fontWeight:800,color:s.c}}>${s.rev}/mo</span>
+                  </div>
+                ))}
+                <div style={{marginTop:14,background:C.g50,borderRadius:10,padding:14,textAlign:"center"}}>
+                  <p style={{margin:0,fontSize:12,color:C.mid}}>Total Monthly</p>
+                  <p style={{margin:"4px 0 0",fontSize:28,fontWeight:900,color:C.g700}}>${totalRev}/mo</p>
+                </div>
+              </div>
+            </div>
+            <div style={{background:C.white,borderRadius:20,padding:22,border:`1.5px solid ${C.border}`}}>
+              <h3 style={{fontSize:15,fontWeight:800,color:C.dark,margin:"0 0 18px"}}>Patient Growth 2025</h3>
+              <div style={{display:"flex",alignItems:"flex-end",gap:14,height:140}}>
+                {[{m:"Jan",n:1},{m:"Feb",n:2},{m:"Mar",n:3},{m:"Apr",n:4},{m:"May",n:6}].map((d,i)=>(
+                  <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
+                    <span style={{fontSize:13,fontWeight:800,color:i===4?C.p600:C.muted}}>{d.n}</span>
+                    <div style={{width:"100%",height:`${(d.n/6)*120}px`,background:i===4?`linear-gradient(180deg,${C.p500},${C.p800})`:`linear-gradient(180deg,${C.p200},${C.p300})`,borderRadius:"6px 6px 0 0"}}/>
+                    <span style={{fontSize:12,color:C.muted}}>{d.m}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {view==="followup"&&(
+          <div>
+            <h1 className="fadeUp" style={{fontSize:26,fontWeight:900,color:C.dark,margin:"0 0 22px"}}>Follow-up Monitor</h1>
+            {PATIENTS.map((p,i)=>{
+              const rec=aiRec(p);
+              const isOD=new Date(p.nextVisit)<new Date();
+              return(
+                <div key={p.id} style={{background:C.white,borderRadius:20,padding:20,marginBottom:12,border:`1.5px solid ${C.border}`,borderLeft:`5px solid ${riskC(p.risk)}`}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10}}>
+                    <div style={{flex:1}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8,flexWrap:"wrap"}}>
+                        <span style={{fontSize:15,fontWeight:800,color:C.dark}}>{p.name}</span>
+                        <Pill label={p.risk.toUpperCase()} c={riskC(p.risk)} bg={riskBg(p.risk)}/>
+                        {isOD&&<Pill label="OVERDUE" c={C.r500} bg={C.r100}/>}
+                      </div>
+                      <div style={{display:"flex",gap:16,flexWrap:"wrap",marginBottom:10}}>
+                        <span style={{fontSize:13,color:C.muted}}>Glucose: <strong style={{color:gStatus(p.glucose).c}}>{p.glucose}</strong></span>
+                        <span style={{fontSize:13,color:C.muted}}>Adherence: <strong style={{color:p.adherence>70?C.g600:C.r500}}>{p.adherence}%</strong></span>
+                        <span style={{fontSize:13,color:isOD?C.r500:C.muted}}>Due: <strong>{p.nextVisit}</strong></span>
+                      </div>
+                      <div style={{background:rec.lvl==="danger"?C.r50:rec.lvl==="warn"?C.o50:C.g50,borderRadius:8,padding:"8px 12px",display:"inline-block"}}>
+                        <p style={{margin:0,fontSize:13,color:C.dark,fontWeight:600}}>🤖 {rec.msg}</p>
+                      </div>
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                      <Btn onClick={()=>notify(`SMS sent to ${p.name} ✓`)} style={{fontSize:13,padding:"9px 16px"}}>📱 Remind</Btn>
+                      <Btn onClick={()=>{setPatient(p);setView("patients");}} v="outline" style={{fontSize:13,padding:"9px 16px"}}>View</Btn>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [screen,setScreen]=useState("auth");
+  const [role,setRole]=useState(null);
+  if(screen==="auth") return <Auth onLogin={r=>{setRole(r);setScreen("app");}}/>;
+  if(role==="patient") return <PatientApp onLogout={()=>{setScreen("auth");setRole(null);}}/>;
+  return <Clinic onLogout={()=>{setScreen("auth");setRole(null);}}/>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
 </body>
 </html>
