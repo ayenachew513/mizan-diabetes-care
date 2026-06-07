@@ -145,14 +145,8 @@ const T = {
 
 // ── OFFLINE STORE (localStorage simulation) ───────────────────────────────────
 const OfflineStore = {
-  get: (key) => { 
-    if (typeof window === 'undefined') return null;
-    try { return JSON.parse(localStorage.getItem("mizan_"+key)||"null"); } catch { return null; } 
-  },
-  set: (key, val) => { 
-    if (typeof window === 'undefined') return;
-    try { localStorage.setItem("mizan_"+key, JSON.stringify(val)); } catch {} 
-  },
+  get: (key) => { try { return JSON.parse(localStorage.getItem("mizan_"+key)||"null"); } catch { return null; } },
+  set: (key, val) => { try { localStorage.setItem("mizan_"+key, JSON.stringify(val)); } catch {} },
   push: (key, item) => {
     const arr = OfflineStore.get(key) || [];
     arr.unshift(item);
@@ -206,6 +200,21 @@ const PATIENTS = [
    history:[{date:"2025-05-01",note:"Good glucose control this month. Insulin dose maintained. Continue current plan.",doctor:"Dr. Amare"}],
    investigations:[{date:"2025-05-01",test:"HbA1c",result:"7.4%",ref:"<7.5% (Type 1)",status:"normal"},{date:"2025-05-01",test:"Fasting Glucose",result:"168 mg/dL",ref:"70-130",status:"elevated"}],
    imaging:[{date:"2025-04-01",type:"Fundoscopy",finding:"No diabetic retinopathy detected.",reported:"Dr. Eye"}]},
+  {id:4,name:"Dawit Mengiste",age:48,gender:"M",type:"Type 2",glucose:126,hba1c:6.8,sbp:122,dbp:78,bmi:24.8,lastVisit:"2025-05-10",nextVisit:"2025-06-10",adherence:91,phone:"+251-941-567890",sub:"premium",weight:75,city:"Gondar",
+   alerts:[],
+   history:[{date:"2025-05-10",note:"Excellent adherence. Glucose well controlled. Lifestyle modifications working.",doctor:"Dr. Ayenachew"}],
+   investigations:[{date:"2025-05-10",test:"HbA1c",result:"6.8%",ref:"<7%",status:"normal"},{date:"2025-05-10",test:"Fasting Glucose",result:"126 mg/dL",ref:"70-130",status:"normal"}],
+   imaging:[]},
+  {id:5,name:"Selamawit Girma",age:37,gender:"F",type:"Type 2",glucose:194,hba1c:7.9,sbp:132,dbp:84,bmi:27.6,lastVisit:"2025-04-15",nextVisit:"2025-05-29",adherence:65,phone:"+251-951-678901",sub:"standard",weight:64,city:"Maksegnit",
+   alerts:["Adherence <70%"],
+   history:[{date:"2025-04-15",note:"Patient struggles with medication adherence. Counseling session done. Reminder system activated.",doctor:"Dr. Samuel"}],
+   investigations:[{date:"2025-04-15",test:"HbA1c",result:"7.9%",ref:"<7%",status:"high"},{date:"2025-04-15",test:"Fasting Glucose",result:"194 mg/dL",ref:"70-130",status:"high"}],
+   imaging:[]},
+  {id:6,name:"Yohannes Assefa",age:71,gender:"M",type:"Type 2",glucose:341,hba1c:10.1,sbp:168,dbp:102,bmi:29.2,lastVisit:"2025-03-20",nextVisit:"2025-04-20",adherence:31,phone:"+251-911-789012",sub:"basic",weight:68,city:"Gondar",
+   alerts:["Glucose >300","HbA1c >10","Missed 3 visits","Adherence <40%"],
+   history:[{date:"2025-03-20",note:"Very poor control. Glucose dangerously high. Referred to specialist. Insulin initiation discussed.",doctor:"Dr. Ayenachew"},{date:"2025-02-01",note:"Missed previous appointment. Phone reminder sent.",doctor:"Dr. Samuel"}],
+   investigations:[{date:"2025-03-20",test:"HbA1c",result:"10.1%",ref:"<7%",status:"high"},{date:"2025-03-20",test:"Fasting Glucose",result:"341 mg/dL",ref:"70-130",status:"high"},{date:"2025-03-20",test:"Urine Ketones",result:"Trace",ref:"Negative",status:"elevated"},{date:"2025-03-20",test:"Creatinine",result:"1.4 mg/dL",ref:"0.6-1.2",status:"elevated"}],
+   imaging:[{date:"2025-02-20",type:"Chest X-Ray",finding:"Cardiomegaly noted. Recommend cardiology review.",reported:"Dr. Radiology"}]},
 ];
 
 const WEEK = [
@@ -218,45 +227,59 @@ const EDUCATION = {
     {id:1,icon:"💉",cat:"Basics",title:"Understanding Blood Sugar",time:"5 min",color:C.p600},
     {id:2,icon:"🦶",cat:"Prevention",title:"Daily Foot Care Guide",time:"4 min",color:C.g600},
     {id:3,icon:"🥗",cat:"Nutrition",title:"Eating Well in Ethiopia",time:"7 min",color:C.o500},
+    {id:4,icon:"🚶",cat:"Lifestyle",title:"Exercise & Glucose Control",time:"6 min",color:C.p700},
+    {id:5,icon:"💊",cat:"Medication",title:"Why Adherence Matters",time:"3 min",color:C.g700},
+    {id:6,icon:"🧠",cat:"Mental Health",title:"Stress & Blood Sugar",time:"5 min",color:C.r500},
   ],
   am: [
     {id:1,icon:"💉",cat:"መሰረታዊ",title:"ስለ ደም ስኳር መረዳት",time:"5 ደቂቃ",color:C.p600},
     {id:2,icon:"🦶",cat:"መከላከል",title:"የዕለት ተዕለት የእግር እንክብካቤ",time:"4 ደቂቃ",color:C.g600},
-    {id:3,icon:"🥗",cat:"አመጋገብ",title:"በእትዮጵያ ጤናማ አመጋገብ",time:"7 ደቂቃ",color:C.o500},
+    {id:3,icon:"🥗",cat:"አመጋገብ",title:"በኢትዮጵያ ጤናማ አመጋገብ",time:"7 ደቂቃ",color:C.o500},
+    {id:4,icon:"🚶",cat:"አኗኗር",title:"ልምምድና የስኳር ቁጥጥር",time:"6 ደቂቃ",color:C.p700},
+    {id:5,icon:"💊",cat:"መድሃኒት",title:"ለምን ተከታዩ አስፈላጊ ነው",time:"3 ደቂቃ",color:C.g700},
+    {id:6,icon:"🧠",cat:"የአዕምሮ ጤና",title:"ጭንቀትና ስኳር",time:"5 ደቂቃ",color:C.r500},
   ]
 };
 
 const PLANS = [
   {name:"basic",price:3,color:C.mid,accent:C.border,
-   inc:{en:["Glucose logging","Medication reminders"],am:["የስኳር ምዝገባ","የመድሃኒት አስታዋሽ"]},
-   exc:{en:["Teleconsultation"],am:["ቴሌ ምክክር"]}},
+   inc:{en:["Glucose logging","Medication reminders","Basic education","Monthly check-in"],am:["የስኳር ምዝገባ","የመድሃኒት አስታዋሽ","መሰረታዊ ትምህርት","ወርሃዊ ክትትል"]},
+   exc:{en:["Teleconsultation","Complication screening","Product delivery","Home visit"],am:["ቴሌ ምክክር","ችግር ምርምር","ምርት ማድረስ","የቤት ጉብኝት"]}},
   {name:"standard",price:7,color:C.p600,accent:C.p200,popular:true,
-   inc:{en:["Everything in Basic","Teleconsultation ×2/mo"],am:["ሁሉም መሰረታዊ","ቴሌ ምክክር ×2/ወር"]},
-   exc:{en:["Home visit"],am:["የቤት ጉብኝት"]}},
+   inc:{en:["Everything in Basic","Teleconsultation ×2/mo","Complication screening","Dietitian access"],am:["ሁሉም መሰረታዊ","ቴሌ ምክክር ×2/ወር","ችግር ምርምር","የምግብ ባለሙያ"]},
+   exc:{en:["Product delivery","Home visit"],am:["ምርት ማድረስ","የቤት ጉብኝት"]}},
   {name:"premium",price:12,color:C.g700,accent:C.g200,
-   inc:{en:["Everything in Standard","Home visit ×1/mo"],am:["ሁሉም መደበኛ","የቤት ጉብኝት ×1/ወር"]},
+   inc:{en:["Everything in Standard","Unlimited teleconsultation","Product delivery","Home visit ×1/mo","Priority support"],am:["ሁሉም መደበኛ","ያልተገደበ ቴሌ ምክክር","ምርት ማድረስ","የቤት ጉብኝት ×1/ወር","ቅድሚያ ድጋፍ"]},
    exc:{en:[],am:[]}},
 ];
 
-// ── RISK LIFECYCLES ────────────────────────────────────────────────────────────
+// ── AI RISK STRATIFICATION ─────────────────────────────────────────────────────
 const calcRiskScore = (p) => {
   let score = 0;
   if (p.glucose > 300) score += 30;
   else if (p.glucose > 200) score += 20;
+  else if (p.glucose > 140) score += 10;
   if (p.hba1c > 9) score += 25;
+  else if (p.hba1c > 8) score += 15;
   else if (p.hba1c > 7) score += 8;
-  if (p.sbp > 140) score += 12;
-  if (p.bmi > 27) score += 5;
-  if (p.adherence < 50) score += 15;
-  const risk = score >= 50 ? "high" : score >= 25 ? "medium" : "low";
+  if (p.sbp > 160) score += 20;
+  else if (p.sbp > 140) score += 12;
+  else if (p.sbp > 130) score += 6;
+  if (p.bmi > 30) score += 10;
+  else if (p.bmi > 27) score += 5;
+  if (p.adherence < 40) score += 15;
+  else if (p.adherence < 60) score += 8;
+  else if (p.adherence < 75) score += 3;
+  const risk = score >= 60 ? "high" : score >= 30 ? "medium" : "low";
   return { score, risk };
 };
 
 const aiRec = (p) => {
-  const { risk } = calcRiskScore(p);
-  if (risk === "high") return { msg: "Urgent consultation needed. Review insulin or emergency referral.", lvl: "danger" };
-  if (p.adherence < 50) return { msg: "Poor adherence. Send local SMS notification educational tip.", lvl: "warn" };
-  return { msg: "Patient is on track. Continue current care plan.", lvl: "ok" };
+  const { score, risk } = calcRiskScore(p);
+  if (risk === "high") return { msg: "Urgent consultation needed. Consider insulin initiation, BP medication review, or emergency referral.", lvl: "danger" };
+  if (p.adherence < 50) return { msg: "Poor adherence detected. Send education reminder and schedule counseling session.", lvl: "warn" };
+  if (new Date(p.nextVisit) < new Date()) return { msg: "Overdue follow-up. Call patient to reschedule as soon as possible.", lvl: "warn" };
+  return { msg: "Patient is on track. Continue current care plan. Next review on schedule.", lvl: "ok" };
 };
 
 const riskC = r => r==="high"?C.r500:r==="medium"?C.o500:C.g600;
@@ -264,177 +287,918 @@ const riskBg = r => r==="high"?C.r100:r==="medium"?C.o100:C.g100;
 
 const gStatus = v => {
   if(v<70) return {label:"LOW",c:C.r500,bg:C.r100,icon:"🔴",advice:"Eat something sweet immediately."};
-  if(v<=140) return {label:"NORMAL",c:C.g600,bg:C.g100,icon:"🟢",advice:"Great control! Keep it up."};
-  return {label:"HIGH",c:C.r500,bg:C.r100,icon:"🔴",advice:"Dangerously high. Contact clinic."};
+  if(v<=140) return {label:"NORMAL",c:C.g600,bg:C.g100,icon:"🟢",advice:"Great control! Keep following your care plan."};
+  if(v<=200) return {label:"ELEVATED",c:C.o500,bg:C.o100,icon:"🟡",advice:"Avoid sugary foods. Monitor closely today."};
+  return {label:"HIGH",c:C.r500,bg:C.r100,icon:"🔴",advice:"Dangerously high. Contact Mizan clinic immediately."};
 };
 
 // ── SHARED UI ──────────────────────────────────────────────────────────────────
 const Toast = ({msg,type,onClose}) => (
-  <div style={{position:"fixed",top:20,right:20,zIndex:9999,background:type==="error"?C.r500:C.g700,color:"#fff",padding:"14px 20px",borderRadius:14,fontWeight:600,fontSize:14,boxShadow:"0 8px 32px rgba(0,0,0,0.2)",display:"flex",gap:12,alignItems:"center"}}>
-    <span>{type==="error"?"❌":"✅"}</span><span>{msg}</span><button onClick={onClose} style={{background:"none",border:"none",color:"#fff",cursor:"pointer",fontSize:18}}>×</button>
+  <div style={{position:"fixed",top:20,right:20,zIndex:9999,animation:"slideIn 0.3s ease",
+    background:type==="error"?C.r500:type==="warn"?C.o500:C.g700,
+    color:"#fff",padding:"14px 20px",borderRadius:14,fontWeight:600,fontSize:14,
+    boxShadow:"0 8px 32px rgba(0,0,0,0.2)",maxWidth:320,display:"flex",gap:12,alignItems:"center"}}>
+    <span style={{fontSize:18}}>{type==="error"?"❌":type==="warn"?"⚠️":"✅"}</span>
+    <span style={{flex:1}}>{msg}</span>
+    <button onClick={onClose} style={{background:"none",border:"none",color:"rgba(255,255,255,0.8)",cursor:"pointer",fontSize:18,padding:0}}>×</button>
   </div>
 );
 
 const Modal = ({children,onClose}) => (
   <div style={{position:"fixed",inset:0,background:"rgba(13,31,53,0.7)",zIndex:900,display:"flex",alignItems:"center",justifyContent:"center",padding:16,backdropFilter:"blur(4px)"}} onClick={onClose}>
-    <div onClick={e=>e.stopPropagation()} style={{background:C.white,borderRadius:24,padding:28,width:"100%",maxWidth:420,boxShadow:"0 24px 80px rgba(0,0,0,0.3)",maxHeight:"90vh",overflowY:"auto"}}>
+    <div onClick={e=>e.stopPropagation()} style={{background:C.white,borderRadius:24,padding:28,width:"100%",maxWidth:420,boxShadow:"0 24px 80px rgba(0,0,0,0.3)",animation:"fadeUp 0.3s ease",maxHeight:"90vh",overflowY:"auto"}}>
       {children}
     </div>
   </div>
 );
 
 const Pill = ({label,c,bg,size=12}) => (
-  <span style={{background:bg,color:c,borderRadius:20,padding:"3px 9px",fontSize:size,fontWeight:700,whiteSpace:"nowrap"}}>{label}</span>
+  <span style={{background:bg,color:c,borderRadius:20,padding:`${size===12?"3px 9px":"4px 12px"}`,fontSize:size,fontWeight:700,letterSpacing:0.2,whiteSpace:"nowrap"}}>{label}</span>
 );
 
 const Btn = ({children,onClick,v="primary",sz="md",full,disabled,style={}}) => {
+  const vs = {
+    primary:{background:`linear-gradient(135deg,${C.p600},${C.p900})`,color:"#fff",border:"none",boxShadow:`0 4px 16px ${C.p300}`},
+    green:{background:`linear-gradient(135deg,${C.g600},${C.g900})`,color:"#fff",border:"none",boxShadow:`0 4px 16px ${C.g300}`},
+    outline:{background:"transparent",color:C.p600,border:`2px solid ${C.p600}`},
+    ghost:{background:C.p100,color:C.p700,border:"none"},
+    danger:{background:C.r100,color:C.r500,border:"none"},
+    muted:{background:C.bg,color:C.muted,border:`1.5px solid ${C.border}`},
+  };
+  const ss = {sm:{padding:"8px 16px",fontSize:13,borderRadius:10},md:{padding:"12px 24px",fontSize:15,borderRadius:12},lg:{padding:"16px 28px",fontSize:17,borderRadius:14}};
   return (
-    <button onClick={onClick} disabled={disabled} style={{
-      background: v === "primary" ? `linear-gradient(135deg,${C.p600},${C.p900})` : C.bg,
-      color: v === "primary" ? "#fff" : C.dark,
-      border: "none", padding: "10px 20px", borderRadius: 12, fontWeight: 700, cursor: "pointer", width: full ? "100%" : "auto", ...style
-    }}>{children}</button>
+    <button className="btn-press" onClick={onClick} disabled={disabled} style={{...vs[v],...ss[sz],fontWeight:700,cursor:disabled?"not-allowed":"pointer",
+      width:full?"100%":"auto",opacity:disabled?0.6:1,transition:"all 0.2s",letterSpacing:0.2,...style}}>
+      {children}
+    </button>
   );
 };
 
-const Field = ({label,value,onChange,placeholder,rows}) => (
+const Field = ({label,type="text",value,onChange,placeholder,icon,hint,rows}) => (
   <div style={{marginBottom:16}}>
-    {label&&<label style={{display:"block",marginBottom:6,fontSize:13,fontWeight:700,color:C.dark}}>{label}</label>}
-    {rows ? (
-      <textarea rows={rows} value={value} onChange={onChange} placeholder={placeholder} style={{width:"100%",padding:"12px",borderRadius:12,border:`1.5px solid ${C.border}`,background:C.bg}}/>
-    ) : (
-      <input value={value} onChange={onChange} placeholder={placeholder} style={{width:"100%",padding:"12px",borderRadius:12,border:`1.5px solid ${C.border}`,background:C.bg}}/>
-    )}
+    {label&&<label style={{display:"block",marginBottom:6,fontSize:13,fontWeight:700,color:C.dark,letterSpacing:0.3}}>{label}</label>}
+    <div style={{position:"relative"}}>
+      {icon&&!rows&&<span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:16,userSelect:"none"}}>{icon}</span>}
+      {rows ? (
+        <textarea rows={rows} value={value} onChange={onChange} placeholder={placeholder}
+          style={{width:"100%",padding:"13px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:15,color:C.dark,background:C.bg,resize:"vertical",fontFamily:"'Outfit',sans-serif"}}
+          onFocus={e=>{e.target.style.border=`1.5px solid ${C.p600}`;}} onBlur={e=>{e.target.style.border=`1.5px solid ${C.border}`;}}/>
+      ) : (
+        <input type={type} value={value} onChange={onChange} placeholder={placeholder}
+          style={{width:"100%",padding:icon?"13px 14px 13px 42px":"13px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:15,color:C.dark,background:C.bg,transition:"border 0.2s",fontFamily:"'Outfit',sans-serif"}}
+          onFocus={e=>{e.target.style.border=`1.5px solid ${C.p600}`;e.target.style.background=C.white;}}
+          onBlur={e=>{e.target.style.border=`1.5px solid ${C.border}`;e.target.style.background=C.bg;}}/>
+      )}
+    </div>
+    {hint&&<p style={{margin:"5px 0 0",fontSize:12,color:C.muted}}>{hint}</p>}
   </div>
 );
 
+// ── OFFLINE BANNER ─────────────────────────────────────────────────────────────
 const OfflineBanner = ({online,syncing,t}) => {
   if (online && !syncing) return null;
-  return <div style={{background:C.o500,color:"#fff",padding:"8px",textAlign:"center",fontSize:12,fontWeight:700}}>{t.offline}</div>;
+  return (
+    <div style={{background:syncing?C.p600:C.o500,color:"#fff",padding:"8px 16px",fontSize:12,fontWeight:700,
+      display:"flex",alignItems:"center",gap:8,justifyContent:"center",position:"sticky",top:0,zIndex:80}}>
+      <span style={{animation:syncing?"syncPulse 1.5s infinite":"none",display:"inline-block"}}>
+        {syncing?"🔄":"📵"}
+      </span>
+      {syncing ? t.syncing : t.offline}
+    </div>
+  );
 };
 
-const Chart = ({compact=false}) => {
-  return <div style={{padding:"20px",textAlign:"center",background:C.bg,borderRadius:12,color:C.muted,fontSize:13}}>{compact ? "Chart View" : "7-Day Trend Vector Graphics"}</div>;
+// ── GLUCOSE CHART ──────────────────────────────────────────────────────────────
+const Chart = ({data=WEEK,compact=false}) => {
+  const H=compact?100:160,W=300,pad=20,max=300;
+  const x=i=>pad+(i/(data.length-1))*(W-pad*2);
+  const y=v=>H-pad-(v/max)*(H-pad*2);
+  const path=key=>data.map((d,i)=>`${i===0?"M":"L"}${x(i)},${y(d[key])}`).join(" ");
+  return (
+    <div style={{overflowX:"auto"}}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:compact?100:170}} preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="gp" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.p500} stopOpacity="0.25"/><stop offset="100%" stopColor={C.p500} stopOpacity="0"/></linearGradient>
+          <linearGradient id="gg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.g500} stopOpacity="0.25"/><stop offset="100%" stopColor={C.g500} stopOpacity="0"/></linearGradient>
+        </defs>
+        {[70,140,200].map(v=>(
+          <g key={v}><line x1={pad} y1={y(v)} x2={W-pad} y2={y(v)} stroke={C.border} strokeWidth="0.8" strokeDasharray="4,4"/><text x={W-pad+4} y={y(v)+4} fontSize="8" fill={C.muted}>{v}</text></g>
+        ))}
+        <path d={`${path("f")} L${x(data.length-1)},${H-pad} L${x(0)},${H-pad} Z`} fill="url(#gp)" opacity="0.6"/>
+        <path d={`${path("r")} L${x(data.length-1)},${H-pad} L${x(0)},${H-pad} Z`} fill="url(#gg)" opacity="0.6"/>
+        <path d={path("f")} fill="none" stroke={C.p600} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d={path("r")} fill="none" stroke={C.g600} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+        {data.map((d,i)=>(
+          <g key={i}>
+            <circle cx={x(i)} cy={y(d.f)} r="4" fill={C.white} stroke={C.p600} strokeWidth="2"/>
+            <circle cx={x(i)} cy={y(d.r)} r="4" fill={C.white} stroke={C.g600} strokeWidth="2"/>
+            {!compact&&<text x={x(i)} y={H-4} textAnchor="middle" fontSize="9" fill={C.muted}>{d.d}</text>}
+          </g>
+        ))}
+      </svg>
+      {!compact&&(
+        <div style={{display:"flex",gap:20,justifyContent:"center",marginTop:4}}>
+          {[{c:C.p600,l:"Fasting"},{c:C.g600,l:"Random"}].map(({c,l})=>(
+            <div key={l} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:C.mid}}>
+              <div style={{width:20,height:3,borderRadius:2,background:c}}/>{l}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 };
 
-const Ring = ({pct,color=C.p600}) => (
-  <div style={{width:60,height:60,borderRadius:"50%",border:`6px solid ${C.border}`,borderTopColor:color,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,color:color}}>{pct}%</div>
-);
+const Ring = ({pct,size=80,color=C.p600}) => {
+  const r=30,circ=2*Math.PI*r,offset=circ*(1-pct/100);
+  return (
+    <svg width={size} height={size} viewBox="0 0 80 80">
+      <circle cx="40" cy="40" r={r} fill="none" stroke={C.border} strokeWidth="8"/>
+      <circle cx="40" cy="40" r={r} fill="none" stroke={color} strokeWidth="8" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" transform="rotate(-90 40 40)" style={{transition:"stroke-dashoffset 1s ease"}}/>
+      <text x="40" y="44" textAnchor="middle" fontSize="14" fontWeight="800" fill={color} fontFamily="Outfit">{pct}%</text>
+    </svg>
+  );
+};
 
 // ════════════════════════════════════════════════════════════════════════════════
-// AUTH SCREEN
+// AUTH
 // ════════════════════════════════════════════════════════════════════════════════
 const Auth = ({onLogin,lang,setLang}) => {
   const t = T[lang];
+  const [mode,setMode] = useState("login");
   const [role,setRole] = useState("patient");
+  const [email,setEmail] = useState("");
+  const [pass,setPass] = useState("");
+  const [name,setName] = useState("");
+  const [loading,setLoading] = useState(false);
+  const [toast,setToast] = useState(null);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if(!email || !pass || (mode==="register" && !name)) {
+      setToast({msg:"Please fill in all fields",type:"error"});
+      return;
+    }
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      onLogin(role);
+    }, 800);
+  };
+
   return (
-    <div style={{maxWidth:400,margin:"80px auto",padding:24,background:C.white,borderRadius:24,boxShadow:"0 8px 32px rgba(0,0,0,0.05)"}}>
-      <FontLoader />
-      <div style={{textAlign:"center",marginBottom:24}}>
-        <MizanLogo size={48} />
-        <h2 style={{color:C.p900,marginTop:12}}>{t.appName}</h2>
-        <p style={{color:C.muted}}>{t.tagline}</p>
-      </div>
-      <div style={{display:"flex",gap:10,marginBottom:20}}>
-        <Btn full v={role==="patient"?"primary":"outline"} onClick={()=>setRole("patient")}>{t.asPatient}</Btn>
-        <Btn full v={role==="doctor"?"primary":"outline"} onClick={()=>setRole("doctor")}>{t.asDoctor}</Btn>
-      </div>
-      <Field label={t.email} placeholder="demo@mizan.com" />
-      <Field label={t.password} placeholder="••••••••" />
-      <Btn full onClick={()=>onLogin(role)} style={{marginTop:12}}>{t.login}</Btn>
-      <div style={{textAlign:"center",marginTop:20}}>
-        <button onClick={()=>setLang(lang==="en"?"am":"en")} style={{background:"none",border:"none",color:C.p600,fontWeight:700,cursor:"pointer"}}>
-          {lang === "en" ? "አማርኛ" : "English"}
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",background:`radial-gradient(circle at 80% 20%, ${C.p100} 0%, ${C.bg} 100%)`,padding:20,position:"relative",overflow:"hidden"}}>
+      <FontLoader/>
+      {toast && <Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
+      
+      <div style={{position:"absolute",top:20,right:20,display:"flex",gap:8,zIndex:10}}>
+        <button onClick={()=>setLang(lang==="en"?"am":"en")} style={{background:C.white,border:`1.5px solid ${C.border}`,padding:"6px 12px",borderRadius:20,fontSize:13,fontWeight:700,color:C.p700,cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
+          {lang==="en"?"አማርኛ 🇪ቲ":"English 🇬🇧"}
         </button>
+      </div>
+
+      <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",width:"100%",maxWidth:400,margin:"0 auto",className:"fadeUp"}}>
+        <div style={{background:C.card,borderRadius:32,padding:"40px 32px",width:"100%",boxShadow:"0 20px 60px rgba(13,50,90,0.08)",border:`1.5px solid ${C.white}`,backdropFilter:"blur(16px)"}}>
+          
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:32}}>
+            <MizanLogo size={56}/>
+            <h1 style={{fontSize:26,fontWeight:900,color:C.p900,marginTop:12,letterSpacing:-0.5}}>{t.appName}</h1>
+            <p style={{fontSize:14,fontWeight:600,color:C.g700,textTransform:"uppercase",letterSpacing:1.5,marginTop:2}}>{t.tagline}</p>
+          </div>
+
+          <div style={{display:"flex",background:C.bg,padding:4,borderRadius:14,marginBottom:24}}>
+            <button onClick={()=>setRole("patient")} style={{flex:1,padding:"10px",borderRadius:10,border:"none",fontSize:14,fontWeight:700,cursor:"pointer",transition:"all 0.2s",background:role==="patient"?C.white:"transparent",color:role==="patient"?C.p800:C.muted,boxShadow:role==="patient"?"0 4px 12px rgba(0,0,0,0.05)":"none"}}>
+              👤 {t.asPatient}
+            </button>
+            <button onClick={()=>setRole("doctor")} style={{flex:1,padding:"10px",borderRadius:10,border:"none",fontSize:14,fontWeight:700,cursor:"pointer",transition:"all 0.2s",background:role==="doctor"?C.white:"transparent",color:role==="doctor"?C.p800:C.muted,boxShadow:role==="doctor"?"0 4px 12px rgba(0,0,0,0.05)":"none"}}>
+              🥼 {t.asDoctor}
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            {mode==="register" && (
+              <Field label={t.name} value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Almaz Tadesse" icon="👤" />
+            )}
+            <Field label={t.email} type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="name@domain.com" icon="✉️" />
+            <Field label={t.password} type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" icon="🔒" />
+
+            {mode==="login" && (
+              <div style={{textAlign:"right",marginTop:-8,marginBottom:20}}>
+                <a href="#forgot" onClick={e=>{e.preventDefault();setToast({msg:"Password reset link sent!",type:"success"});}} style={{fontSize:13,fontWeight:600,color:C.p700,textDecoration:"none"}}>{t.forgot}</a>
+              </div>
+            )}
+
+            <Btn type="submit" full disabled={loading}>
+              {loading ? "..." : mode==="login" ? t.login : t.register}
+            </Btn>
+          </form>
+
+          <div style={{textAlign:"center",marginTop:24,borderTop:`1.5px solid ${C.border}`,paddingTop:20}}>
+            <button onClick={()=>setMode(mode==="login"?"register":"login")} style={{background:"none",border:"none",color:C.mid,fontSize:14,fontWeight:600,cursor:"pointer"}}>
+              {mode==="login" ? (lang==="en"?"New to Mizan? Create Account":"አዲስ ነዎት? መለያ ይፍጠሩ") : (lang==="en"?"Already have an account? Sign In":"ቀድሞ መለያ አሎት? ይግቡ")}
+            </button>
+          </div>
+
+        </div>
       </div>
     </div>
   );
 };
 
 // ════════════════════════════════════════════════════════════════════════════════
-// PATIENT APP VIEW
+// PATIENT APP
 // ════════════════════════════════════════════════════════════════════════════════
 const PatientApp = ({onLogout,lang}) => {
   const t = T[lang];
+  const [tab,setTab] = useState("home");
+  const [online,setOnline] = useState(navigator.onLine);
+  const [syncing,setSyncing] = useState(false);
+  const [toast,setToast] = useState(null);
+  
+  // Modals
+  const [glucoseModal,setGlucoseModal] = useState(false);
+  const [vitalsModal,setVitalsModal] = useState(false);
+  const [refillModal,setRefillModal] = useState(false);
+  const [missedModal,setMissedModal] = useState(false);
+  const [planModal,setPlanModal] = useState(false);
+
+  // Local Form States
+  const [gValue,setGValue] = useState("");
+  const [gType,setGType] = useState("fasting");
+  const [sys,setSys] = useState("");
+  const [dia,setDia] = useState("");
+  const [wt,setWt] = useState("");
+  const [exMin,setExMin] = useState("");
+  const [selectedPlan,setSelectedPlan] = useState("standard");
+
+  // Dynamic lists from OfflineStore
+  const [gLogs,setGLogs] = useState([]);
+  const [chatMsgs,setChatMsgs] = useState([]);
+  const [newMsg,setNewMsg] = useState("");
+
+  useEffect(() => {
+    setGLogs(OfflineStore.get("g_logs") || [{val:142,type:"fasting",date:new Date().toLocaleTimeString(),status:gStatus(142)}]);
+    setChatMsgs(OfflineStore.get("chat") || [{sender:"doc",text:"Hello, how are you feeling today? Please remember to log your fasting glucose.",time:"10:15 AM"}]);
+
+    const handleOnline = () => { setOnline(true); setSyncing(true); setTimeout(()=>setSyncing(false),1500); };
+    const handleOffline = () => setOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => { window.removeEventListener("online",handleOnline); window.removeEventListener("offline",handleOffline); };
+  }, []);
+
+  const notify = (msg, type="success") => { setToast({msg,type}); setTimeout(()=>setToast(null),4000); };
+
+  const handleLogGlucose = (e) => {
+    e.preventDefault();
+    if(!gValue) return;
+    const val = parseInt(gValue);
+    const item = { val, type: gType, date: new Date().toLocaleTimeString(), status: gStatus(val) };
+    const updated = OfflineStore.push("g_logs", item);
+    setGLogs(updated);
+    setGlucoseModal(false);
+    setGValue("");
+    if(!online) notify(t.syncBanner, "warn");
+    else notify(`Glucose logged successfully! status: ${item.status.label}`);
+  };
+
+  const handleSendChat = (e) => {
+    e.preventDefault();
+    if(!newMsg.trim()) return;
+    const m = { sender: "patient", text: newMsg, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
+    const updated = OfflineStore.push("chat", m);
+    setChatMsgs(updated);
+    setNewMsg("");
+    setTimeout(() => {
+      const reply = { sender: "doc", text: "Thank you for the message. Dr. Ayenachew will review this during regular clinic hours.", time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
+      setChatMsgs(OfflineStore.push("chat", reply));
+    }, 1500);
+  };
+
   return (
-    <div style={{padding:24,maxWidth:600,margin:"0 auto"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+    <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",paddingBottom:80}}>
+      <FontLoader/>
+      <OfflineBanner online={online} syncing={syncing} t={t}/>
+      {toast && <Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
+
+      {/* HEADER */}
+      <header style={{background:C.white,padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1.5px solid ${C.border}`,position:"sticky",top:online?0:32,zIndex:70}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <MizanLogo size={32} />
-          <h3 style={{color:C.p900}}>{t.appName}</h3>
+          <MizanLogo size={36}/>
+          <div>
+            <h2 style={{fontSize:16,fontWeight:900,color:C.p900,lineHeight:1.1}}>{t.appName}</h2>
+            <span style={{fontSize:11,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5}}>Patient Portal</span>
+          </div>
         </div>
-        <Btn sz="sm" onClick={onLogout}>Logout</Btn>
-      </div>
-      <div style={{background:C.white,padding:24,borderRadius:20,boxShadow:"0 4px 20px rgba(0,0,0,0.02)",marginBottom:20}}>
-        <h4>{t.goodMorning}, Patient 👋</h4>
-        <p style={{color:C.muted,fontSize:14,marginTop:4}}>{t.healthTip}</p>
-      </div>
-      <Chart />
+        <button onClick={onLogout} style={{background:C.r100,border:"none",color:C.r500,padding:"8px 14px",borderRadius:10,fontSize:13,fontWeight:700,cursor:"pointer"}}>Logout 🚪</button>
+      </header>
+
+      {/* CONTENT AREA */}
+      <main style={{padding:16,maxWidth:480,margin:"0 auto",width:"100%"}}>
+        
+        {/* TAB 1: HOME */}
+        {tab === "home" && (
+          <div className="fadeUp" style={{display:"flex",flexDirection:"column",gap:16}}>
+            
+            <div style={{background:`linear-gradient(135deg, ${C.p900}, ${C.p700})`,borderRadius:24,padding:24,color:C.white,position:"relative",overflow:"hidden",boxShadow:`0 8px 32px ${C.p200}`}}>
+              <div style={{position:"absolute",right:-20,bottom:-20,opacity:0.08}}><MizanLogo size={160} dark/></div>
+              <p style={{fontSize:14,color:C.p200,fontWeight:600}}>{t.goodMorning}, Dawit 👋</p>
+              <h3 style={{fontSize:22,fontWeight:800,marginTop:4,lineHeight:1.2}}>{lang==="en"?"Your control looks strong this week!":"በዚህ ሳምንት ቁጥጥርዎ በጣም ጥሩ ነው!"}</h3>
+              <div style={{display:"flex",gap:12,marginTop:20}}>
+                <Btn onClick={()=>setGlucoseModal(true)} v="green" sz="sm">🩸 {t.logGlucose}</Btn>
+                <Btn onClick={()=>setVitalsModal(true)} v="ghost" style={{background:"rgba(255,255,255,0.15)",color:"#fff"}} sz="sm">🩺 Log Vitals</Btn>
+              </div>
+            </div>
+
+            <div style={{background:C.white,borderRadius:24,padding:20,border:`1.5px solid ${C.border}`}}>
+              <h4 style={{fontSize:15,fontWeight:800,color:C.dark,marginBottom:14,display:"flex",justifyContent:"between",alignItems:"center"}}>
+                <span>📈 {t.glucoseTracker}</span>
+                <Pill label={t.weekTrend} c={C.p700} bg={C.p100}/>
+              </h4>
+              <Chart compact/>
+            </div>
+
+            {/* QUICK ACTIONS */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <div onClick={()=>setRefillModal(true)} className="card-hover" style={{background:C.white,padding:16,borderRadius:20,border:`1.5px solid ${C.border}`,cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
+                <span style={{fontSize:24,background:C.g100,padding:8,borderRadius:12}}>💊</span>
+                <div>
+                  <h5 style={{fontSize:14,fontWeight:800,color:C.dark}}>{t.refillRequest}</h5>
+                  <p style={{fontSize:11,color:C.muted}}>Fast clinic approval</p>
+                </div>
+              </div>
+              <div onClick={()=>setMissedModal(true)} className="card-hover" style={{background:C.white,padding:16,borderRadius:20,border:`1.5px solid ${C.border}`,cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
+                <span style={{fontSize:24,background:C.r100,padding:8,borderRadius:12}}>⚠️</span>
+                <div>
+                  <h5 style={{fontSize:14,fontWeight:800,color:C.dark}}>{t.missedDose}</h5>
+                  <p style={{fontSize:11,color:C.muted}}>Inform your doctor</p>
+                </div>
+              </div>
+            </div>
+
+            {/* APPOINTMENT CARD */}
+            <div style={{background:C.white,borderRadius:24,padding:20,border:`1.5px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div>
+                <p style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase"}}>{t.nextAppt}</p>
+                <h4 style={{fontSize:16,fontWeight:800,color:C.dark,marginTop:2}}>June 18, 2026 @ 9:00 AM</h4>
+                <p style={{fontSize:12,color:C.g700,fontWeight:600,marginTop:2}}>📍 Mizan Gondar Clinic (Dr. Ayenachew)</p>
+              </div>
+              <Btn onClick={()=>notify(t.apptBooked)} v="outline" sz="sm">Reschedule</Btn>
+            </div>
+
+            {/* HEALTH TIP */}
+            <div style={{background:C.o50,border:`1.5px solid ${C.o100}`,padding:16,borderRadius:20,display:"flex",gap:12}}>
+              <span style={{fontSize:22}}>💡</span>
+              <div>
+                <h5 style={{fontSize:13,fontWeight:800,color:C.o500,textTransform:"uppercase"}}>{t.healthTip}</h5>
+                <p style={{fontSize:13,color:C.dark,fontWeight:500,marginTop:2,lineHeight:1.4}}>
+                  {lang==="en"?"Drinking water before meals can help reduce blood sugar spikes. Try to avoid sweet tea or local soft drinks."
+                           :"ከምግብ በፊት ውሃ መጠጣት የስኳር መጠን ድንገት እንዳይጨምር ይረዳል። ሻይ በስኳር ወይም ለስላሳ መጠጦችን ያስወግዱ።"}
+                </p>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 2: GLUCOSE HISTORY */}
+        {tab === "glucose" && (
+          <div className="fadeUp" style={{display:"flex",flexDirection:"column",gap:16}}>
+            <div style={{background:C.white,borderRadius:24,padding:20,border:`1.5px solid ${C.border}`}}>
+              <h3 style={{fontSize:18,fontWeight:900,color:C.p900,marginBottom:16}}>{t.glucoseTracker}</h3>
+              <Chart/>
+            </div>
+            
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              <h4 style={{fontSize:14,fontWeight:800,color:C.dark,textTransform:"uppercase",letterSpacing:0.5}}>Logs History</h4>
+              {gLogs.map((log,i)=>(
+                <div key={i} style={{background:C.white,borderRadius:16,padding:"14px 16px",border:`1.5px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:12}}>
+                    <span style={{fontSize:20}}>{log.status.icon}</span>
+                    <div>
+                      <div style={{display:"flex",alignItems:"center",gap:6}}>
+                        <span style={{fontSize:18,fontWeight:800,color:C.dark}}>{log.val}</span>
+                        <span style={{fontSize:12,color:C.muted,fontWeight:600}}>mg/dL</span>
+                      </div>
+                      <span style={{fontSize:12,color:C.mid,fontWeight:600,textTransform:"capitalize"}}>{t[log.type]} Log</span>
+                    </div>
+                  </div>
+                  <div style={{textAlign:"right"}}>
+                    <Pill label={log.status.label} c={log.status.c} bg={log.status.bg}/>
+                    <p style={{fontSize:11,color:C.muted,marginTop:4}}>{log.date}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: EDUCATION */}
+        {tab === "learn" && (
+          <div className="fadeUp" style={{display:"flex",flexDirection:"column",gap:16}}>
+            <div>
+              <h3 style={{fontSize:20,fontWeight:900,color:C.p900}}>{t.learn}</h3>
+              <p style={{fontSize:13,color:C.muted}}>Expert localized materials tailored for your health journey</p>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr",gap:12}}>
+              {EDUCATION[lang].map(ed=>(
+                <div key={ed.id} className="card-hover" onClick={()=>notify(`Opening "${ed.title}"...`)} style={{background:C.white,borderRadius:20,padding:16,border:`1.5px solid ${C.border}`,cursor:"pointer",display:"flex",alignItems:"center",gap:16}}>
+                  <div style={{fontSize:28,background:C.bg,width:52,height:52,borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",border:`1.5px solid ${C.border}`}}>{ed.icon}</div>
+                  <div style={{flex:1}}>
+                    <span style={{fontSize:11,fontWeight:700,color:ed.color,textTransform:"uppercase",letterSpacing:0.5}}>{ed.cat}</span>
+                    <h4 style={{fontSize:15,fontWeight:800,color:C.dark,marginTop:1}}>{ed.title}</h4>
+                    <p style={{fontSize:12,color:C.muted,marginTop:2}}>⏱️ {ed.time} read</p>
+                  </div>
+                  <span style={{color:C.muted,fontSize:18}}>➔</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: PLANS */}
+        {tab === "plans" && (
+          <div className="fadeUp" style={{display:"flex",flexDirection:"column",gap:16}}>
+            <div style={{textAlign:"center",marginBottom:8}}>
+              <h3 style={{fontSize:20,fontWeight:900,color:C.p900}}>{t.plans_title}</h3>
+              <p style={{fontSize:13,color:C.muted,marginTop:2}}>{t.affordable}</p>
+            </div>
+
+            {PLANS.map(p=>(
+              <div key={p.name} style={{background:C.white,borderRadius:24,padding:24,border:selectedPlan===p.name?`2.5px solid ${p.color}`:`1.5px solid ${C.border}`,position:"relative",boxShadow:selectedPlan===p.name?`0 8px 24px ${p.accent}`:"none"}}>
+                {p.popular && <span style={{position:"absolute",top:-12,right:20,background:C.o500,color:"#fff",padding:"4px 12px",borderRadius:12,fontSize:11,fontWeight:800}}>MOST POPULAR</span>}
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
+                  <div>
+                    <h4 style={{fontSize:18,fontWeight:900,color:p.color,textTransform:"uppercase",letterSpacing:0.5}}>{t[p.name]}</h4>
+                    <div style={{display:"flex",alignItems:"baseline",gap:4,marginTop:4}}>
+                      <span style={{fontSize:24,fontWeight:900,color:C.dark}}>{p.price*100} ETB</span>
+                      <span style={{fontSize:13,color:C.muted}}>/month</span>
+                    </div>
+                  </div>
+                  <input type="radio" checked={selectedPlan===p.name} onChange={()=>setSelectedPlan(p.name)} style={{width:20,height:20,accentColor:p.color,cursor:"pointer"}}/>
+                </div>
+
+                <div style={{marginTop:16,display:"flex",flexDirection:"column",gap:8,borderTop:`1.5px solid ${C.bg}`,paddingTop:16}}>
+                  {p.inc[lang].map((f,i)=><div key={i} style={{fontSize:13,color:C.dark,fontWeight:500}}>✅ {f}</div>)}
+                  {p.exc[lang].map((f,i)=><div key={i} style={{fontSize:13,color:C.muted,opacity:0.6}}>❌ {f}</div>)}
+                </div>
+
+                {selectedPlan===p.name && (
+                  <Btn onClick={()=>setPlanModal(true)} full style={{marginTop:20,background:p.color}} sz="sm">Activate {t[p.name]} Plan</Btn>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* TAB 5: CHAT */}
+        {tab === "chat" && (
+          <div className="fadeUp" style={{display:"flex",flexDirection:"column",height:"calc(100vh - 160px)",background:C.white,borderRadius:24,border:`1.5px solid ${C.border}`,overflow:"hidden"}}>
+            <div style={{background:C.p100,padding:"14px 20px",borderBottom:`1.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:10}}>
+              <div style={{width:10,height:10,background:C.g500,borderRadius:5}}/>
+              <div>
+                <h4 style={{fontSize:14,fontWeight:800,color:C.p900}}>{t.consultChat}</h4>
+                <p style={{fontSize:11,color:C.muted}}>Typically replies within 2 hours</p>
+              </div>
+            </div>
+
+            <div style={{flex:1,padding:16,overflowY:"auto",display:"flex",flexDirection:"column-reverse",gap:12,background:C.bg}}>
+              {chatMsgs.map((m,i)=>{
+                const isPat = m.sender==="patient";
+                return (
+                  <div key={i} style={{display:"flex",justifyContent:isPat?"flex-end":"flex-start",animation:"fadeUp 0.2s ease"}}>
+                    <div style={{maxWidth:"80%",background:isPat?C.p600:C.white,color:isPat?"#fff":C.dark,padding:"12px 16px",borderRadius:isPat?"18px 18px 2px 18px":"18px 18px 18px 2px",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
+                      <p style={{margin:0,fontSize:14,fontWeight:500,lineHeight:1.4}}>{m.text}</p>
+                      <span style={{fontSize:10,color:isPat?C.p200:C.muted,display:"block",textAlign:"right",marginTop:4}}>{m.time}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <form onSubmit={handleSendChat} style={{padding:12,background:C.white,borderTop:`1.5px solid ${C.border}`,display:"flex",gap:8}}>
+              <input value={newMsg} onChange={e=>setNewMsg(e.target.value)} placeholder={t.typeMessage} style={{flex:1,padding:"12px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:14,background:C.bg}}/>
+              <Btn type="submit" sz="sm">Send ➔</Btn>
+            </form>
+          </div>
+        )}
+
+      </main>
+
+      {/* FOOTER NAVIGATION BAR */}
+      <nav style={{position:"fixed",bottom:0,left:0,right:0,background:C.white,borderTop:`1.5px solid ${C.border}`,display:"flex",justifyContent:"space-around",padding:"8px 0",zIndex:100,boxShadow:"0 -4px 16px rgba(0,0,0,0.03)"}}>
+        {[
+          {id:"home",icon:"🏠",label:t.home},
+          {id:"glucose",icon:"🩸",label:t.glucose},
+          {id:"learn",icon:"🧠",label:t.learn},
+          {id:"chat",icon:"💬",label:t.chat},
+          {id:"plans",icon:"💳",label:t.plans},
+        ].map(n=>(
+          <button key={n.id} onClick={()=>setTab(n.id)} style={{background:"none",border:"none",display:"flex",flexDirection:"column",alignItems:"center",gap:2,cursor:"pointer",width:60,color:tab===n.id?C.p600:C.muted,transition:"color 0.2s"}}>
+            <span style={{fontSize:20,opacity:tab===n.id?1:0.6}}>{n.icon}</span>
+            <span style={{fontSize:11,fontWeight:tab===n.id?800:500}}>{n.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      {/* MODALS */}
+      {glucoseModal && (
+        <Modal onClose={()=>setGlucoseModal(false)}>
+          <h3 style={{fontSize:18,fontWeight:900,color:C.p900,marginBottom:16}}>🩸 {t.logGlucose}</h3>
+          <form onSubmit={handleLogGlucose}>
+            <Field label="Glucose Level (mg/dL)" type="number" value={gValue} onChange={e=>setGValue(e.target.value)} placeholder="e.g. 135" />
+            <div style={{marginBottom:20}}>
+              <label style={{display:"block",marginBottom:6,fontSize:13,fontWeight:700,color:C.dark}}>Measurement Context</label>
+              <select value={gType} onChange={e=>setGType(e.target.value)} style={{width:"100%",padding:"12px",borderRadius:12,border:`1.5px solid ${C.border}`,background:C.bg,fontSize:14,fontWeight:600,color:C.dark}}>
+                <option value="fasting">🥣 {t.fasting} ({t.fastingHint})</option>
+                <option value="random">🍽️ {t.random} ({t.randomHint})</option>
+              </select>
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <Btn type="button" onClick={()=>setGlucoseModal(false)} v="danger" full sz="sm">{t.cancel}</Btn>
+              <Btn type="submit" full sz="sm">{t.save}</Btn>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {vitalsModal && (
+        <Modal onClose={()=>setVitalsModal(false)}>
+          <h3 style={{fontSize:18,fontWeight:900,color:C.p900,marginBottom:16}}>🩺 {t.vitalsLog}</h3>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+            <Field label={t.systolic} type="number" value={sys} onChange={e=>setSys(e.target.value)} placeholder="120" />
+            <Field label={t.diastolic} type="number" value={dia} onChange={e=>setDia(e.target.value)} placeholder="80" />
+          </div>
+          <Field label={t.weight} type="number" value={wt} onChange={e=>setWt(e.target.value)} placeholder="e.g. 74" />
+          <Field label={t.exercise} type="number" value={exMin} onChange={e=>setExMin(e.target.value)} placeholder="Minutes" hint={t.exerciseMin} />
+          <div style={{display:"flex",gap:10,marginTop:8}}>
+            <Btn onClick={()=>setVitalsModal(false)} v="danger" full sz="sm">{t.cancel}</Btn>
+            <Btn onClick={()=>{setVitalsModal(false);notify("Vitals saved successfully!");}} full sz="sm">{t.save}</Btn>
+          </div>
+        </Modal>
+      )}
+
+      {refillModal && (
+        <Modal onClose={()=>setRefillModal(false)}>
+          <h3 style={{fontSize:18,fontWeight:900,color:C.p900,marginBottom:12}}>💊 Confirm Refill</h3>
+          <p style={{fontSize:14,color:C.mid,lineHeight:1.4,marginBottom:16}}>This will request a renewal prescription for <b>Metformin 500mg BD</b> at the Mizan Gondar Clinic branch.</p>
+          <div style={{display:"flex",gap:10}}>
+            <Btn onClick={()=>setRefillModal(false)} v="muted" full sz="sm">{t.cancel}</Btn>
+            <Btn onClick={()=>{setRefillModal(false);notify(t.refillSent);}} v="green" full sz="sm">Confirm Request</Btn>
+          </div>
+        </Modal>
+      )}
+
+      {missedModal && (
+        <Modal onClose={()=>setMissedModal(false)}>
+          <h3 style={{fontSize:18,fontWeight:900,color:C.p900,marginBottom:12}}>⚠️ Log Missed Dose</h3>
+          <p style={{fontSize:14,color:C.mid,marginBottom:16}}>Logging missed doses helps Dr. Ayenachew fine-tune your treatment plan safely.</p>
+          <select style={{width:"100%",padding:"12px",borderRadius:12,border:`1.5px solid ${C.border}`,background:C.bg,fontSize:14,fontWeight:600,color:C.dark,marginBottom:16}}>
+            <option>Metformin 500mg - Morning Dose</option>
+            <option>Metformin 500mg - Evening Dose</option>
+          </select>
+          <Field label="Reason (Optional)" placeholder="e.g. Forgot, side effects, out of stock" rows={2}/>
+          <div style={{display:"flex",gap:10}}>
+            <Btn onClick={()=>setMissedModal(false)} v="muted" full sz="sm">{t.cancel}</Btn>
+            <Btn onClick={()=>{setMissedModal(false);notify(t.missedLogged);}} v="primary" full sz="sm">Submit Log</Btn>
+          </div>
+        </Modal>
+      )}
+
+      {planModal && (
+        <Modal onClose={()=>setPlanModal(false)}>
+          <h3 style={{fontSize:18,fontWeight:900,color:C.p900,marginBottom:12}}>💳 CBE Birr Payment</h3>
+          <p style={{fontSize:14,color:C.mid,lineHeight:1.4,marginBottom:16}}>To complete enrollment, please process the subscription fee via CBE Birr to merchant code <b>MIZAN-MED (882199)</b>.</p>
+          <div style={{background:C.bg,padding:12,borderRadius:12,fontSize:13,fontWeight:600,color:C.dark,marginBottom:20}}>
+            💰 Total Amount: <b>{PLANS.find(p=>p.name===selectedPlan)?.price * 100} ETB</b>
+          </div>
+          <Field label="Transaction Reference ID" placeholder="e.g. FT26..." />
+          <div style={{display:"flex",gap:10}}>
+            <Btn onClick={()=>setPlanModal(false)} v="muted" full sz="sm">{t.cancel}</Btn>
+            <Btn onClick={()=>{setPlanModal(false);notify("Payment submitted! Awaiting verification.");}} v="green" full sz="sm">Submit Payment</Btn>
+          </div>
+        </Modal>
+      )}
+
     </div>
   );
 };
 
 // ════════════════════════════════════════════════════════════════════════════════
-// CLINIC CLINICIAN VIEW
+// CLINIC CLINICAL DASHBOARD
 // ════════════════════════════════════════════════════════════════════════════════
 const Clinic = ({onLogout,lang}) => {
   const t = T[lang];
+  const [view,setView] = useState("overview");
+  const [search,setSearch] = useState("");
+  const [patient,setPatient] = useState(null);
+  const [patientTab,setPatientTab] = useState("overview");
+  const [toast,setToast] = useState(null);
+  const [smsModal,setSmsModal] = useState(null);
+  const [smsMsg,setSmsMsg] = useState("");
+
+  const notify = (msg, type="success") => { setToast({msg,type}); setTimeout(()=>setToast(null),3500); };
+
+  const filtered = PATIENTS.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.phone.includes(search));
+
   return (
-    <div style={{padding:24,maxWidth:1000,margin:"0 auto"}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <MizanLogo size={32} />
-          <h3 style={{color:C.p900}}>{t.appName} — Clinician Portal</h3>
+    <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column"}}>
+      <FontLoader/>
+      {toast && <Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
+
+      {/* NAV SIDEBAR / HEADER (Mobile Responsive) */}
+      <header style={{background:`linear-gradient(135deg, ${C.p900}, ${C.p800})`,color:"#fff",padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 4px 20px rgba(0,0,0,0.1)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"} } onClick={()=>{setView("overview");setPatient(null);}}>
+          <MizanLogo size={36} dark/>
+          <div>
+            <h2 style={{fontSize:17,fontWeight:900,letterSpacing:-0.3}}>{t.appName}</h2>
+            <span style={{fontSize:11,color:C.p300,fontWeight:700,letterSpacing:0.5}}>CLINICAL HUB (Dr. Ayenachew)</span>
+          </div>
         </div>
-        <Btn sz="sm" onClick={onLogout}>Logout</Btn>
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,marginBottom:24}}>
-        <div style={{background:C.white,padding:20,borderRadius:16}}><h5>{t.totalPatients}</h5><p style={{fontSize:24,fontWeight:800,color:C.p900}}>6</p></div>
-        <div style={{background:C.white,padding:20,borderRadius:16}}><h5>{t.monthlyRevenue}</h5><p style={{fontSize:24,fontWeight:800,color:C.g600}}>$42.00</p></div>
-        <div style={{background:C.white,padding:20,borderRadius:16}}><h5>{t.activeSubscriptions}</h5><p style={{fontSize:24,fontWeight:800,color:C.o500}}>100%</p></div>
-      </div>
-      <div style={{background:C.white,padding:24,borderRadius:20}}>
-        <h4 style={{marginBottom:16}}>{t.allPatients}</h4>
-        {PATIENTS.map(p => {
-          const rec = aiRec(p);
-          const stratified = calcRiskScore(p);
-          return (
-            <div key={p.id} style={{padding:"16px 0",borderBottom:`1.5px solid ${C.bg}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div>
-                <span style={{fontWeight:700,color:C.dark}}>{p.name}</span>
-                <span style={{fontSize:12,color:C.muted,marginLeft:8}}>{p.age} {p.gender} • {p.city}</span>
-                <div style={{marginTop:6,display:"flex",gap:8,alignItems:"center"}}>
-                  <Pill label={`Risk: ${stratified.risk.toUpperCase()}`} c={riskC(stratified.risk)} bg={riskBg(stratified.risk)} />
-                  <p style={{fontSize:12,color:C.mid}}>{rec.msg}</p>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={()=>setView("overview")} style={{background:view==="overview"?"rgba(255,255,255,0.15)":"transparent",border:"none",color:"#fff",padding:"8px 14px",borderRadius:10,fontSize:13,fontWeight:700,cursor:"pointer"}}>Dashboard</button>
+          <button onClick={()=>setView("patients")} style={{background:view==="patients"?"rgba(255,255,255,0.15)":"transparent",border:"none",color:"#fff",padding:"8px 14px",borderRadius:10,fontSize:13,fontWeight:700,cursor:"pointer"}}>Patients</button>
+          <button onClick={onLogout} style={{background:"none",border:"none",color:C.r100,fontSize:13,fontWeight:700,cursor:"pointer",marginLeft:10}}>Sign Out ➔</button>
+        </div>
+      </header>
+
+      {/* CORE WORKSPACE */}
+      <div style={{flex:1,padding:20,maxWidth:1024,margin:"0 auto",width:"100%"}} className="fadeUp">
+        
+        {/* VIEW: OVERVIEW */}
+        {view === "overview" && !patient && (
+          <div style={{display:"flex",flexDirection:"column",gap:24}}>
+            
+            {/* STATS */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))",gap:16}}>
+              <div style={{background:C.white,padding:20,borderRadius:24,border:`1.5px solid ${C.border}`,display:"flex",justifyContent:"between",alignItems:"center"}}>
+                <div>
+                  <p style={{fontSize:13,fontWeight:700,color:C.muted}}>{t.totalPatients}</p>
+                  <h3 style={{fontSize:28,fontWeight:900,color:C.dark,marginTop:4}}>1,420</h3>
+                  <span style={{fontSize:12,color:C.g600,fontWeight:700}}>📈 +14 this week</span>
+                </div>
+                <span style={{fontSize:32,background:C.p50,padding:12,borderRadius:16}}>👥</span>
+              </div>
+              <div style={{background:C.white,padding:20,borderRadius:24,border:`1.5px solid ${C.border}`,display:"flex",justifyContent:"between",alignItems:"center"}}>
+                <div>
+                  <p style={{fontSize:13,fontWeight:700,color:C.muted}}>High Risk Stratified</p>
+                  <h3 style={{fontSize:28,fontWeight:900,color:C.r500,marginTop:4}}>34</h3>
+                  <span style={{fontSize:12,color:C.r500,fontWeight:700}}>⚠️ Requires Review</span>
+                </div>
+                <span style={{fontSize:32,background:C.r50,padding:12,borderRadius:16}}>🚨</span>
+              </div>
+              <div style={{background:C.white,padding:20,borderRadius:24,border:`1.5px solid ${C.border}`,display:"flex",justifyContent:"between",alignItems:"center"}}>
+                <div>
+                  <p style={{fontSize:13,fontWeight:700,color:C.muted}}>{t.activeSubscriptions}</p>
+                  <h3 style={{fontSize:28,fontWeight:900,color:C.g700,marginTop:4}}>842</h3>
+                  <span style={{fontSize:12,color:C.muted,fontWeight:600}}>CBE Birr Verified</span>
+                </div>
+                <span style={{fontSize:32,background:C.g50,padding:12,borderRadius:16}}>💳</span>
+              </div>
+            </div>
+
+            {/* ALERT PANEL & CLINICAL RECOMMENDATIONS */}
+            <div style={{background:C.white,borderRadius:24,padding:20,border:`1.5px solid ${C.border}`}}>
+              <h3 style={{fontSize:16,fontWeight:900,color:C.dark,marginBottom:16,display:"flex",alignItems:"center",gap:8}}>⚡ Critical AI Risk Alerts</h3>
+              <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                {PATIENTS.filter(p=>calcRiskScore(p).risk==="high").map(p=>{
+                  const rec = aiRec(p);
+                  return (
+                    <div key={p.id} style={{background:C.bg,borderRadius:16,padding:16,borderLeft:`5px solid ${C.r500}`,display:"flex",flexDirection:"column",gap:10}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",flexWrap:"wrap",gap:8}}>
+                        <div>
+                          <h4 style={{fontSize:15,fontWeight:800,color:C.dark}}>{p.name} ({p.age} {p.gender})</h4>
+                          <p style={{fontSize:12,color:C.muted,marginTop:1}}>📞 {p.phone} | 📍 {p.city}</p>
+                        </div>
+                        <div style={{display:"flex",gap:6}}>
+                          <Pill label={`Glucose: ${p.glucose}`} c={C.r500} bg={C.r100}/>
+                          <Pill label={`HbA1c: ${p.hba1c}%`} c={C.r500} bg={C.r100}/>
+                        </div>
+                      </div>
+                      <div style={{background:C.white,padding:10,borderRadius:10,border:`1px dashed ${C.border}`,display:"flex",gap:8,alignItems:"flex-start"}}>
+                        <span style={{fontSize:14,flexShrink:0}}>🤖</span>
+                        <p style={{margin:0,fontSize:12,color:C.dark,fontWeight:600,lineHeight:1.5}}>{rec.msg}</p>
+                      </div>
+                      <div style={{display:"flex",flexDirection:"column",gap:7}}>
+                        <Btn onClick={()=>setSmsModal(p)} v="primary" sz="sm">📱 SMS</Btn>
+                        <Btn onClick={()=>{setPatient(p);setView("patients");setPatientTab("overview");}} v="outline" sz="sm">View</Btn>
+                        <Btn onClick={()=>notify(t.apptBooked)} v="ghost" sz="sm">📅 Book</Btn>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* VIEW: PATIENTS LIST & DETAILS */}
+        {view === "patients" && (
+          <div>
+            {!patient ? (
+              <div style={{display:"flex",flexDirection:"column",gap:16}}>
+                <div style={{display:"flex",gap:12}}>
+                  <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search patients by name, phone or branch..." style={{flex:1,padding:"14px 18px",borderRadius:14,border:`1.5px solid ${C.border}`,fontSize:15,background:C.white}}/>
+                  <Btn onClick={()=>notify("Enrollment form coming soon!")} v="green">+ Enroll</Btn>
+                </div>
+
+                <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  {filtered.map(p=>{
+                    const {score,risk} = calcRiskScore(p);
+                    return (
+                      <div key={p.id} onClick={()=>{setPatient(p);setPatientTab("overview");}} className="card-hover" style={{background:C.white,borderRadius:20,padding:18,border:`1.5px solid ${C.border}`,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
+                        <div>
+                          <h4 style={{fontSize:16,fontWeight:800,color:C.dark}}>{p.name}</h4>
+                          <p style={{fontSize:13,color:C.muted,marginTop:2}}>{p.age} {p.gender} • {p.type} • 📱 {p.phone}</p>
+                        </div>
+                        <div style={{display:"flex",alignItems:"center",gap:12}}>
+                          <div style={{textAlign:"right"}}>
+                            <span style={{fontSize:11,fontWeight:700,color:C.muted,display:"block",textTransform:"uppercase"}}>Last Reading</span>
+                            <span style={{fontSize:15,fontWeight:800,color:gStatus(p.glucose).c}}>{p.glucose} mg/dL</span>
+                          </div>
+                          <span style={{background:riskBg(risk),color:riskC(risk),padding:"6px 12px",borderRadius:12,fontSize:12,fontWeight:800,textTransform:"uppercase"}}>
+                            {risk}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-              <Ring pct={p.adherence} color={p.adherence < 50 ? C.r500 : C.g600} />
-            </div>
-          );
-        })}
+            ) : (
+              /* INDIVIDUAL PATIENT PROFILE DEEP DIVE */
+              <div className="fadeUp" style={{display:"flex",flexDirection:"column",gap:20}}>
+                <Btn onClick={()=>setPatient(null)} v="muted" sz="sm" style={{alignSelf:"start"}}>⬅️ Back to List</Btn>
+                
+                <div style={{background:C.white,borderRadius:24,padding:24,border:`1.5px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"start",flexWrap:"wrap",gap:16}}>
+                  <div>
+                    <h2 style={{fontSize:22,fontWeight:900,color:C.dark}}>{patient.name}</h2>
+                    <p style={{fontSize:14,color:C.mid,marginTop:4}}><b>Age/Gender:</b> {patient.age}/{patient.gender} | <b>Type:</b> {patient.type} | <b>Phone:</b> {patient.phone}</p>
+                    <p style={{fontSize:13,color:C.muted,marginTop:2}}>📍 Resident of {patient.city}, Ethiopia | Plan: <span style={{fontWeight:700,color:C.p700}}>{patient.sub.toUpperCase()}</span></p>
+                  </div>
+                  <div style={{display:"flex",gap:10}}>
+                    <Btn onClick={()=>setSmsModal(patient)} sz="sm">Send SMS 📱</Btn>
+                    <Btn onClick={()=>notify("Prescription updated")} v="outline" sz="sm">Rx Link 💊</Btn>
+                  </div>
+                </div>
+
+                {/* PATIENT TABS */}
+                <div style={{display:"flex",gap:4,borderBottom:`2px solid ${C.border}`,paddingBottom:2}}>
+                  {["overview", "history", "labs", "imaging"].map(tName=>(
+                    <button key={tName} onClick={()=>setPatientTab(tName)} style={{background:"none",border:"none",padding:"10px 16px",fontSize:14,fontWeight:700,cursor:"pointer",color:patientTab===tName?C.p600:C.muted,borderBottom:patientTab===tName?`3px solid ${C.p600}`:"none",textTransform:"capitalize"}}>
+                      {tName}
+                    </button>
+                  ))}
+                </div>
+
+                {/* PATIENT TAB CONTENT: OVERVIEW */}
+                {patientTab === "overview" && (
+                  <div style={{display:"flex",flexDirection:"column",gap:16}} className="fadeUp">
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(140px, 1fr))",gap:12}}>
+                      <div style={{background:C.white,padding:16,borderRadius:16,border:`1.5px solid ${C.border}`}}>
+                        <span style={{fontSize:12,color:C.muted,fontWeight:700}}>GLUCOSE</span>
+                        <h4 style={{fontSize:20,fontWeight:900,color:gStatus(patient.glucose).c,marginTop:4}}>{patient.glucose} <span style={{fontSize:12,fontWeight:500}}>mg/dL</span></h4>
+                      </div>
+                      <div style={{background:C.white,padding:16,borderRadius:16,border:`1.5px solid ${C.border}`}}>
+                        <span style={{fontSize:12,color:C.muted,fontWeight:700}}>HBA1C</span>
+                        <h4 style={{fontSize:20,fontWeight:900,color:patient.hba1c>7.5?C.r500:C.g600,marginTop:4}}>{patient.hba1c}%</h4>
+                      </div>
+                      <div style={{background:C.white,padding:16,borderRadius:16,border:`1.5px solid ${C.border}`}}>
+                        <span style={{fontSize:12,color:C.muted,fontWeight:700}}>BLOOD PRESSURE</span>
+                        <h4 style={{fontSize:20,fontWeight:900,color:patient.sbp>140?C.r500:C.g600,marginTop:4}}>{patient.sbp}/{patient.dbp}</h4>
+                      </div>
+                      <div style={{background:C.white,padding:16,borderRadius:16,border:`1.5px solid ${C.border}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+                        <span style={{fontSize:11,color:C.muted,fontWeight:700,marginBottom:2}}>ADHERENCE</span>
+                        <Ring pct={patient.adherence} size={60} color={patient.adherence<50?C.r500:patient.adherence<80?C.o500:C.g600}/>
+                      </div>
+                    </div>
+
+                    <div style={{background:C.white,borderRadius:20,padding:20,border:`1.5px solid ${C.border}`}}>
+                      <h4 style={{fontSize:15,fontWeight:800,marginBottom:12}}>AI Clinical Assessment</h4>
+                      <p style={{fontSize:14,color:C.dark,lineHeight:1.5}}>{aiRec(patient).msg}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* PATIENT TAB CONTENT: CLINICAL HISTORY NOTE */}
+                {patientTab === "history" && (
+                  <div style={{display:"flex",flexDirection:"column",gap:16}} className="fadeUp">
+                    <div style={{background:C.white,borderRadius:20,padding:20,border:`1.5px solid ${C.border}`}}>
+                      <h4 style={{fontSize:15,fontWeight:800,marginBottom:12}}>Add Clinical Progress Note</h4>
+                      <Field placeholder="Type clinical presentation, adjustment in drugs (e.g. Insulin, Metformin), dietary targets..." rows={3}/>
+                      <Btn onClick={()=>notify("Note saved successfully")} sz="sm">Save Note 📝</Btn>
+                    </div>
+
+                    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                      {patient.history.map((h,i)=>(
+                        <div key={i} style={{background:C.white,padding:16,borderRadius:16,border:`1.5px solid ${C.border}`}}>
+                          <div style={{display:"flex",justifyContent:"space-between",fontSize:12,fontWeight:700,color:C.muted,marginBottom:6}}>
+                            <span>🗓️ {h.date}</span>
+                            <span>✍️ {h.doctor}</span>
+                          </div>
+                          <p style={{fontSize:14,color:C.dark,lineHeight:1.5}}>{h.note}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* PATIENT TAB CONTENT: INVESTIGATIONS LABS */}
+                {patientTab === "labs" && (
+                  <div style={{background:C.white,borderRadius:24,padding:20,border:`1.5px solid ${C.border}`}} className="fadeUp">
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+                      <h4 style={{fontSize:15,fontWeight:800}}>Lab Panel Results</h4>
+                      <Btn onClick={()=>notify("Lab request triggered")} v="outline" sz="sm">Order New Lab 🧪</Btn>
+                    </div>
+                    <div style={{overflowX:"auto"}}>
+                      <table style={{width:"100%",borderCollapse:"collapse",fontSize:14,textAlign:"left"}}>
+                        <thead>
+                          <tr style={{borderBottom:`2px solid ${C.border}`,color:C.muted,fontWeight:700}}>
+                            <th style={{padding:"8px 4px"}}>Test</th>
+                            <th style={{padding:"8px 4px"}}>Result</th>
+                            <th style={{padding:"8px 4px"}}>Reference</th>
+                            <th style={{padding:"8px 4px"}}>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {patient.investigations.map((inv,i)=>(
+                            <tr key={i} style={{borderBottom:`1.5px solid ${C.bg}`}}>
+                              <td style={{padding:"12px 4px",fontWeight:600}}>{inv.test}</td>
+                              <td style={{padding:"12px 4px",fontWeight:700,color:inv.status==="high"?C.r500:C.dark}}>{inv.result}</td>
+                              <td style={{padding:"12px 4px",color:C.muted}}>{inv.ref}</td>
+                              <td style={{padding:"12px 4px"}}>
+                                <Pill label={inv.status.toUpperCase()} c={inv.status==="high"?C.r500:C.g600} bg={inv.status==="high"?C.r100:C.g100}/>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* PATIENT TAB CONTENT: IMAGING */}
+                {patientTab === "imaging" && (
+                  <div style={{display:"flex",flexDirection:"column",gap:16}} className="fadeUp">
+                    <div style={{background:C.white,borderRadius:24,padding:20,border:`1.5px solid ${C.border}`,textAlign:"center",paddingTop:32,paddingBottom:32}}>
+                      <span style={{fontSize:36}}>🖼️</span>
+                      <h4 style={{fontSize:16,fontWeight:800,marginTop:8}}>Upload Diagnostic Imaging</h4>
+                      <p style={{fontSize:13,color:C.muted,maxWidth:280,margin:"4px auto 16px"}}>Attach clear photos of Chest X-Rays, Fundoscopy or Renal Ultrasounds.</p>
+                      <input type="file" id="img-up" style={{display:"none"}} onChange={()=>notify("File parsed successfully")}/>
+                      <label htmlFor="img-up" style={{background:C.p100,color:C.p700,padding:"10px 20px",borderRadius:12,fontSize:14,fontWeight:700,cursor:"pointer",display:"inline-block"}}>Choose File</label>
+                    </div>
+
+                    {patient.imaging.length > 0 && (
+                      <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                        {patient.imaging.map((img,i)=>(
+                          <div key={i} style={{background:C.white,padding:16,borderRadius:16,border:`1.5px solid ${C.border}`}}>
+                            <div style={{display:"flex",justifyContent:"space-between",fontSize:12,fontWeight:700,color:C.muted,marginBottom:4}}>
+                              <span>📸 {img.type}</span>
+                              <span>🗓️ {img.date}</span>
+                            </div>
+                            <p style={{fontSize:14,fontWeight:600,color:C.dark}}>Finding: <span style={{fontWeight:500}}>{img.finding}</span></p>
+                            <span style={{fontSize:11,color:C.muted,display:"block",marginTop:4}}>Reported by: {img.reported}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
+
+      {/* SMS ALERTS COMMUNICATION MODAL */}
+      {smsModal && (
+        <Modal onClose={()=>setSmsModal(null)}>
+          <h3 style={{fontSize:18,fontWeight:900,color:C.p900,marginBottom:6}}>📱 Send SMS Alert</h3>
+          <p style={{fontSize:13,color:C.muted,marginBottom:16}}>Recipient: <b>{smsModal.name} ({smsModal.phone})</b></p>
+          <Field label="Message Text" rows={4} value={smsMsg} onChange={e=>setSmsMsg(e.target.value)} placeholder="e.g. Hello Almaz, Dr. Ayenachew noticed your blood sugar reading was high (312mg/dL). Please visit the Mizan clinic tomorrow morning fasting." />
+          <div style={{display:"flex",gap:10}}>
+            <Btn onClick={()=>setSmsModal(null)} v="muted" full sz="sm">{t.cancel}</Btn>
+            <Btn onClick={()=>{setSmsModal(null);setSmsMsg("");notify(t.smsSent);}} v="primary" full sz="sm">Send SMS ➔</Btn>
+          </div>
+        </Modal>
+      )}
+
     </div>
   );
 };
 
 // ════════════════════════════════════════════════════════════════════════════════
-// ROOT BOOTSTRAP EXPORT
+// ROOT
 // ════════════════════════════════════════════════════════════════════════════════
 export default function App() {
   const [screen,setScreen] = useState("auth");
   const [role,setRole] = useState(null);
   const [lang,setLang] = useState("en");
-
-  return (
-    <>
-      <FontLoader />
-      {screen === "auth" ? (
-        <Auth onLogin={r=>{setRole(r); setScreen("app");}} lang={lang} setLang={setLang}/>
-      ) : role === "patient" ? (
-        <PatientApp onLogout={()=>{setScreen("auth"); setRole(null);}} lang={lang} />
-      ) : (
-        <Clinic onLogout={()=>{setScreen("auth"); setRole(null);}} lang={lang} />
-      )}
-    </>
-  );
+  return screen==="auth"
+    ? <Auth onLogin={r=>{setRole(r);setScreen(\"app\");}} lang={lang} setLang={setLang}/>
+    : role==="patient"
+      ? <PatientApp onLogout={()=>{setScreen(\"auth\");setRole(null);}} lang={lang} setLang={setLang}/>
+      : <Clinic onLogout={()=>{setScreen(\"auth\");setRole(null);}} lang={lang}/>;
 }
