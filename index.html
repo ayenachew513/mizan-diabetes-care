@@ -1,1204 +1,1003 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-
-// ── FONT LOADER ────────────────────────────────────────────────────────────────
-const FontLoader = () => {
-  useEffect(() => {
-    const l = document.createElement("link");
-    l.href = "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Lora:ital,wght@0,400;0,600;1,400&display=swap";
-    l.rel = "stylesheet";
-    document.head.appendChild(l);
-    const style = document.createElement("style");
-    style.textContent = `
-      *{box-sizing:border-box;margin:0;padding:0;}
-      body{font-family:'Outfit',sans-serif;background:#f0f6ff;}
-      ::-webkit-scrollbar{width:6px;}
-      ::-webkit-scrollbar-track{background:#f0f6ff;}
-      ::-webkit-scrollbar-thumb{background:#b8d4ee;border-radius:3px;}
-      @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
-      @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
-      @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg)}}
-      @keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
-      @keyframes syncPulse{0%,100%{opacity:0.4;transform:scale(1);}50%{opacity:1;transform:scale(1.1);}}
-      .fadeUp{animation:fadeUp 0.45s ease forwards;}
-      .fadeUp1{animation:fadeUp 0.45s 0.08s ease both;}
-      .fadeUp2{animation:fadeUp 0.45s 0.16s ease both;}
-      .fadeUp3{animation:fadeUp 0.45s 0.24s ease both;}
-      .fadeUp4{animation:fadeUp 0.45s 0.32s ease both;}
-      .card-hover{transition:transform 0.2s,box-shadow 0.2s;}
-      .card-hover:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(10,80,160,0.12)!important;}
-      .btn-press:active{transform:scale(0.97);}
-      input:focus,textarea:focus,select:focus{outline:none;}
-      button{font-family:'Outfit',sans-serif;}
-      textarea{font-family:'Outfit',sans-serif;}
-    `;
-    document.head.appendChild(style);
-  }, []);
-  return null;
-};
-
-// ── DESIGN TOKENS ─────────────────────────────────────────────────────────────
-const C = {
-  p900:"#0a3d6b", p800:"#0d5299", p700:"#0f67b8", p600:"#1278d4", p500:"#2190f0",
-  p400:"#60b3f8", p300:"#a8d5fc", p200:"#d4ebfe", p100:"#eaf4ff", p50:"#f5faff",
-  g900:"#0a3d22", g800:"#0d5230", g700:"#108242", g600:"#14a854", g500:"#18c965",
-  g400:"#52db8c", g300:"#97ecb8", g200:"#c8f5d8", g100:"#e8faf0", g50:"#f4fdf7",
-  r500:"#e8344a", r100:"#fde8eb", r50:"#fff5f6",
-  o500:"#f0831a", o100:"#fef0e0", o50:"#fffaf4",
-  y500:"#f5c800", y100:"#fef9d9",
-  dark:"#0d1f35", mid:"#3a5570", muted:"#7a9bb5", border:"#cde2f5",
-  bg:"#f0f6ff", white:"#ffffff", card:"rgba(255,255,255,0.95)",
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mizan Diabetes Care</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Outfit',sans-serif;background:#f0f6ff;min-height:100vh;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.fade{animation:fadeUp 0.4s ease both;}
+.card{background:#fff;border-radius:18px;border:1.5px solid #cde2f5;padding:18px;margin-bottom:14px;box-shadow:0 2px 10px rgba(10,80,160,0.05);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:12px;border:none;font-family:'Outfit',sans-serif;font-weight:700;font-size:15px;cursor:pointer;transition:all 0.2s;}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:linear-gradient(135deg,#1278d4,#0a3d6b);color:#fff;box-shadow:0 4px 14px rgba(18,120,212,0.3);}
+.btn-green{background:linear-gradient(135deg,#14a854,#0a3d22);color:#fff;box-shadow:0 4px 14px rgba(20,168,84,0.3);}
+.btn-outline{background:transparent;color:#1278d4;border:2px solid #1278d4;}
+.btn-ghost{background:#eaf4ff;color:#0f67b8;}
+.btn-full{width:100%;}
+.btn-sm{padding:8px 14px;font-size:13px;border-radius:10px;}
+.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
+input,textarea,select{font-family:'Outfit',sans-serif;width:100%;padding:12px 14px;border-radius:11px;border:1.5px solid #cde2f5;font-size:15px;color:#0d1f35;background:#f0f6ff;transition:border 0.2s;}
+input:focus,textarea:focus{outline:none;border-color:#1278d4;background:#fff;}
+label{display:block;margin-bottom:6px;font-size:13px;font-weight:700;color:#0d1f35;}
+.field{margin-bottom:14px;}
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #cde2f5;display:flex;z-index:50;max-width:500px;margin:0 auto;}
+.tab-btn{flex:1;padding:8px 4px 6px;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:'Outfit',sans-serif;}
+.tab-icon{font-size:18px;}
+.tab-label{font-size:9px;font-weight:700;letter-spacing:0.2px;}
+.screen{max-width:500px;margin:0 auto;padding:16px 14px 88px;min-height:100vh;}
+.header{background:linear-gradient(135deg,#0a3d6b,#0a3d22);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40;max-width:500px;margin:0 auto;}
+.toast{position:fixed;top:16px;right:16px;left:16px;max-width:380px;margin:0 auto;z-index:999;padding:14px 18px;border-radius:14px;color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;gap:10px;animation:fadeUp 0.3s ease;box-shadow:0 8px 24px rgba(0,0,0,0.2);}
+.modal-bg{position:fixed;inset:0;background:rgba(13,31,53,0.7);z-index:800;display:flex;align-items:center;justify-content:center;padding:16px;}
+.modal{background:#fff;border-radius:22px;padding:24px;width:100%;max-width:400px;animation:fadeUp 0.3s ease;max-height:90vh;overflow-y:auto;}
+.offline-bar{background:#f0831a;color:#fff;padding:7px 14px;font-size:12px;font-weight:700;text-align:center;position:sticky;top:0;z-index:60;}
+.risk-high{color:#e8344a;} .risk-med{color:#f0831a;} .risk-low{color:#14a854;}
+.bg-high{background:#fde8eb;} .bg-med{background:#fef0e0;} .bg-low{background:#e8faf0;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.stat-box{background:#fff;border-radius:14px;padding:14px;border:1.5px solid #cde2f5;}
+table{width:100%;border-collapse:collapse;}
+th{padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#7a9bb5;background:#f0f6ff;letter-spacing:0.8px;}
+td{padding:10px 12px;font-size:13px;border-top:1px solid #eaf4ff;}
+.lang-toggle{display:flex;gap:4px;}
+.lang-btn{padding:4px 10px;border-radius:10px;border:1.5px solid rgba(255,255,255,0.3);background:transparent;color:rgba(255,255,255,0.6);font-weight:700;font-size:11px;cursor:pointer;font-family:'Outfit',sans-serif;}
+.lang-btn.active{background:rgba(255,255,255,0.2);color:#fff;border-color:rgba(255,255,255,0.6);}
+.chart-bar{display:flex;align-items:flex-end;gap:8px;height:120px;padding:0 4px;}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.bar{width:100%;border-radius:6px 6px 0 0;transition:height 0.5s ease;}
+.bar-label{font-size:10px;color:#7a9bb5;font-weight:600;}
+.sidebar{width:200px;background:linear-gradient(180deg,#0a3d6b,#071a2e);min-height:100vh;position:fixed;left:0;top:0;display:flex;flex-direction:column;z-index:30;}
+.main-content{margin-left:200px;padding:24px;min-height:100vh;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:rgba(255,255,255,0.55);border:none;background:transparent;width:100%;font-family:'Outfit',sans-serif;text-align:left;border-left:3px solid transparent;margin-bottom:2px;transition:all 0.2s;}
+.nav-item.active{background:rgba(255,255,255,0.13);color:#fff;border-left-color:#18c965;}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.kpi{background:#fff;border-radius:16px;padding:18px;border:1.5px solid #cde2f5;}
+.patient-row{border-top:1px solid #eaf4ff;cursor:pointer;transition:background 0.15s;}
+.patient-row:hover{background:#f5faff;}
+.risk-badge{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;font-size:11px;font-weight:800;}
+.progress-bar{height:5px;background:#eaf4ff;border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:3px;}
+@media(max-width:640px){
+  .sidebar{display:none;}
+  .main-content{margin-left:0;padding:14px;}
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let state = {
+  screen: 'auth', // auth | patient | clinic
+  role: null,
+  lang: 'en',
+  tab: 'home',
+  clinicView: 'overview',
+  selectedPatient: null,
+  patientTab: 'overview',
+  filter: 'all',
+  online: navigator.onLine,
+  toast: null,
+  readings: JSON.parse(localStorage.getItem('mz_readings')||'[]'),
+  vitals: JSON.parse(localStorage.getItem('mz_vitals')||'[]'),
+  missed: JSON.parse(localStorage.getItem('mz_missed')||'[]'),
+  chatMsgs: [{from:'doctor',text:'Hello! I am Dr. Ayenachew. How are you feeling today?',time:'09:00'}],
+  plan: 'standard',
+  modal: null,
 };
 
 // ── TRANSLATIONS ───────────────────────────────────────────────────────────────
 const T = {
-  en: {
-    appName: "Mizan Diabetes Care", tagline: "Care Closer",
-    login: "Sign In", register: "Create Account", forgot: "Forgot Password",
-    email: "Email Address", password: "Password", name: "Full Name",
-    asPatient: "Patient", asDoctor: "Clinic Doctor",
-    home: "Home", glucose: "Glucose", meds: "Meds", visits: "Visits",
-    learn: "Learn", plans: "Plans", chat: "Chat",
-    goodMorning: "Good morning", goodAfternoon: "Good afternoon", goodEvening: "Good evening",
-    offline: "Offline — changes saved locally",
-    syncing: "Syncing...", synced: "All data synced",
-    logGlucose: "Log Reading", save: "Save", cancel: "Cancel", send: "Send",
-    fasting: "Fasting", random: "Random",
-    fastingHint: "Before eating, morning", randomHint: "Any time of day",
-    glucoseTracker: "Glucose Tracker", weekTrend: "7-Day Trend",
-    medications: "Medications", appointments: "Appointments",
-    nextAppt: "Next Appointment", requestAppt: "Request Appointment",
-    pastVisits: "Past Visits", reasonVisit: "Reason for Visit",
-    missedDose: "Missed Dose Log", refillRequest: "Request Refill",
-    weight: "Weight (kg)", bp: "Blood Pressure", bmi: "BMI",
-    exercise: "Exercise / Activity",
-    vitalsLog: "Log Vitals", systolic: "Systolic (mmHg)", diastolic: "Diastolic (mmHg)",
-    exerciseMin: "Exercise Duration (minutes)",
-    patientHistory: "Patient History", investigations: "Investigation Results",
-    imaging: "Imaging Reports", uploadImage: "Upload Report",
-    overview: "Overview", patients: "Patients", analytics: "Analytics",
-    followup: "Follow-up", riskScore: "Risk Score",
-    highRisk: "High Risk", medRisk: "Medium Risk", lowRisk: "Low Risk",
-    aiRec: "AI Recommendation", takeAction: "Take Action",
-    sendSms: "Send SMS", viewProfile: "View Profile", schedule: "Schedule",
-    enrollPatient: "+ Enroll Patient", allPatients: "All Patients",
-    monthlyRevenue: "Monthly Revenue", totalPatients: "Total Patients",
-    activeSubscriptions: "Active Subscriptions",
-    consultChat: "Consultation Chat", typeMessage: "Type a message...",
-    photoUpload: "Send Photo", healthTip: "Health Tip of the Day",
-    plans_title: "Care Plans", affordable: "Affordable monthly plans",
-    basic: "Basic", standard: "Standard", premium: "Premium",
-    confirmPlan: "Confirm Plan", currentPlan: "Your current selection",
-    refillSent: "Refill request sent to clinic!",
-    missedLogged: "Missed dose logged.",
-    apptBooked: "Appointment booked!",
-    noteSaved: "Note saved.",
-    labSent: "Lab request sent.",
-    smsSent: "SMS sent",
-    syncBanner: "Data saved offline. Will sync when connected.",
+  en:{
+    appName:'Mizan Diabetes Care',tagline:'Care Closer',
+    login:'Sign In',register:'Create Account',email:'Email',password:'Password',name:'Full Name',
+    asPatient:'Patient',asDoctor:'Clinic Doctor',
+    home:'Home',glucose:'Glucose',vitals:'Vitals',meds:'Meds',visits:'Visits',chat:'Chat',learn:'Learn',plans:'Plans',
+    offline:'Offline — saved locally',syncing:'Syncing...',
+    save:'Save',cancel:'Cancel',send:'Send',
+    fasting:'Fasting (mg/dL)',random:'Random (mg/dL)',
+    weight:'Weight (kg)',systolic:'Systolic (mmHg)',diastolic:'Diastolic (mmHg)',exercise:'Exercise (minutes)',
+    missedDose:'Log Missed Dose',refillReq:'Request Refill',
+    history:'Patient History',investigations:'Investigation Results',imaging:'Imaging Reports',
+    overview:'Overview',patients:'Patients',analytics:'Analytics',followup:'Follow-up',
+    highRisk:'High Risk',medRisk:'Medium Risk',lowRisk:'Low Risk',
+    aiRec:'AI Recommendation',sendSms:'Send SMS',
+    consultChat:'Consultation Chat',typeMsg:'Type a message...',uploadPhoto:'Send Photo',
+    plans_title:'Care Plans',basic:'Basic',standard:'Standard',premium:'Premium',
+    goodMorning:'Good morning',goodAfternoon:'Good afternoon',goodEvening:'Good evening',
+    healthTip:'Health Tip',enrollPatient:'+ Enroll Patient',
   },
-  am: {
-    appName: "ሚዛን የስኳር ህክምና", tagline: "ቅርብ ህክምና",
-    login: "ግባ", register: "መለያ ፍጠር", forgot: "የይለፍ ቃል ረሳህ?",
-    email: "ኢሜይል አድራሻ", password: "የይለፍ ቃል", name: "ሙሉ ስም",
-    asPatient: "ታካሚ", asDoctor: "ዶክተር",
-    home: "ዋና", glucose: "ስኳር", meds: "መድሃኒት", visits: "ቀጠሮ",
-    learn: "ይማሩ", plans: "ዕቅዶች", chat: "ውይይት",
-    goodMorning: "እንደምን አደሩ", goodAfternoon: "እንደምን ዋሉ", goodEvening: "እንደምን አመሹ",
-    offline: "ከኔት ተቋርጧል — ለውጦች ተቀምጠዋል",
-    syncing: "እየተመሳሰለ ነው...", synced: "ሁሉም ተመሳስሏል",
-    logGlucose: "ንባብ ያስገቡ", save: "አስቀምጥ", cancel: "ሰርዝ", send: "ላክ",
-    fasting: "ጾም", random: "ማንኛውም ሰዓት",
-    fastingHint: "ምግብ ሳይበሉ፣ ጠዋት", randomHint: "በቀን ማንኛውም ሰዓት",
-    glucoseTracker: "የስኳር መለኪያ", weekTrend: "የ7 ቀን ሪፖርት",
-    medications: "መድሃኒቶች", appointments: "ቀጠሮዎች",
-    nextAppt: "ቀጣይ ቀጠሮ", requestAppt: "ቀጠሮ ጠይቅ",
-    pastVisits: "ያለፉ ጉብኝቶች", reasonVisit: "የጉብኝት ምክንያት",
-    missedDose: "ያመለጠ መድሃኒት", refillRequest: "መሙሌ ጠይቅ",
-    weight: "ክብደት (ኪ.ግ)", bp: "የደም ግፊት", bmi: "BMI",
-    exercise: "ልምምድ / እንቅስቃሴ",
-    vitalsLog: "አስፈላጊ ምልክቶች", systolic: "ሲስቶሊክ (ሚ.ሜ.ሃ.ግ)", diastolic: "ዳያስቶሊክ (ሚ.ሜ.ሃ.ግ)",
-    exerciseMin: "የልምምድ ደቂቃዎች",
-    patientHistory: "የታካሚ ታሪክ", investigations: "የምርምር ውጤቶች",
-    imaging: "የምስል ሪፖርቶች", uploadImage: "ሪፖርት አያይዝ",
-    overview: "አጠቃላይ", patients: "ታካሚዎች", analytics: "ትንታኔ",
-    followup: "ክትትል", riskScore: "የአደጋ ደረጃ",
-    highRisk: "ከፍተኛ አደጋ", medRisk: "መካከለኛ አደጋ", lowRisk: "ዝቅተኛ አደጋ",
-    aiRec: "የAI ምክር", takeAction: "እርምጃ ውሰድ",
-    sendSms: "SMS ላክ", viewProfile: "መገለጫ ይመልከቱ", schedule: "ቀጠሮ",
-    enrollPatient: "+ ታካሚ ምዝገባ", allPatients: "ሁሉም ታካሚዎች",
-    monthlyRevenue: "ወርሃዊ ገቢ", totalPatients: "ጠቅላላ ታካሚዎች",
-    activeSubscriptions: "ገቢ ምዝገባዎች",
-    consultChat: "የምክክር ውይይት", typeMessage: "መልእክት ይፃፉ...",
-    photoUpload: "ፎቶ ላክ", healthTip: "የዛሬ የጤና ምክር",
-    plans_title: "የህክምና ዕቅዶች", affordable: "ለኢትዮጵያ ታካሚዎች ተመጣጣኝ ወርሃዊ ዕቅዶች",
-    basic: "መሰረታዊ", standard: "መደበኛ", premium: "ፕሪሚየም",
-    confirmPlan: "ዕቅድ አረጋግጥ", currentPlan: "የአሁን ምርጫዎ",
-    refillSent: "የሙሌ ጥያቄ ወደ ክሊኒክ ተልኳል!",
-    missedLogged: "ያለፈ መድሃኒት ተመዝግቧል።",
-    apptBooked: "ቀጠሮ ተይዟል!",
-    noteSaved: "ማስታወሻ ተቀምጧል።",
-    labSent: "የላብ ጥያቄ ተልኳል።",
-    smsSent: "SMS ተልኳል",
-    syncBanner: "ዳታ ያለ ኢንተርኔት ተቀምጧል። ሲገናኙ ይመሳሰላል።",
+  am:{
+    appName:'ሚዛን የስኳር ህክምና',tagline:'ቅርብ ህክምና',
+    login:'ግባ',register:'መለያ ፍጠር',email:'ኢሜይል',password:'የይለፍ ቃል',name:'ሙሉ ስም',
+    asPatient:'ታካሚ',asDoctor:'ዶክተር',
+    home:'ዋና',glucose:'ስኳር',vitals:'ምልክቶች',meds:'መድሃኒት',visits:'ቀጠሮ',chat:'ውይይት',learn:'ይማሩ',plans:'ዕቅዶች',
+    offline:'ከኔት ተቋርጧል — ተቀምጧል',syncing:'እየተመሳሰለ...',
+    save:'አስቀምጥ',cancel:'ሰርዝ',send:'ላክ',
+    fasting:'ጾም (mg/dL)',random:'ማንኛውም ሰዓት (mg/dL)',
+    weight:'ክብደት (ኪ.ግ)',systolic:'ሲስቶሊክ',diastolic:'ዳያስቶሊክ',exercise:'ልምምድ (ደቂቃ)',
+    missedDose:'ያለፈ መድሃኒት',refillReq:'መሙሌ ጠይቅ',
+    history:'የታካሚ ታሪክ',investigations:'የምርምር ውጤቶች',imaging:'የምስል ሪፖርቶች',
+    overview:'አጠቃላይ',patients:'ታካሚዎች',analytics:'ትንታኔ',followup:'ክትትል',
+    highRisk:'ከፍተኛ አደጋ',medRisk:'መካከለኛ',lowRisk:'ዝቅተኛ',
+    aiRec:'AI ምክር',sendSms:'SMS ላክ',
+    consultChat:'ምክክር',typeMsg:'መልእክት ይፃፉ...',uploadPhoto:'ፎቶ ላክ',
+    plans_title:'የህክምና ዕቅዶች',basic:'መሰረታዊ',standard:'መደበኛ',premium:'ፕሪሚየም',
+    goodMorning:'እንደምን አደሩ',goodAfternoon:'እንደምን ዋሉ',goodEvening:'እንደምን አመሹ',
+    healthTip:'የጤና ምክር',enrollPatient:'+ ምዝገባ',
   }
 };
-
-// ── OFFLINE STORE (localStorage simulation) ───────────────────────────────────
-const OfflineStore = {
-  get: (key) => { try { return JSON.parse(localStorage.getItem("mizan_"+key)||"null"); } catch { return null; } },
-  set: (key, val) => { try { localStorage.setItem("mizan_"+key, JSON.stringify(val)); } catch {} },
-  push: (key, item) => {
-    const arr = OfflineStore.get(key) || [];
-    arr.unshift(item);
-    OfflineStore.set(key, arr);
-    return arr;
-  }
-};
-
-// ── LOGO SVG ──────────────────────────────────────────────────────────────────
-const MizanLogo = ({ size = 36, blue = "#1278d4", green = "#108242", dark = false }) => (
-  <svg width={size} height={size} viewBox="0 0 80 80" fill="none">
-    <defs>
-      <linearGradient id={`lg-${size}`} x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor={dark ? "#60b3f8" : blue}/>
-        <stop offset="100%" stopColor={dark ? "#52db8c" : green}/>
-      </linearGradient>
-    </defs>
-    <rect x="14" y="32" width="52" height="3.5" rx="1.75" fill={`url(#lg-${size})`}/>
-    <rect x="38" y="16" width="4" height="42" rx="2" fill={`url(#lg-${size})`}/>
-    <rect x="28" y="58" width="24" height="3.5" rx="1.75" fill={`url(#lg-${size})`}/>
-    <rect x="32" y="61.5" width="16" height="2.5" rx="1.25" fill={`url(#lg-${size})`} fillOpacity="0.4"/>
-    <path d="M40 18 C45 21,45 24,40 27 C35 30,35 33,40 36 C45 39,45 42,40 45 C35 48,35 51,40 54"
-      stroke={dark ? "#52db8c" : green} strokeWidth="2.8" fill="none" strokeLinecap="round"/>
-    <ellipse cx="40.5" cy="17" rx="3.2" ry="2.2" fill={dark ? "#52db8c" : green} transform="rotate(-8 40.5 17)"/>
-    <path d="M39.5 14.8 L38.3 12.8 M39.5 14.8 L40.8 12.8" stroke={dark ? "#52db8c" : green} strokeWidth="1" strokeLinecap="round"/>
-    <circle cx="42" cy="16.3" r="0.65" fill="white"/>
-    <line x1="18" y1="35.5" x2="18" y2="43" stroke={dark ? "#60b3f8" : blue} strokeWidth="1.8"/>
-    <ellipse cx="18" cy="47" rx="7" ry="5" fill={dark ? "#60b3f8" : blue} fillOpacity="0.15" stroke={dark ? "#60b3f8" : blue} strokeWidth="1.5"/>
-    <path d="M18 41.5 C18 41.5 14 45 14 47.2 C14 49.4 15.8 50.8 18 50.8 C20.2 50.8 22 49.4 22 47.2 C22 45 18 41.5 18 41.5Z" fill={dark ? "#60b3f8" : blue} fillOpacity="0.55"/>
-    <text x="18" y="49" fontSize="5.5" fill="white" textAnchor="middle" fontWeight="bold" fontFamily="Arial">G</text>
-    <line x1="62" y1="35.5" x2="62" y2="43" stroke={dark ? "#52db8c" : green} strokeWidth="1.8"/>
-    <ellipse cx="62" cy="47" rx="7" ry="5" fill={dark ? "#52db8c" : green} fillOpacity="0.15" stroke={dark ? "#52db8c" : green} strokeWidth="1.5"/>
-    <path d="M62 51.5 C62 51.5 57 47.5 57 45.2 C57 43.2 58.5 42 60.2 42 C61.2 42 62 42.7 62 42.7 C62 42.7 62.8 42 63.8 42 C65.5 42 67 43.2 67 45.2 C67 47.5 62 51.5 62 51.5Z" fill={dark ? "#52db8c" : green} fillOpacity="0.7"/>
-  </svg>
-);
 
 // ── MOCK DATA ──────────────────────────────────────────────────────────────────
 const PATIENTS = [
-  {id:1,name:"Almaz Tadesse",age:54,gender:"F",type:"Type 2",glucose:312,hba1c:9.2,sbp:158,dbp:96,bmi:28.4,lastVisit:"2025-04-10",nextVisit:"2025-04-24",adherence:42,phone:"+251-911-234567",sub:"standard",weight:72,city:"Gondar",
-   alerts:["Glucose >300","Missed 2 visits"],
-   history:[{date:"2025-04-10",note:"Patient reports increased thirst and fatigue. Glucose uncontrolled. Metformin dose increased to 1g BD.",doctor:"Dr. Ayenachew"},{date:"2025-03-01",note:"Initial enrollment. Started on Metformin 500mg. Dietary counseling given.",doctor:"Dr. Samuel"}],
-   investigations:[{date:"2025-04-10",test:"HbA1c",result:"9.2%",ref:"<7%",status:"high"},{date:"2025-04-10",test:"Fasting Glucose",result:"312 mg/dL",ref:"70-130",status:"high"},{date:"2025-03-01",test:"Urine Microalbumin",result:"45 mg/L",ref:"<30",status:"high"},{date:"2025-03-01",test:"Creatinine",result:"0.9 mg/dL",ref:"0.6-1.2",status:"normal"}],
-   imaging:[{date:"2025-03-15",type:"Chest X-Ray",finding:"Normal cardiac silhouette. No active pulmonary lesion.",reported:"Dr. Radiology"},{date:"2025-02-10",type:"Renal Ultrasound",finding:"Both kidneys normal in size and echogenicity.",reported:"Dr. Radiology"}]},
-  {id:2,name:"Bekele Haile",age:62,gender:"M",type:"Type 2",glucose:287,hba1c:8.8,sbp:145,dbp:88,bmi:26.1,lastVisit:"2025-04-22",nextVisit:"2025-05-06",adherence:58,phone:"+251-921-345678",sub:"basic",weight:80,city:"Gondar",
-   alerts:["Glucose >250"],
-   history:[{date:"2025-04-22",note:"Follow-up visit. BP slightly improved. Still on Metformin + Glibenclamide.",doctor:"Dr. Ayenachew"}],
-   investigations:[{date:"2025-04-22",test:"HbA1c",result:"8.8%",ref:"<7%",status:"high"},{date:"2025-04-22",test:"Fasting Glucose",result:"287 mg/dL",ref:"70-130",status:"high"},{date:"2025-03-10",test:"Lipid Profile",result:"LDL 142 mg/dL",ref:"<100",status:"high"}],
+  {id:1,name:'Almaz Tadesse',age:54,gender:'F',type:'Type 2',glucose:312,hba1c:9.2,sbp:158,dbp:96,bmi:28.4,adherence:42,sub:'standard',weight:72,city:'Gondar',phone:'+251-911-234567',nextVisit:'2025-04-24',
+   alerts:['Glucose >300','Missed 2 visits'],
+   history:[{date:'2025-04-10',note:'Glucose uncontrolled. Metformin dose increased to 1g BD.',doctor:'Dr. Ayenachew'},{date:'2025-03-01',note:'Initial enrollment. Started Metformin 500mg.',doctor:'Dr. Samuel'}],
+   investigations:[{date:'2025-04-10',test:'HbA1c',result:'9.2%',ref:'<7%',status:'high'},{date:'2025-04-10',test:'Fasting Glucose',result:'312 mg/dL',ref:'70-130',status:'high'},{date:'2025-03-01',test:'Creatinine',result:'0.9 mg/dL',ref:'0.6-1.2',status:'normal'}],
+   imaging:[{date:'2025-03-15',type:'Chest X-Ray',finding:'Normal cardiac silhouette. No active pulmonary lesion.',reported:'Dr. Radiology'}]},
+  {id:2,name:'Bekele Haile',age:62,gender:'M',type:'Type 2',glucose:287,hba1c:8.8,sbp:145,dbp:88,bmi:26.1,adherence:58,sub:'basic',weight:80,city:'Gondar',phone:'+251-921-345678',nextVisit:'2025-05-06',
+   alerts:['Glucose >250'],
+   history:[{date:'2025-04-22',note:'BP slightly improved. Continue Metformin + Glibenclamide.',doctor:'Dr. Ayenachew'}],
+   investigations:[{date:'2025-04-22',test:'HbA1c',result:'8.8%',ref:'<7%',status:'high'},{date:'2025-04-22',test:'Fasting Glucose',result:'287 mg/dL',ref:'70-130',status:'high'}],
    imaging:[]},
-  {id:3,name:"Tigist Worku",age:41,gender:"F",type:"Type 1",glucose:168,hba1c:7.4,sbp:118,dbp:76,bmi:22.3,lastVisit:"2025-05-01",nextVisit:"2025-06-01",adherence:78,phone:"+251-931-456789",sub:"premium",weight:58,city:"Debark",
+  {id:3,name:'Tigist Worku',age:41,gender:'F',type:'Type 1',glucose:168,hba1c:7.4,sbp:118,dbp:76,bmi:22.3,adherence:78,sub:'premium',weight:58,city:'Debark',phone:'+251-931-456789',nextVisit:'2025-06-01',
    alerts:[],
-   history:[{date:"2025-05-01",note:"Good glucose control this month. Insulin dose maintained. Continue current plan.",doctor:"Dr. Amare"}],
-   investigations:[{date:"2025-05-01",test:"HbA1c",result:"7.4%",ref:"<7.5% (Type 1)",status:"normal"},{date:"2025-05-01",test:"Fasting Glucose",result:"168 mg/dL",ref:"70-130",status:"elevated"}],
-   imaging:[{date:"2025-04-01",type:"Fundoscopy",finding:"No diabetic retinopathy detected.",reported:"Dr. Eye"}]},
-  {id:4,name:"Dawit Mengiste",age:48,gender:"M",type:"Type 2",glucose:126,hba1c:6.8,sbp:122,dbp:78,bmi:24.8,lastVisit:"2025-05-10",nextVisit:"2025-06-10",adherence:91,phone:"+251-941-567890",sub:"premium",weight:75,city:"Gondar",
+   history:[{date:'2025-05-01',note:'Good glucose control. Insulin dose maintained.',doctor:'Dr. Amare'}],
+   investigations:[{date:'2025-05-01',test:'HbA1c',result:'7.4%',ref:'<7.5%',status:'normal'}],
+   imaging:[{date:'2025-04-01',type:'Fundoscopy',finding:'No diabetic retinopathy detected.',reported:'Dr. Eye'}]},
+  {id:4,name:'Dawit Mengiste',age:48,gender:'M',type:'Type 2',glucose:126,hba1c:6.8,sbp:122,dbp:78,bmi:24.8,adherence:91,sub:'premium',weight:75,city:'Gondar',phone:'+251-941-567890',nextVisit:'2025-06-10',
    alerts:[],
-   history:[{date:"2025-05-10",note:"Excellent adherence. Glucose well controlled. Lifestyle modifications working.",doctor:"Dr. Ayenachew"}],
-   investigations:[{date:"2025-05-10",test:"HbA1c",result:"6.8%",ref:"<7%",status:"normal"},{date:"2025-05-10",test:"Fasting Glucose",result:"126 mg/dL",ref:"70-130",status:"normal"}],
+   history:[{date:'2025-05-10',note:'Excellent adherence. Glucose well controlled.',doctor:'Dr. Ayenachew'}],
+   investigations:[{date:'2025-05-10',test:'HbA1c',result:'6.8%',ref:'<7%',status:'normal'}],
    imaging:[]},
-  {id:5,name:"Selamawit Girma",age:37,gender:"F",type:"Type 2",glucose:194,hba1c:7.9,sbp:132,dbp:84,bmi:27.6,lastVisit:"2025-04-15",nextVisit:"2025-05-29",adherence:65,phone:"+251-951-678901",sub:"standard",weight:64,city:"Maksegnit",
-   alerts:["Adherence <70%"],
-   history:[{date:"2025-04-15",note:"Patient struggles with medication adherence. Counseling session done. Reminder system activated.",doctor:"Dr. Samuel"}],
-   investigations:[{date:"2025-04-15",test:"HbA1c",result:"7.9%",ref:"<7%",status:"high"},{date:"2025-04-15",test:"Fasting Glucose",result:"194 mg/dL",ref:"70-130",status:"high"}],
-   imaging:[]},
-  {id:6,name:"Yohannes Assefa",age:71,gender:"M",type:"Type 2",glucose:341,hba1c:10.1,sbp:168,dbp:102,bmi:29.2,lastVisit:"2025-03-20",nextVisit:"2025-04-20",adherence:31,phone:"+251-911-789012",sub:"basic",weight:68,city:"Gondar",
-   alerts:["Glucose >300","HbA1c >10","Missed 3 visits","Adherence <40%"],
-   history:[{date:"2025-03-20",note:"Very poor control. Glucose dangerously high. Referred to specialist. Insulin initiation discussed.",doctor:"Dr. Ayenachew"},{date:"2025-02-01",note:"Missed previous appointment. Phone reminder sent.",doctor:"Dr. Samuel"}],
-   investigations:[{date:"2025-03-20",test:"HbA1c",result:"10.1%",ref:"<7%",status:"high"},{date:"2025-03-20",test:"Fasting Glucose",result:"341 mg/dL",ref:"70-130",status:"high"},{date:"2025-03-20",test:"Urine Ketones",result:"Trace",ref:"Negative",status:"elevated"},{date:"2025-03-20",test:"Creatinine",result:"1.4 mg/dL",ref:"0.6-1.2",status:"elevated"}],
-   imaging:[{date:"2025-02-20",type:"Chest X-Ray",finding:"Cardiomegaly noted. Recommend cardiology review.",reported:"Dr. Radiology"}]},
+  {id:5,name:'Yohannes Assefa',age:71,gender:'M',type:'Type 2',glucose:341,hba1c:10.1,sbp:168,dbp:102,bmi:29.2,adherence:31,sub:'basic',weight:68,city:'Gondar',phone:'+251-911-789012',nextVisit:'2025-04-20',
+   alerts:['Glucose >300','HbA1c >10','Missed 3 visits'],
+   history:[{date:'2025-03-20',note:'Very poor control. Insulin initiation discussed. Referred to specialist.',doctor:'Dr. Ayenachew'}],
+   investigations:[{date:'2025-03-20',test:'HbA1c',result:'10.1%',ref:'<7%',status:'high'},{date:'2025-03-20',test:'Fasting Glucose',result:'341 mg/dL',ref:'70-130',status:'high'},{date:'2025-03-20',test:'Creatinine',result:'1.4 mg/dL',ref:'0.6-1.2',status:'elevated'}],
+   imaging:[{date:'2025-02-20',type:'Chest X-Ray',finding:'Cardiomegaly noted. Recommend cardiology review.',reported:'Dr. Radiology'}]},
 ];
 
-const WEEK = [
-  {d:"M",f:142,r:198},{d:"T",f:156,r:221},{d:"W",f:138,r:187},
-  {d:"T",f:163,r:234},{d:"F",f:147,r:205},{d:"S",f:129,r:176},{d:"S",f:134,r:189},
-];
+const WEEK = [{d:'M',f:142,r:198},{d:'T',f:156,r:221},{d:'W',f:138,r:187},{d:'T',f:163,r:234},{d:'F',f:147,r:205},{d:'S',f:129,r:176},{d:'S',f:134,r:189}];
 
-const EDUCATION = {
-  en: [
-    {id:1,icon:"💉",cat:"Basics",title:"Understanding Blood Sugar",time:"5 min",color:C.p600},
-    {id:2,icon:"🦶",cat:"Prevention",title:"Daily Foot Care Guide",time:"4 min",color:C.g600},
-    {id:3,icon:"🥗",cat:"Nutrition",title:"Eating Well in Ethiopia",time:"7 min",color:C.o500},
-    {id:4,icon:"🚶",cat:"Lifestyle",title:"Exercise & Glucose Control",time:"6 min",color:C.p700},
-    {id:5,icon:"💊",cat:"Medication",title:"Why Adherence Matters",time:"3 min",color:C.g700},
-    {id:6,icon:"🧠",cat:"Mental Health",title:"Stress & Blood Sugar",time:"5 min",color:C.r500},
-  ],
-  am: [
-    {id:1,icon:"💉",cat:"መሰረታዊ",title:"ስለ ደም ስኳር መረዳት",time:"5 ደቂቃ",color:C.p600},
-    {id:2,icon:"🦶",cat:"መከላከል",title:"የዕለት ተዕለት የእግር እንክብካቤ",time:"4 ደቂቃ",color:C.g600},
-    {id:3,icon:"🥗",cat:"አመጋገብ",title:"በኢትዮጵያ ጤናማ አመጋገብ",time:"7 ደቂቃ",color:C.o500},
-    {id:4,icon:"🚶",cat:"አኗኗር",title:"ልምምድና የስኳር ቁጥጥር",time:"6 ደቂቃ",color:C.p700},
-    {id:5,icon:"💊",cat:"መድሃኒት",title:"ለምን ተከታዩ አስፈላጊ ነው",time:"3 ደቂቃ",color:C.g700},
-    {id:6,icon:"🧠",cat:"የአዕምሮ ጤና",title:"ጭንቀትና ስኳር",time:"5 ደቂቃ",color:C.r500},
-  ]
+// ── HELPERS ────────────────────────────────────────────────────────────────────
+const t = () => T[state.lang];
+const $  = id => document.getElementById(id);
+const gStatus = v => v<70?{l:'LOW',c:'#e8344a',bg:'#fde8eb'}:v<=140?{l:'NORMAL',c:'#14a854',bg:'#e8faf0'}:v<=200?{l:'ELEVATED',c:'#f0831a',bg:'#fef0e0'}:{l:'HIGH',c:'e8344a',bg:'#fde8eb'};
+const calcRisk = p => {
+  let s=0;
+  if(p.glucose>300)s+=30;else if(p.glucose>200)s+=20;else s+=10;
+  if(p.hba1c>9)s+=25;else if(p.hba1c>8)s+=15;else s+=8;
+  if(p.sbp>160)s+=20;else if(p.sbp>140)s+=12;else s+=6;
+  if(p.bmi>30)s+=10;else if(p.bmi>27)s+=5;
+  if(p.adherence<40)s+=15;else if(p.adherence<60)s+=8;else s+=3;
+  return {score:s,risk:s>=60?'high':s>=30?'medium':'low'};
 };
-
-const PLANS = [
-  {name:"basic",price:3,color:C.mid,accent:C.border,
-   inc:{en:["Glucose logging","Medication reminders","Basic education","Monthly check-in"],am:["የስኳር ምዝገባ","የመድሃኒት አስታዋሽ","መሰረታዊ ትምህርት","ወርሃዊ ክትትል"]},
-   exc:{en:["Teleconsultation","Complication screening","Product delivery","Home visit"],am:["ቴሌ ምክክር","ችግር ምርምር","ምርት ማድረስ","የቤት ጉብኝት"]}},
-  {name:"standard",price:7,color:C.p600,accent:C.p200,popular:true,
-   inc:{en:["Everything in Basic","Teleconsultation ×2/mo","Complication screening","Dietitian access"],am:["ሁሉም መሰረታዊ","ቴሌ ምክክር ×2/ወር","ችግር ምርምር","የምግብ ባለሙያ"]},
-   exc:{en:["Product delivery","Home visit"],am:["ምርት ማድረስ","የቤት ጉብኝት"]}},
-  {name:"premium",price:12,color:C.g700,accent:C.g200,
-   inc:{en:["Everything in Standard","Unlimited teleconsultation","Product delivery","Home visit ×1/mo","Priority support"],am:["ሁሉም መደበኛ","ያልተገደበ ቴሌ ምክክር","ምርት ማድረስ","የቤት ጉብኝት ×1/ወር","ቅድሚያ ድጋፍ"]},
-   exc:{en:[],am:[]}},
-];
-
-// ── AI RISK STRATIFICATION ─────────────────────────────────────────────────────
-const calcRiskScore = (p) => {
-  let score = 0;
-  if (p.glucose > 300) score += 30;
-  else if (p.glucose > 200) score += 20;
-  else if (p.glucose > 140) score += 10;
-  if (p.hba1c > 9) score += 25;
-  else if (p.hba1c > 8) score += 15;
-  else if (p.hba1c > 7) score += 8;
-  if (p.sbp > 160) score += 20;
-  else if (p.sbp > 140) score += 12;
-  else if (p.sbp > 130) score += 6;
-  if (p.bmi > 30) score += 10;
-  else if (p.bmi > 27) score += 5;
-  if (p.adherence < 40) score += 15;
-  else if (p.adherence < 60) score += 8;
-  else if (p.adherence < 75) score += 3;
-  const risk = score >= 60 ? "high" : score >= 30 ? "medium" : "low";
-  return { score, risk };
-};
-
-const aiRec = (p) => {
-  const { score, risk } = calcRiskScore(p);
-  if (risk === "high") return { msg: "Urgent consultation needed. Consider insulin initiation, BP medication review, or emergency referral.", lvl: "danger" };
-  if (p.adherence < 50) return { msg: "Poor adherence detected. Send education reminder and schedule counseling session.", lvl: "warn" };
-  if (new Date(p.nextVisit) < new Date()) return { msg: "Overdue follow-up. Call patient to reschedule as soon as possible.", lvl: "warn" };
-  return { msg: "Patient is on track. Continue current care plan. Next review on schedule.", lvl: "ok" };
-};
-
-const riskC = r => r==="high"?C.r500:r==="medium"?C.o500:C.g600;
-const riskBg = r => r==="high"?C.r100:r==="medium"?C.o100:C.g100;
-
-const gStatus = v => {
-  if(v<70) return {label:"LOW",c:C.r500,bg:C.r100,icon:"🔴",advice:"Eat something sweet immediately."};
-  if(v<=140) return {label:"NORMAL",c:C.g600,bg:C.g100,icon:"🟢",advice:"Great control! Keep following your care plan."};
-  if(v<=200) return {label:"ELEVATED",c:C.o500,bg:C.o100,icon:"🟡",advice:"Avoid sugary foods. Monitor closely today."};
-  return {label:"HIGH",c:C.r500,bg:C.r100,icon:"🔴",advice:"Dangerously high. Contact Mizan clinic immediately."};
-};
-
-// ── SHARED UI ──────────────────────────────────────────────────────────────────
-const Toast = ({msg,type,onClose}) => (
-  <div style={{position:"fixed",top:20,right:20,zIndex:9999,animation:"slideIn 0.3s ease",
-    background:type==="error"?C.r500:type==="warn"?C.o500:C.g700,
-    color:"#fff",padding:"14px 20px",borderRadius:14,fontWeight:600,fontSize:14,
-    boxShadow:"0 8px 32px rgba(0,0,0,0.2)",maxWidth:320,display:"flex",gap:12,alignItems:"center"}}>
-    <span style={{fontSize:18}}>{type==="error"?"❌":type==="warn"?"⚠️":"✅"}</span>
-    <span style={{flex:1}}>{msg}</span>
-    <button onClick={onClose} style={{background:"none",border:"none",color:"rgba(255,255,255,0.8)",cursor:"pointer",fontSize:18,padding:0}}>×</button>
-  </div>
-);
-
-const Modal = ({children,onClose}) => (
-  <div style={{position:"fixed",inset:0,background:"rgba(13,31,53,0.7)",zIndex:900,display:"flex",alignItems:"center",justifyContent:"center",padding:16,backdropFilter:"blur(4px)"}} onClick={onClose}>
-    <div onClick={e=>e.stopPropagation()} style={{background:C.white,borderRadius:24,padding:28,width:"100%",maxWidth:420,boxShadow:"0 24px 80px rgba(0,0,0,0.3)",animation:"fadeUp 0.3s ease",maxHeight:"90vh",overflowY:"auto"}}>
-      {children}
-    </div>
-  </div>
-);
-
-const Pill = ({label,c,bg,size=12}) => (
-  <span style={{background:bg,color:c,borderRadius:20,padding:`${size===12?"3px 9px":"4px 12px"}`,fontSize:size,fontWeight:700,letterSpacing:0.2,whiteSpace:"nowrap"}}>{label}</span>
-);
-
-const Btn = ({children,onClick,v="primary",sz="md",full,disabled,style={}}) => {
-  const vs = {
-    primary:{background:`linear-gradient(135deg,${C.p600},${C.p900})`,color:"#fff",border:"none",boxShadow:`0 4px 16px ${C.p300}`},
-    green:{background:`linear-gradient(135deg,${C.g600},${C.g900})`,color:"#fff",border:"none",boxShadow:`0 4px 16px ${C.g300}`},
-    outline:{background:"transparent",color:C.p600,border:`2px solid ${C.p600}`},
-    ghost:{background:C.p100,color:C.p700,border:"none"},
-    danger:{background:C.r100,color:C.r500,border:"none"},
-    muted:{background:C.bg,color:C.muted,border:`1.5px solid ${C.border}`},
-  };
-  const ss = {sm:{padding:"8px 16px",fontSize:13,borderRadius:10},md:{padding:"12px 24px",fontSize:15,borderRadius:12},lg:{padding:"16px 28px",fontSize:17,borderRadius:14}};
-  return (
-    <button className="btn-press" onClick={onClick} disabled={disabled} style={{...vs[v],...ss[sz],fontWeight:700,cursor:disabled?"not-allowed":"pointer",
-      width:full?"100%":"auto",opacity:disabled?0.6:1,transition:"all 0.2s",letterSpacing:0.2,...style}}>
-      {children}
-    </button>
-  );
-};
-
-const Field = ({label,type="text",value,onChange,placeholder,icon,hint,rows}) => (
-  <div style={{marginBottom:16}}>
-    {label&&<label style={{display:"block",marginBottom:6,fontSize:13,fontWeight:700,color:C.dark,letterSpacing:0.3}}>{label}</label>}
-    <div style={{position:"relative"}}>
-      {icon&&!rows&&<span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:16,userSelect:"none"}}>{icon}</span>}
-      {rows ? (
-        <textarea rows={rows} value={value} onChange={onChange} placeholder={placeholder}
-          style={{width:"100%",padding:"13px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:15,color:C.dark,background:C.bg,resize:"vertical",fontFamily:"'Outfit',sans-serif"}}
-          onFocus={e=>{e.target.style.border=`1.5px solid ${C.p600}`;}} onBlur={e=>{e.target.style.border=`1.5px solid ${C.border}`;}}/>
-      ) : (
-        <input type={type} value={value} onChange={onChange} placeholder={placeholder}
-          style={{width:"100%",padding:icon?"13px 14px 13px 42px":"13px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:15,color:C.dark,background:C.bg,transition:"border 0.2s",fontFamily:"'Outfit',sans-serif"}}
-          onFocus={e=>{e.target.style.border=`1.5px solid ${C.p600}`;e.target.style.background=C.white;}}
-          onBlur={e=>{e.target.style.border=`1.5px solid ${C.border}`;e.target.style.background=C.bg;}}/>
-      )}
-    </div>
-    {hint&&<p style={{margin:"5px 0 0",fontSize:12,color:C.muted}}>{hint}</p>}
-  </div>
-);
-
-// ── OFFLINE BANNER ─────────────────────────────────────────────────────────────
-const OfflineBanner = ({online,syncing,t}) => {
-  if (online && !syncing) return null;
-  return (
-    <div style={{background:syncing?C.p600:C.o500,color:"#fff",padding:"8px 16px",fontSize:12,fontWeight:700,
-      display:"flex",alignItems:"center",gap:8,justifyContent:"center",position:"sticky",top:0,zIndex:80}}>
-      <span style={{animation:syncing?"syncPulse 1.5s infinite":"none",display:"inline-block"}}>
-        {syncing?"🔄":"📵"}
-      </span>
-      {syncing ? t.syncing : t.offline}
-    </div>
-  );
-};
-
-// ── GLUCOSE CHART ──────────────────────────────────────────────────────────────
-const Chart = ({data=WEEK,compact=false}) => {
-  const H=compact?100:160,W=300,pad=20,max=300;
-  const x=i=>pad+(i/(data.length-1))*(W-pad*2);
-  const y=v=>H-pad-(v/max)*(H-pad*2);
-  const path=key=>data.map((d,i)=>`${i===0?"M":"L"}${x(i)},${y(d[key])}`).join(" ");
-  return (
-    <div style={{overflowX:"auto"}}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:compact?100:170}} preserveAspectRatio="xMidYMid meet">
-        <defs>
-          <linearGradient id="gp" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.p500} stopOpacity="0.25"/><stop offset="100%" stopColor={C.p500} stopOpacity="0"/></linearGradient>
-          <linearGradient id="gg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.g500} stopOpacity="0.25"/><stop offset="100%" stopColor={C.g500} stopOpacity="0"/></linearGradient>
-        </defs>
-        {[70,140,200].map(v=>(
-          <g key={v}><line x1={pad} y1={y(v)} x2={W-pad} y2={y(v)} stroke={C.border} strokeWidth="0.8" strokeDasharray="4,4"/><text x={W-pad+4} y={y(v)+4} fontSize="8" fill={C.muted}>{v}</text></g>
-        ))}
-        <path d={`${path("f")} L${x(data.length-1)},${H-pad} L${x(0)},${H-pad} Z`} fill="url(#gp)" opacity="0.6"/>
-        <path d={`${path("r")} L${x(data.length-1)},${H-pad} L${x(0)},${H-pad} Z`} fill="url(#gg)" opacity="0.6"/>
-        <path d={path("f")} fill="none" stroke={C.p600} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d={path("r")} fill="none" stroke={C.g600} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-        {data.map((d,i)=>(
-          <g key={i}>
-            <circle cx={x(i)} cy={y(d.f)} r="4" fill={C.white} stroke={C.p600} strokeWidth="2"/>
-            <circle cx={x(i)} cy={y(d.r)} r="4" fill={C.white} stroke={C.g600} strokeWidth="2"/>
-            {!compact&&<text x={x(i)} y={H-4} textAnchor="middle" fontSize="9" fill={C.muted}>{d.d}</text>}
-          </g>
-        ))}
-      </svg>
-      {!compact&&(
-        <div style={{display:"flex",gap:20,justifyContent:"center",marginTop:4}}>
-          {[{c:C.p600,l:"Fasting"},{c:C.g600,l:"Random"}].map(({c,l})=>(
-            <div key={l} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:C.mid}}>
-              <div style={{width:20,height:3,borderRadius:2,background:c}}/>{l}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const Ring = ({pct,size=80,color=C.p600}) => {
-  const r=30,circ=2*Math.PI*r,offset=circ*(1-pct/100);
-  return (
-    <svg width={size} height={size} viewBox="0 0 80 80">
-      <circle cx="40" cy="40" r={r} fill="none" stroke={C.border} strokeWidth="8"/>
-      <circle cx="40" cy="40" r={r} fill="none" stroke={color} strokeWidth="8" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" transform="rotate(-90 40 40)" style={{transition:"stroke-dashoffset 1s ease"}}/>
-      <text x="40" y="44" textAnchor="middle" fontSize="14" fontWeight="800" fill={color} fontFamily="Outfit">{pct}%</text>
-    </svg>
-  );
-};
-
-// ════════════════════════════════════════════════════════════════════════════════
-// AUTH
-// ════════════════════════════════════════════════════════════════════════════════
-const Auth = ({onLogin,lang,setLang}) => {
-  const t = T[lang];
-  const [mode,setMode] = useState("login");
-  const [role,setRole] = useState("patient");
-  const [email,setEmail] = useState("");
-  const [pass,setPass] = useState("");
-  const [name,setName] = useState("");
-  const [loading,setLoading] = useState(false);
-  const [toast,setToast] = useState(null);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if(!email || !pass || (mode==="register" && !name)) {
-      setToast({msg:"Please fill in all fields",type:"error"});
-      return;
-    }
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      onLogin(role);
-    }, 800);
-  };
-
-  return (
-    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",background:`radial-gradient(circle at 80% 20%, ${C.p100} 0%, ${C.bg} 100%)`,padding:20,position:"relative",overflow:"hidden"}}>
-      <FontLoader/>
-      {toast && <Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
-      
-      <div style={{position:"absolute",top:20,right:20,display:"flex",gap:8,zIndex:10}}>
-        <button onClick={()=>setLang(lang==="en"?"am":"en")} style={{background:C.white,border:`1.5px solid ${C.border}`,padding:"6px 12px",borderRadius:20,fontSize:13,fontWeight:700,color:C.p700,cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
-          {lang==="en"?"አማርኛ 🇪ቲ":"English 🇬🇧"}
-        </button>
-      </div>
-
-      <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",width:"100%",maxWidth:400,margin:"0 auto",className:"fadeUp"}}>
-        <div style={{background:C.card,borderRadius:32,padding:"40px 32px",width:"100%",boxShadow:"0 20px 60px rgba(13,50,90,0.08)",border:`1.5px solid ${C.white}`,backdropFilter:"blur(16px)"}}>
-          
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:32}}>
-            <MizanLogo size={56}/>
-            <h1 style={{fontSize:26,fontWeight:900,color:C.p900,marginTop:12,letterSpacing:-0.5}}>{t.appName}</h1>
-            <p style={{fontSize:14,fontWeight:600,color:C.g700,textTransform:"uppercase",letterSpacing:1.5,marginTop:2}}>{t.tagline}</p>
-          </div>
-
-          <div style={{display:"flex",background:C.bg,padding:4,borderRadius:14,marginBottom:24}}>
-            <button onClick={()=>setRole("patient")} style={{flex:1,padding:"10px",borderRadius:10,border:"none",fontSize:14,fontWeight:700,cursor:"pointer",transition:"all 0.2s",background:role==="patient"?C.white:"transparent",color:role==="patient"?C.p800:C.muted,boxShadow:role==="patient"?"0 4px 12px rgba(0,0,0,0.05)":"none"}}>
-              👤 {t.asPatient}
-            </button>
-            <button onClick={()=>setRole("doctor")} style={{flex:1,padding:"10px",borderRadius:10,border:"none",fontSize:14,fontWeight:700,cursor:"pointer",transition:"all 0.2s",background:role==="doctor"?C.white:"transparent",color:role==="doctor"?C.p800:C.muted,boxShadow:role==="doctor"?"0 4px 12px rgba(0,0,0,0.05)":"none"}}>
-              🥼 {t.asDoctor}
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            {mode==="register" && (
-              <Field label={t.name} value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Almaz Tadesse" icon="👤" />
-            )}
-            <Field label={t.email} type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="name@domain.com" icon="✉️" />
-            <Field label={t.password} type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" icon="🔒" />
-
-            {mode==="login" && (
-              <div style={{textAlign:"right",marginTop:-8,marginBottom:20}}>
-                <a href="#forgot" onClick={e=>{e.preventDefault();setToast({msg:"Password reset link sent!",type:"success"});}} style={{fontSize:13,fontWeight:600,color:C.p700,textDecoration:"none"}}>{t.forgot}</a>
-              </div>
-            )}
-
-            <Btn type="submit" full disabled={loading}>
-              {loading ? "..." : mode==="login" ? t.login : t.register}
-            </Btn>
-          </form>
-
-          <div style={{textAlign:"center",marginTop:24,borderTop:`1.5px solid ${C.border}`,paddingTop:20}}>
-            <button onClick={()=>setMode(mode==="login"?"register":"login")} style={{background:"none",border:"none",color:C.mid,fontSize:14,fontWeight:600,cursor:"pointer"}}>
-              {mode==="login" ? (lang==="en"?"New to Mizan? Create Account":"አዲስ ነዎት? መለያ ይፍጠሩ") : (lang==="en"?"Already have an account? Sign In":"ቀድሞ መለያ አሎት? ይግቡ")}
-            </button>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ════════════════════════════════════════════════════════════════════════════════
-// PATIENT APP
-// ════════════════════════════════════════════════════════════════════════════════
-const PatientApp = ({onLogout,lang}) => {
-  const t = T[lang];
-  const [tab,setTab] = useState("home");
-  const [online,setOnline] = useState(navigator.onLine);
-  const [syncing,setSyncing] = useState(false);
-  const [toast,setToast] = useState(null);
-  
-  // Modals
-  const [glucoseModal,setGlucoseModal] = useState(false);
-  const [vitalsModal,setVitalsModal] = useState(false);
-  const [refillModal,setRefillModal] = useState(false);
-  const [missedModal,setMissedModal] = useState(false);
-  const [planModal,setPlanModal] = useState(false);
-
-  // Local Form States
-  const [gValue,setGValue] = useState("");
-  const [gType,setGType] = useState("fasting");
-  const [sys,setSys] = useState("");
-  const [dia,setDia] = useState("");
-  const [wt,setWt] = useState("");
-  const [exMin,setExMin] = useState("");
-  const [selectedPlan,setSelectedPlan] = useState("standard");
-
-  // Dynamic lists from OfflineStore
-  const [gLogs,setGLogs] = useState([]);
-  const [chatMsgs,setChatMsgs] = useState([]);
-  const [newMsg,setNewMsg] = useState("");
-
-  useEffect(() => {
-    setGLogs(OfflineStore.get("g_logs") || [{val:142,type:"fasting",date:new Date().toLocaleTimeString(),status:gStatus(142)}]);
-    setChatMsgs(OfflineStore.get("chat") || [{sender:"doc",text:"Hello, how are you feeling today? Please remember to log your fasting glucose.",time:"10:15 AM"}]);
-
-    const handleOnline = () => { setOnline(true); setSyncing(true); setTimeout(()=>setSyncing(false),1500); };
-    const handleOffline = () => setOnline(false);
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-    return () => { window.removeEventListener("online",handleOnline); window.removeEventListener("offline",handleOffline); };
-  }, []);
-
-  const notify = (msg, type="success") => { setToast({msg,type}); setTimeout(()=>setToast(null),4000); };
-
-  const handleLogGlucose = (e) => {
-    e.preventDefault();
-    if(!gValue) return;
-    const val = parseInt(gValue);
-    const item = { val, type: gType, date: new Date().toLocaleTimeString(), status: gStatus(val) };
-    const updated = OfflineStore.push("g_logs", item);
-    setGLogs(updated);
-    setGlucoseModal(false);
-    setGValue("");
-    if(!online) notify(t.syncBanner, "warn");
-    else notify(`Glucose logged successfully! status: ${item.status.label}`);
-  };
-
-  const handleSendChat = (e) => {
-    e.preventDefault();
-    if(!newMsg.trim()) return;
-    const m = { sender: "patient", text: newMsg, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
-    const updated = OfflineStore.push("chat", m);
-    setChatMsgs(updated);
-    setNewMsg("");
-    setTimeout(() => {
-      const reply = { sender: "doc", text: "Thank you for the message. Dr. Ayenachew will review this during regular clinic hours.", time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
-      setChatMsgs(OfflineStore.push("chat", reply));
-    }, 1500);
-  };
-
-  return (
-    <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column",paddingBottom:80}}>
-      <FontLoader/>
-      <OfflineBanner online={online} syncing={syncing} t={t}/>
-      {toast && <Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
-
-      {/* HEADER */}
-      <header style={{background:C.white,padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1.5px solid ${C.border}`,position:"sticky",top:online?0:32,zIndex:70}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <MizanLogo size={36}/>
-          <div>
-            <h2 style={{fontSize:16,fontWeight:900,color:C.p900,lineHeight:1.1}}>{t.appName}</h2>
-            <span style={{fontSize:11,color:C.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5}}>Patient Portal</span>
-          </div>
-        </div>
-        <button onClick={onLogout} style={{background:C.r100,border:"none",color:C.r500,padding:"8px 14px",borderRadius:10,fontSize:13,fontWeight:700,cursor:"pointer"}}>Logout 🚪</button>
-      </header>
-
-      {/* CONTENT AREA */}
-      <main style={{padding:16,maxWidth:480,margin:"0 auto",width:"100%"}}>
-        
-        {/* TAB 1: HOME */}
-        {tab === "home" && (
-          <div className="fadeUp" style={{display:"flex",flexDirection:"column",gap:16}}>
-            
-            <div style={{background:`linear-gradient(135deg, ${C.p900}, ${C.p700})`,borderRadius:24,padding:24,color:C.white,position:"relative",overflow:"hidden",boxShadow:`0 8px 32px ${C.p200}`}}>
-              <div style={{position:"absolute",right:-20,bottom:-20,opacity:0.08}}><MizanLogo size={160} dark/></div>
-              <p style={{fontSize:14,color:C.p200,fontWeight:600}}>{t.goodMorning}, Dawit 👋</p>
-              <h3 style={{fontSize:22,fontWeight:800,marginTop:4,lineHeight:1.2}}>{lang==="en"?"Your control looks strong this week!":"በዚህ ሳምንት ቁጥጥርዎ በጣም ጥሩ ነው!"}</h3>
-              <div style={{display:"flex",gap:12,marginTop:20}}>
-                <Btn onClick={()=>setGlucoseModal(true)} v="green" sz="sm">🩸 {t.logGlucose}</Btn>
-                <Btn onClick={()=>setVitalsModal(true)} v="ghost" style={{background:"rgba(255,255,255,0.15)",color:"#fff"}} sz="sm">🩺 Log Vitals</Btn>
-              </div>
-            </div>
-
-            <div style={{background:C.white,borderRadius:24,padding:20,border:`1.5px solid ${C.border}`}}>
-              <h4 style={{fontSize:15,fontWeight:800,color:C.dark,marginBottom:14,display:"flex",justifyContent:"between",alignItems:"center"}}>
-                <span>📈 {t.glucoseTracker}</span>
-                <Pill label={t.weekTrend} c={C.p700} bg={C.p100}/>
-              </h4>
-              <Chart compact/>
-            </div>
-
-            {/* QUICK ACTIONS */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-              <div onClick={()=>setRefillModal(true)} className="card-hover" style={{background:C.white,padding:16,borderRadius:20,border:`1.5px solid ${C.border}`,cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
-                <span style={{fontSize:24,background:C.g100,padding:8,borderRadius:12}}>💊</span>
-                <div>
-                  <h5 style={{fontSize:14,fontWeight:800,color:C.dark}}>{t.refillRequest}</h5>
-                  <p style={{fontSize:11,color:C.muted}}>Fast clinic approval</p>
-                </div>
-              </div>
-              <div onClick={()=>setMissedModal(true)} className="card-hover" style={{background:C.white,padding:16,borderRadius:20,border:`1.5px solid ${C.border}`,cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
-                <span style={{fontSize:24,background:C.r100,padding:8,borderRadius:12}}>⚠️</span>
-                <div>
-                  <h5 style={{fontSize:14,fontWeight:800,color:C.dark}}>{t.missedDose}</h5>
-                  <p style={{fontSize:11,color:C.muted}}>Inform your doctor</p>
-                </div>
-              </div>
-            </div>
-
-            {/* APPOINTMENT CARD */}
-            <div style={{background:C.white,borderRadius:24,padding:20,border:`1.5px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div>
-                <p style={{fontSize:12,fontWeight:700,color:C.muted,textTransform:"uppercase"}}>{t.nextAppt}</p>
-                <h4 style={{fontSize:16,fontWeight:800,color:C.dark,marginTop:2}}>June 18, 2026 @ 9:00 AM</h4>
-                <p style={{fontSize:12,color:C.g700,fontWeight:600,marginTop:2}}>📍 Mizan Gondar Clinic (Dr. Ayenachew)</p>
-              </div>
-              <Btn onClick={()=>notify(t.apptBooked)} v="outline" sz="sm">Reschedule</Btn>
-            </div>
-
-            {/* HEALTH TIP */}
-            <div style={{background:C.o50,border:`1.5px solid ${C.o100}`,padding:16,borderRadius:20,display:"flex",gap:12}}>
-              <span style={{fontSize:22}}>💡</span>
-              <div>
-                <h5 style={{fontSize:13,fontWeight:800,color:C.o500,textTransform:"uppercase"}}>{t.healthTip}</h5>
-                <p style={{fontSize:13,color:C.dark,fontWeight:500,marginTop:2,lineHeight:1.4}}>
-                  {lang==="en"?"Drinking water before meals can help reduce blood sugar spikes. Try to avoid sweet tea or local soft drinks."
-                           :"ከምግብ በፊት ውሃ መጠጣት የስኳር መጠን ድንገት እንዳይጨምር ይረዳል። ሻይ በስኳር ወይም ለስላሳ መጠጦችን ያስወግዱ።"}
-                </p>
-              </div>
-            </div>
-
-          </div>
-        )}
-
-        {/* TAB 2: GLUCOSE HISTORY */}
-        {tab === "glucose" && (
-          <div className="fadeUp" style={{display:"flex",flexDirection:"column",gap:16}}>
-            <div style={{background:C.white,borderRadius:24,padding:20,border:`1.5px solid ${C.border}`}}>
-              <h3 style={{fontSize:18,fontWeight:900,color:C.p900,marginBottom:16}}>{t.glucoseTracker}</h3>
-              <Chart/>
-            </div>
-            
-            <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              <h4 style={{fontSize:14,fontWeight:800,color:C.dark,textTransform:"uppercase",letterSpacing:0.5}}>Logs History</h4>
-              {gLogs.map((log,i)=>(
-                <div key={i} style={{background:C.white,borderRadius:16,padding:"14px 16px",border:`1.5px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:12}}>
-                    <span style={{fontSize:20}}>{log.status.icon}</span>
-                    <div>
-                      <div style={{display:"flex",alignItems:"center",gap:6}}>
-                        <span style={{fontSize:18,fontWeight:800,color:C.dark}}>{log.val}</span>
-                        <span style={{fontSize:12,color:C.muted,fontWeight:600}}>mg/dL</span>
-                      </div>
-                      <span style={{fontSize:12,color:C.mid,fontWeight:600,textTransform:"capitalize"}}>{t[log.type]} Log</span>
-                    </div>
-                  </div>
-                  <div style={{textAlign:"right"}}>
-                    <Pill label={log.status.label} c={log.status.c} bg={log.status.bg}/>
-                    <p style={{fontSize:11,color:C.muted,marginTop:4}}>{log.date}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: EDUCATION */}
-        {tab === "learn" && (
-          <div className="fadeUp" style={{display:"flex",flexDirection:"column",gap:16}}>
-            <div>
-              <h3 style={{fontSize:20,fontWeight:900,color:C.p900}}>{t.learn}</h3>
-              <p style={{fontSize:13,color:C.muted}}>Expert localized materials tailored for your health journey</p>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr",gap:12}}>
-              {EDUCATION[lang].map(ed=>(
-                <div key={ed.id} className="card-hover" onClick={()=>notify(`Opening "${ed.title}"...`)} style={{background:C.white,borderRadius:20,padding:16,border:`1.5px solid ${C.border}`,cursor:"pointer",display:"flex",alignItems:"center",gap:16}}>
-                  <div style={{fontSize:28,background:C.bg,width:52,height:52,borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",border:`1.5px solid ${C.border}`}}>{ed.icon}</div>
-                  <div style={{flex:1}}>
-                    <span style={{fontSize:11,fontWeight:700,color:ed.color,textTransform:"uppercase",letterSpacing:0.5}}>{ed.cat}</span>
-                    <h4 style={{fontSize:15,fontWeight:800,color:C.dark,marginTop:1}}>{ed.title}</h4>
-                    <p style={{fontSize:12,color:C.muted,marginTop:2}}>⏱️ {ed.time} read</p>
-                  </div>
-                  <span style={{color:C.muted,fontSize:18}}>➔</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 4: PLANS */}
-        {tab === "plans" && (
-          <div className="fadeUp" style={{display:"flex",flexDirection:"column",gap:16}}>
-            <div style={{textAlign:"center",marginBottom:8}}>
-              <h3 style={{fontSize:20,fontWeight:900,color:C.p900}}>{t.plans_title}</h3>
-              <p style={{fontSize:13,color:C.muted,marginTop:2}}>{t.affordable}</p>
-            </div>
-
-            {PLANS.map(p=>(
-              <div key={p.name} style={{background:C.white,borderRadius:24,padding:24,border:selectedPlan===p.name?`2.5px solid ${p.color}`:`1.5px solid ${C.border}`,position:"relative",boxShadow:selectedPlan===p.name?`0 8px 24px ${p.accent}`:"none"}}>
-                {p.popular && <span style={{position:"absolute",top:-12,right:20,background:C.o500,color:"#fff",padding:"4px 12px",borderRadius:12,fontSize:11,fontWeight:800}}>MOST POPULAR</span>}
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
-                  <div>
-                    <h4 style={{fontSize:18,fontWeight:900,color:p.color,textTransform:"uppercase",letterSpacing:0.5}}>{t[p.name]}</h4>
-                    <div style={{display:"flex",alignItems:"baseline",gap:4,marginTop:4}}>
-                      <span style={{fontSize:24,fontWeight:900,color:C.dark}}>{p.price*100} ETB</span>
-                      <span style={{fontSize:13,color:C.muted}}>/month</span>
-                    </div>
-                  </div>
-                  <input type="radio" checked={selectedPlan===p.name} onChange={()=>setSelectedPlan(p.name)} style={{width:20,height:20,accentColor:p.color,cursor:"pointer"}}/>
-                </div>
-
-                <div style={{marginTop:16,display:"flex",flexDirection:"column",gap:8,borderTop:`1.5px solid ${C.bg}`,paddingTop:16}}>
-                  {p.inc[lang].map((f,i)=><div key={i} style={{fontSize:13,color:C.dark,fontWeight:500}}>✅ {f}</div>)}
-                  {p.exc[lang].map((f,i)=><div key={i} style={{fontSize:13,color:C.muted,opacity:0.6}}>❌ {f}</div>)}
-                </div>
-
-                {selectedPlan===p.name && (
-                  <Btn onClick={()=>setPlanModal(true)} full style={{marginTop:20,background:p.color}} sz="sm">Activate {t[p.name]} Plan</Btn>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* TAB 5: CHAT */}
-        {tab === "chat" && (
-          <div className="fadeUp" style={{display:"flex",flexDirection:"column",height:"calc(100vh - 160px)",background:C.white,borderRadius:24,border:`1.5px solid ${C.border}`,overflow:"hidden"}}>
-            <div style={{background:C.p100,padding:"14px 20px",borderBottom:`1.5px solid ${C.border}`,display:"flex",alignItems:"center",gap:10}}>
-              <div style={{width:10,height:10,background:C.g500,borderRadius:5}}/>
-              <div>
-                <h4 style={{fontSize:14,fontWeight:800,color:C.p900}}>{t.consultChat}</h4>
-                <p style={{fontSize:11,color:C.muted}}>Typically replies within 2 hours</p>
-              </div>
-            </div>
-
-            <div style={{flex:1,padding:16,overflowY:"auto",display:"flex",flexDirection:"column-reverse",gap:12,background:C.bg}}>
-              {chatMsgs.map((m,i)=>{
-                const isPat = m.sender==="patient";
-                return (
-                  <div key={i} style={{display:"flex",justifyContent:isPat?"flex-end":"flex-start",animation:"fadeUp 0.2s ease"}}>
-                    <div style={{maxWidth:"80%",background:isPat?C.p600:C.white,color:isPat?"#fff":C.dark,padding:"12px 16px",borderRadius:isPat?"18px 18px 2px 18px":"18px 18px 18px 2px",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
-                      <p style={{margin:0,fontSize:14,fontWeight:500,lineHeight:1.4}}>{m.text}</p>
-                      <span style={{fontSize:10,color:isPat?C.p200:C.muted,display:"block",textAlign:"right",marginTop:4}}>{m.time}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <form onSubmit={handleSendChat} style={{padding:12,background:C.white,borderTop:`1.5px solid ${C.border}`,display:"flex",gap:8}}>
-              <input value={newMsg} onChange={e=>setNewMsg(e.target.value)} placeholder={t.typeMessage} style={{flex:1,padding:"12px 16px",borderRadius:12,border:`1.5px solid ${C.border}`,fontSize:14,background:C.bg}}/>
-              <Btn type="submit" sz="sm">Send ➔</Btn>
-            </form>
-          </div>
-        )}
-
-      </main>
-
-      {/* FOOTER NAVIGATION BAR */}
-      <nav style={{position:"fixed",bottom:0,left:0,right:0,background:C.white,borderTop:`1.5px solid ${C.border}`,display:"flex",justifyContent:"space-around",padding:"8px 0",zIndex:100,boxShadow:"0 -4px 16px rgba(0,0,0,0.03)"}}>
-        {[
-          {id:"home",icon:"🏠",label:t.home},
-          {id:"glucose",icon:"🩸",label:t.glucose},
-          {id:"learn",icon:"🧠",label:t.learn},
-          {id:"chat",icon:"💬",label:t.chat},
-          {id:"plans",icon:"💳",label:t.plans},
-        ].map(n=>(
-          <button key={n.id} onClick={()=>setTab(n.id)} style={{background:"none",border:"none",display:"flex",flexDirection:"column",alignItems:"center",gap:2,cursor:"pointer",width:60,color:tab===n.id?C.p600:C.muted,transition:"color 0.2s"}}>
-            <span style={{fontSize:20,opacity:tab===n.id?1:0.6}}>{n.icon}</span>
-            <span style={{fontSize:11,fontWeight:tab===n.id?800:500}}>{n.label}</span>
-          </button>
-        ))}
-      </nav>
-
-      {/* MODALS */}
-      {glucoseModal && (
-        <Modal onClose={()=>setGlucoseModal(false)}>
-          <h3 style={{fontSize:18,fontWeight:900,color:C.p900,marginBottom:16}}>🩸 {t.logGlucose}</h3>
-          <form onSubmit={handleLogGlucose}>
-            <Field label="Glucose Level (mg/dL)" type="number" value={gValue} onChange={e=>setGValue(e.target.value)} placeholder="e.g. 135" />
-            <div style={{marginBottom:20}}>
-              <label style={{display:"block",marginBottom:6,fontSize:13,fontWeight:700,color:C.dark}}>Measurement Context</label>
-              <select value={gType} onChange={e=>setGType(e.target.value)} style={{width:"100%",padding:"12px",borderRadius:12,border:`1.5px solid ${C.border}`,background:C.bg,fontSize:14,fontWeight:600,color:C.dark}}>
-                <option value="fasting">🥣 {t.fasting} ({t.fastingHint})</option>
-                <option value="random">🍽️ {t.random} ({t.randomHint})</option>
-              </select>
-            </div>
-            <div style={{display:"flex",gap:10}}>
-              <Btn type="button" onClick={()=>setGlucoseModal(false)} v="danger" full sz="sm">{t.cancel}</Btn>
-              <Btn type="submit" full sz="sm">{t.save}</Btn>
-            </div>
-          </form>
-        </Modal>
-      )}
-
-      {vitalsModal && (
-        <Modal onClose={()=>setVitalsModal(false)}>
-          <h3 style={{fontSize:18,fontWeight:900,color:C.p900,marginBottom:16}}>🩺 {t.vitalsLog}</h3>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-            <Field label={t.systolic} type="number" value={sys} onChange={e=>setSys(e.target.value)} placeholder="120" />
-            <Field label={t.diastolic} type="number" value={dia} onChange={e=>setDia(e.target.value)} placeholder="80" />
-          </div>
-          <Field label={t.weight} type="number" value={wt} onChange={e=>setWt(e.target.value)} placeholder="e.g. 74" />
-          <Field label={t.exercise} type="number" value={exMin} onChange={e=>setExMin(e.target.value)} placeholder="Minutes" hint={t.exerciseMin} />
-          <div style={{display:"flex",gap:10,marginTop:8}}>
-            <Btn onClick={()=>setVitalsModal(false)} v="danger" full sz="sm">{t.cancel}</Btn>
-            <Btn onClick={()=>{setVitalsModal(false);notify("Vitals saved successfully!");}} full sz="sm">{t.save}</Btn>
-          </div>
-        </Modal>
-      )}
-
-      {refillModal && (
-        <Modal onClose={()=>setRefillModal(false)}>
-          <h3 style={{fontSize:18,fontWeight:900,color:C.p900,marginBottom:12}}>💊 Confirm Refill</h3>
-          <p style={{fontSize:14,color:C.mid,lineHeight:1.4,marginBottom:16}}>This will request a renewal prescription for <b>Metformin 500mg BD</b> at the Mizan Gondar Clinic branch.</p>
-          <div style={{display:"flex",gap:10}}>
-            <Btn onClick={()=>setRefillModal(false)} v="muted" full sz="sm">{t.cancel}</Btn>
-            <Btn onClick={()=>{setRefillModal(false);notify(t.refillSent);}} v="green" full sz="sm">Confirm Request</Btn>
-          </div>
-        </Modal>
-      )}
-
-      {missedModal && (
-        <Modal onClose={()=>setMissedModal(false)}>
-          <h3 style={{fontSize:18,fontWeight:900,color:C.p900,marginBottom:12}}>⚠️ Log Missed Dose</h3>
-          <p style={{fontSize:14,color:C.mid,marginBottom:16}}>Logging missed doses helps Dr. Ayenachew fine-tune your treatment plan safely.</p>
-          <select style={{width:"100%",padding:"12px",borderRadius:12,border:`1.5px solid ${C.border}`,background:C.bg,fontSize:14,fontWeight:600,color:C.dark,marginBottom:16}}>
-            <option>Metformin 500mg - Morning Dose</option>
-            <option>Metformin 500mg - Evening Dose</option>
-          </select>
-          <Field label="Reason (Optional)" placeholder="e.g. Forgot, side effects, out of stock" rows={2}/>
-          <div style={{display:"flex",gap:10}}>
-            <Btn onClick={()=>setMissedModal(false)} v="muted" full sz="sm">{t.cancel}</Btn>
-            <Btn onClick={()=>{setMissedModal(false);notify(t.missedLogged);}} v="primary" full sz="sm">Submit Log</Btn>
-          </div>
-        </Modal>
-      )}
-
-      {planModal && (
-        <Modal onClose={()=>setPlanModal(false)}>
-          <h3 style={{fontSize:18,fontWeight:900,color:C.p900,marginBottom:12}}>💳 CBE Birr Payment</h3>
-          <p style={{fontSize:14,color:C.mid,lineHeight:1.4,marginBottom:16}}>To complete enrollment, please process the subscription fee via CBE Birr to merchant code <b>MIZAN-MED (882199)</b>.</p>
-          <div style={{background:C.bg,padding:12,borderRadius:12,fontSize:13,fontWeight:600,color:C.dark,marginBottom:20}}>
-            💰 Total Amount: <b>{PLANS.find(p=>p.name===selectedPlan)?.price * 100} ETB</b>
-          </div>
-          <Field label="Transaction Reference ID" placeholder="e.g. FT26..." />
-          <div style={{display:"flex",gap:10}}>
-            <Btn onClick={()=>setPlanModal(false)} v="muted" full sz="sm">{t.cancel}</Btn>
-            <Btn onClick={()=>{setPlanModal(false);notify("Payment submitted! Awaiting verification.");}} v="green" full sz="sm">Submit Payment</Btn>
-          </div>
-        </Modal>
-      )}
-
-    </div>
-  );
-};
-
-// ════════════════════════════════════════════════════════════════════════════════
-// CLINIC CLINICAL DASHBOARD
-// ════════════════════════════════════════════════════════════════════════════════
-const Clinic = ({onLogout,lang}) => {
-  const t = T[lang];
-  const [view,setView] = useState("overview");
-  const [search,setSearch] = useState("");
-  const [patient,setPatient] = useState(null);
-  const [patientTab,setPatientTab] = useState("overview");
-  const [toast,setToast] = useState(null);
-  const [smsModal,setSmsModal] = useState(null);
-  const [smsMsg,setSmsMsg] = useState("");
-
-  const notify = (msg, type="success") => { setToast({msg,type}); setTimeout(()=>setToast(null),3500); };
-
-  const filtered = PATIENTS.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.phone.includes(search));
-
-  return (
-    <div style={{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column"}}>
-      <FontLoader/>
-      {toast && <Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
-
-      {/* NAV SIDEBAR / HEADER (Mobile Responsive) */}
-      <header style={{background:`linear-gradient(135deg, ${C.p900}, ${C.p800})`,color:"#fff",padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",boxShadow:"0 4px 20px rgba(0,0,0,0.1)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"} } onClick={()=>{setView("overview");setPatient(null);}}>
-          <MizanLogo size={36} dark/>
-          <div>
-            <h2 style={{fontSize:17,fontWeight:900,letterSpacing:-0.3}}>{t.appName}</h2>
-            <span style={{fontSize:11,color:C.p300,fontWeight:700,letterSpacing:0.5}}>CLINICAL HUB (Dr. Ayenachew)</span>
-          </div>
-        </div>
-        <div style={{display:"flex",gap:8}}>
-          <button onClick={()=>setView("overview")} style={{background:view==="overview"?"rgba(255,255,255,0.15)":"transparent",border:"none",color:"#fff",padding:"8px 14px",borderRadius:10,fontSize:13,fontWeight:700,cursor:"pointer"}}>Dashboard</button>
-          <button onClick={()=>setView("patients")} style={{background:view==="patients"?"rgba(255,255,255,0.15)":"transparent",border:"none",color:"#fff",padding:"8px 14px",borderRadius:10,fontSize:13,fontWeight:700,cursor:"pointer"}}>Patients</button>
-          <button onClick={onLogout} style={{background:"none",border:"none",color:C.r100,fontSize:13,fontWeight:700,cursor:"pointer",marginLeft:10}}>Sign Out ➔</button>
-        </div>
-      </header>
-
-      {/* CORE WORKSPACE */}
-      <div style={{flex:1,padding:20,maxWidth:1024,margin:"0 auto",width:"100%"}} className="fadeUp">
-        
-        {/* VIEW: OVERVIEW */}
-        {view === "overview" && !patient && (
-          <div style={{display:"flex",flexDirection:"column",gap:24}}>
-            
-            {/* STATS */}
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))",gap:16}}>
-              <div style={{background:C.white,padding:20,borderRadius:24,border:`1.5px solid ${C.border}`,display:"flex",justifyContent:"between",alignItems:"center"}}>
-                <div>
-                  <p style={{fontSize:13,fontWeight:700,color:C.muted}}>{t.totalPatients}</p>
-                  <h3 style={{fontSize:28,fontWeight:900,color:C.dark,marginTop:4}}>1,420</h3>
-                  <span style={{fontSize:12,color:C.g600,fontWeight:700}}>📈 +14 this week</span>
-                </div>
-                <span style={{fontSize:32,background:C.p50,padding:12,borderRadius:16}}>👥</span>
-              </div>
-              <div style={{background:C.white,padding:20,borderRadius:24,border:`1.5px solid ${C.border}`,display:"flex",justifyContent:"between",alignItems:"center"}}>
-                <div>
-                  <p style={{fontSize:13,fontWeight:700,color:C.muted}}>High Risk Stratified</p>
-                  <h3 style={{fontSize:28,fontWeight:900,color:C.r500,marginTop:4}}>34</h3>
-                  <span style={{fontSize:12,color:C.r500,fontWeight:700}}>⚠️ Requires Review</span>
-                </div>
-                <span style={{fontSize:32,background:C.r50,padding:12,borderRadius:16}}>🚨</span>
-              </div>
-              <div style={{background:C.white,padding:20,borderRadius:24,border:`1.5px solid ${C.border}`,display:"flex",justifyContent:"between",alignItems:"center"}}>
-                <div>
-                  <p style={{fontSize:13,fontWeight:700,color:C.muted}}>{t.activeSubscriptions}</p>
-                  <h3 style={{fontSize:28,fontWeight:900,color:C.g700,marginTop:4}}>842</h3>
-                  <span style={{fontSize:12,color:C.muted,fontWeight:600}}>CBE Birr Verified</span>
-                </div>
-                <span style={{fontSize:32,background:C.g50,padding:12,borderRadius:16}}>💳</span>
-              </div>
-            </div>
-
-            {/* ALERT PANEL & CLINICAL RECOMMENDATIONS */}
-            <div style={{background:C.white,borderRadius:24,padding:20,border:`1.5px solid ${C.border}`}}>
-              <h3 style={{fontSize:16,fontWeight:900,color:C.dark,marginBottom:16,display:"flex",alignItems:"center",gap:8}}>⚡ Critical AI Risk Alerts</h3>
-              <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                {PATIENTS.filter(p=>calcRiskScore(p).risk==="high").map(p=>{
-                  const rec = aiRec(p);
-                  return (
-                    <div key={p.id} style={{background:C.bg,borderRadius:16,padding:16,borderLeft:`5px solid ${C.r500}`,display:"flex",flexDirection:"column",gap:10}}>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",flexWrap:"wrap",gap:8}}>
-                        <div>
-                          <h4 style={{fontSize:15,fontWeight:800,color:C.dark}}>{p.name} ({p.age} {p.gender})</h4>
-                          <p style={{fontSize:12,color:C.muted,marginTop:1}}>📞 {p.phone} | 📍 {p.city}</p>
-                        </div>
-                        <div style={{display:"flex",gap:6}}>
-                          <Pill label={`Glucose: ${p.glucose}`} c={C.r500} bg={C.r100}/>
-                          <Pill label={`HbA1c: ${p.hba1c}%`} c={C.r500} bg={C.r100}/>
-                        </div>
-                      </div>
-                      <div style={{background:C.white,padding:10,borderRadius:10,border:`1px dashed ${C.border}`,display:"flex",gap:8,alignItems:"flex-start"}}>
-                        <span style={{fontSize:14,flexShrink:0}}>🤖</span>
-                        <p style={{margin:0,fontSize:12,color:C.dark,fontWeight:600,lineHeight:1.5}}>{rec.msg}</p>
-                      </div>
-                      <div style={{display:"flex",flexDirection:"column",gap:7}}>
-                        <Btn onClick={()=>setSmsModal(p)} v="primary" sz="sm">📱 SMS</Btn>
-                        <Btn onClick={()=>{setPatient(p);setView("patients");setPatientTab("overview");}} v="outline" sz="sm">View</Btn>
-                        <Btn onClick={()=>notify(t.apptBooked)} v="ghost" sz="sm">📅 Book</Btn>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* VIEW: PATIENTS LIST & DETAILS */}
-        {view === "patients" && (
-          <div>
-            {!patient ? (
-              <div style={{display:"flex",flexDirection:"column",gap:16}}>
-                <div style={{display:"flex",gap:12}}>
-                  <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search patients by name, phone or branch..." style={{flex:1,padding:"14px 18px",borderRadius:14,border:`1.5px solid ${C.border}`,fontSize:15,background:C.white}}/>
-                  <Btn onClick={()=>notify("Enrollment form coming soon!")} v="green">+ Enroll</Btn>
-                </div>
-
-                <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                  {filtered.map(p=>{
-                    const {score,risk} = calcRiskScore(p);
-                    return (
-                      <div key={p.id} onClick={()=>{setPatient(p);setPatientTab("overview");}} className="card-hover" style={{background:C.white,borderRadius:20,padding:18,border:`1.5px solid ${C.border}`,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
-                        <div>
-                          <h4 style={{fontSize:16,fontWeight:800,color:C.dark}}>{p.name}</h4>
-                          <p style={{fontSize:13,color:C.muted,marginTop:2}}>{p.age} {p.gender} • {p.type} • 📱 {p.phone}</p>
-                        </div>
-                        <div style={{display:"flex",alignItems:"center",gap:12}}>
-                          <div style={{textAlign:"right"}}>
-                            <span style={{fontSize:11,fontWeight:700,color:C.muted,display:"block",textTransform:"uppercase"}}>Last Reading</span>
-                            <span style={{fontSize:15,fontWeight:800,color:gStatus(p.glucose).c}}>{p.glucose} mg/dL</span>
-                          </div>
-                          <span style={{background:riskBg(risk),color:riskC(risk),padding:"6px 12px",borderRadius:12,fontSize:12,fontWeight:800,textTransform:"uppercase"}}>
-                            {risk}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              /* INDIVIDUAL PATIENT PROFILE DEEP DIVE */
-              <div className="fadeUp" style={{display:"flex",flexDirection:"column",gap:20}}>
-                <Btn onClick={()=>setPatient(null)} v="muted" sz="sm" style={{alignSelf:"start"}}>⬅️ Back to List</Btn>
-                
-                <div style={{background:C.white,borderRadius:24,padding:24,border:`1.5px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"start",flexWrap:"wrap",gap:16}}>
-                  <div>
-                    <h2 style={{fontSize:22,fontWeight:900,color:C.dark}}>{patient.name}</h2>
-                    <p style={{fontSize:14,color:C.mid,marginTop:4}}><b>Age/Gender:</b> {patient.age}/{patient.gender} | <b>Type:</b> {patient.type} | <b>Phone:</b> {patient.phone}</p>
-                    <p style={{fontSize:13,color:C.muted,marginTop:2}}>📍 Resident of {patient.city}, Ethiopia | Plan: <span style={{fontWeight:700,color:C.p700}}>{patient.sub.toUpperCase()}</span></p>
-                  </div>
-                  <div style={{display:"flex",gap:10}}>
-                    <Btn onClick={()=>setSmsModal(patient)} sz="sm">Send SMS 📱</Btn>
-                    <Btn onClick={()=>notify("Prescription updated")} v="outline" sz="sm">Rx Link 💊</Btn>
-                  </div>
-                </div>
-
-                {/* PATIENT TABS */}
-                <div style={{display:"flex",gap:4,borderBottom:`2px solid ${C.border}`,paddingBottom:2}}>
-                  {["overview", "history", "labs", "imaging"].map(tName=>(
-                    <button key={tName} onClick={()=>setPatientTab(tName)} style={{background:"none",border:"none",padding:"10px 16px",fontSize:14,fontWeight:700,cursor:"pointer",color:patientTab===tName?C.p600:C.muted,borderBottom:patientTab===tName?`3px solid ${C.p600}`:"none",textTransform:"capitalize"}}>
-                      {tName}
-                    </button>
-                  ))}
-                </div>
-
-                {/* PATIENT TAB CONTENT: OVERVIEW */}
-                {patientTab === "overview" && (
-                  <div style={{display:"flex",flexDirection:"column",gap:16}} className="fadeUp">
-                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(140px, 1fr))",gap:12}}>
-                      <div style={{background:C.white,padding:16,borderRadius:16,border:`1.5px solid ${C.border}`}}>
-                        <span style={{fontSize:12,color:C.muted,fontWeight:700}}>GLUCOSE</span>
-                        <h4 style={{fontSize:20,fontWeight:900,color:gStatus(patient.glucose).c,marginTop:4}}>{patient.glucose} <span style={{fontSize:12,fontWeight:500}}>mg/dL</span></h4>
-                      </div>
-                      <div style={{background:C.white,padding:16,borderRadius:16,border:`1.5px solid ${C.border}`}}>
-                        <span style={{fontSize:12,color:C.muted,fontWeight:700}}>HBA1C</span>
-                        <h4 style={{fontSize:20,fontWeight:900,color:patient.hba1c>7.5?C.r500:C.g600,marginTop:4}}>{patient.hba1c}%</h4>
-                      </div>
-                      <div style={{background:C.white,padding:16,borderRadius:16,border:`1.5px solid ${C.border}`}}>
-                        <span style={{fontSize:12,color:C.muted,fontWeight:700}}>BLOOD PRESSURE</span>
-                        <h4 style={{fontSize:20,fontWeight:900,color:patient.sbp>140?C.r500:C.g600,marginTop:4}}>{patient.sbp}/{patient.dbp}</h4>
-                      </div>
-                      <div style={{background:C.white,padding:16,borderRadius:16,border:`1.5px solid ${C.border}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-                        <span style={{fontSize:11,color:C.muted,fontWeight:700,marginBottom:2}}>ADHERENCE</span>
-                        <Ring pct={patient.adherence} size={60} color={patient.adherence<50?C.r500:patient.adherence<80?C.o500:C.g600}/>
-                      </div>
-                    </div>
-
-                    <div style={{background:C.white,borderRadius:20,padding:20,border:`1.5px solid ${C.border}`}}>
-                      <h4 style={{fontSize:15,fontWeight:800,marginBottom:12}}>AI Clinical Assessment</h4>
-                      <p style={{fontSize:14,color:C.dark,lineHeight:1.5}}>{aiRec(patient).msg}</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* PATIENT TAB CONTENT: CLINICAL HISTORY NOTE */}
-                {patientTab === "history" && (
-                  <div style={{display:"flex",flexDirection:"column",gap:16}} className="fadeUp">
-                    <div style={{background:C.white,borderRadius:20,padding:20,border:`1.5px solid ${C.border}`}}>
-                      <h4 style={{fontSize:15,fontWeight:800,marginBottom:12}}>Add Clinical Progress Note</h4>
-                      <Field placeholder="Type clinical presentation, adjustment in drugs (e.g. Insulin, Metformin), dietary targets..." rows={3}/>
-                      <Btn onClick={()=>notify("Note saved successfully")} sz="sm">Save Note 📝</Btn>
-                    </div>
-
-                    <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                      {patient.history.map((h,i)=>(
-                        <div key={i} style={{background:C.white,padding:16,borderRadius:16,border:`1.5px solid ${C.border}`}}>
-                          <div style={{display:"flex",justifyContent:"space-between",fontSize:12,fontWeight:700,color:C.muted,marginBottom:6}}>
-                            <span>🗓️ {h.date}</span>
-                            <span>✍️ {h.doctor}</span>
-                          </div>
-                          <p style={{fontSize:14,color:C.dark,lineHeight:1.5}}>{h.note}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* PATIENT TAB CONTENT: INVESTIGATIONS LABS */}
-                {patientTab === "labs" && (
-                  <div style={{background:C.white,borderRadius:24,padding:20,border:`1.5px solid ${C.border}`}} className="fadeUp">
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-                      <h4 style={{fontSize:15,fontWeight:800}}>Lab Panel Results</h4>
-                      <Btn onClick={()=>notify("Lab request triggered")} v="outline" sz="sm">Order New Lab 🧪</Btn>
-                    </div>
-                    <div style={{overflowX:"auto"}}>
-                      <table style={{width:"100%",borderCollapse:"collapse",fontSize:14,textAlign:"left"}}>
-                        <thead>
-                          <tr style={{borderBottom:`2px solid ${C.border}`,color:C.muted,fontWeight:700}}>
-                            <th style={{padding:"8px 4px"}}>Test</th>
-                            <th style={{padding:"8px 4px"}}>Result</th>
-                            <th style={{padding:"8px 4px"}}>Reference</th>
-                            <th style={{padding:"8px 4px"}}>Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {patient.investigations.map((inv,i)=>(
-                            <tr key={i} style={{borderBottom:`1.5px solid ${C.bg}`}}>
-                              <td style={{padding:"12px 4px",fontWeight:600}}>{inv.test}</td>
-                              <td style={{padding:"12px 4px",fontWeight:700,color:inv.status==="high"?C.r500:C.dark}}>{inv.result}</td>
-                              <td style={{padding:"12px 4px",color:C.muted}}>{inv.ref}</td>
-                              <td style={{padding:"12px 4px"}}>
-                                <Pill label={inv.status.toUpperCase()} c={inv.status==="high"?C.r500:C.g600} bg={inv.status==="high"?C.r100:C.g100}/>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {/* PATIENT TAB CONTENT: IMAGING */}
-                {patientTab === "imaging" && (
-                  <div style={{display:"flex",flexDirection:"column",gap:16}} className="fadeUp">
-                    <div style={{background:C.white,borderRadius:24,padding:20,border:`1.5px solid ${C.border}`,textAlign:"center",paddingTop:32,paddingBottom:32}}>
-                      <span style={{fontSize:36}}>🖼️</span>
-                      <h4 style={{fontSize:16,fontWeight:800,marginTop:8}}>Upload Diagnostic Imaging</h4>
-                      <p style={{fontSize:13,color:C.muted,maxWidth:280,margin:"4px auto 16px"}}>Attach clear photos of Chest X-Rays, Fundoscopy or Renal Ultrasounds.</p>
-                      <input type="file" id="img-up" style={{display:"none"}} onChange={()=>notify("File parsed successfully")}/>
-                      <label htmlFor="img-up" style={{background:C.p100,color:C.p700,padding:"10px 20px",borderRadius:12,fontSize:14,fontWeight:700,cursor:"pointer",display:"inline-block"}}>Choose File</label>
-                    </div>
-
-                    {patient.imaging.length > 0 && (
-                      <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                        {patient.imaging.map((img,i)=>(
-                          <div key={i} style={{background:C.white,padding:16,borderRadius:16,border:`1.5px solid ${C.border}`}}>
-                            <div style={{display:"flex",justifyContent:"space-between",fontSize:12,fontWeight:700,color:C.muted,marginBottom:4}}>
-                              <span>📸 {img.type}</span>
-                              <span>🗓️ {img.date}</span>
-                            </div>
-                            <p style={{fontSize:14,fontWeight:600,color:C.dark}}>Finding: <span style={{fontWeight:500}}>{img.finding}</span></p>
-                            <span style={{fontSize:11,color:C.muted,display:"block",marginTop:4}}>Reported by: {img.reported}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-              </div>
-            )}
-          </div>
-        )}
-
-      </div>
-
-      {/* SMS ALERTS COMMUNICATION MODAL */}
-      {smsModal && (
-        <Modal onClose={()=>setSmsModal(null)}>
-          <h3 style={{fontSize:18,fontWeight:900,color:C.p900,marginBottom:6}}>📱 Send SMS Alert</h3>
-          <p style={{fontSize:13,color:C.muted,marginBottom:16}}>Recipient: <b>{smsModal.name} ({smsModal.phone})</b></p>
-          <Field label="Message Text" rows={4} value={smsMsg} onChange={e=>setSmsMsg(e.target.value)} placeholder="e.g. Hello Almaz, Dr. Ayenachew noticed your blood sugar reading was high (312mg/dL). Please visit the Mizan clinic tomorrow morning fasting." />
-          <div style={{display:"flex",gap:10}}>
-            <Btn onClick={()=>setSmsModal(null)} v="muted" full sz="sm">{t.cancel}</Btn>
-            <Btn onClick={()=>{setSmsModal(null);setSmsMsg("");notify(t.smsSent);}} v="primary" full sz="sm">Send SMS ➔</Btn>
-          </div>
-        </Modal>
-      )}
-
-    </div>
-  );
-};
-
-// ════════════════════════════════════════════════════════════════════════════════
-// ROOT
-// ════════════════════════════════════════════════════════════════════════════════
-export default function App() {
-  const [screen,setScreen] = useState("auth");
-  const [role,setRole] = useState(null);
-  const [lang,setLang] = useState("en");
-  return screen==="auth"
-    ? <Auth onLogin={r=>{setRole(r);setScreen(\"app\");}} lang={lang} setLang={setLang}/>
-    : role==="patient"
-      ? <PatientApp onLogout={()=>{setScreen(\"auth\");setRole(null);}} lang={lang} setLang={setLang}/>
-      : <Clinic onLogout={()=>{setScreen(\"auth\");setRole(null);}} lang={lang}/>;
+const riskC = r => r==='high'?'#e8344a':r==='medium'?'#f0831a':'#14a854';
+const riskBg = r => r==='high'?'#fde8eb':r==='medium'?'#fef0e0':'#e8faf0';
+const hour = new Date().getHours();
+const greeting = () => hour<12?t().goodMorning:hour<17?t().goodAfternoon:t().goodEvening;
+
+function notify(msg, type='ok') {
+  state.toast = {msg, type};
+  render();
+  setTimeout(()=>{state.toast=null;render();}, 3000);
 }
+
+function setState(updates) {
+  Object.assign(state, updates);
+  render();
+}
+
+// ── OFFLINE ────────────────────────────────────────────────────────────────────
+window.addEventListener('online', () => setState({online:true}));
+window.addEventListener('offline', () => setState({online:false}));
+
+// ── SVG LOGO ───────────────────────────────────────────────────────────────────
+function logoSVG(size=32, dark=false) {
+  const b = dark?'#60b3f8':'#1278d4', g = dark?'#52db8c':'#108242';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 80 80" fill="none">
+    <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${b}"/><stop offset="100%" stop-color="${g}"/></linearGradient></defs>
+    <rect x="14" y="32" width="52" height="3.5" rx="1.75" fill="url(#lg)"/>
+    <rect x="38" y="16" width="4" height="42" rx="2" fill="url(#lg)"/>
+    <rect x="28" y="58" width="24" height="3.5" rx="1.75" fill="url(#lg)"/>
+    <path d="M40 18 C45 21,45 24,40 27 C35 30,35 33,40 36 C45 39,45 42,40 45 C35 48,35 51,40 54" stroke="${g}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+    <ellipse cx="40.5" cy="17" rx="3.2" ry="2.2" fill="${g}" transform="rotate(-8 40.5 17)"/>
+    <line x1="18" y1="35.5" x2="18" y2="43" stroke="${b}" stroke-width="1.8"/>
+    <path d="M18 41.5 C18 41.5 14 45 14 47.2 C14 49.4 15.8 50.8 18 50.8 C20.2 50.8 22 49.4 22 47.2 C22 45 18 41.5 18 41.5Z" fill="${b}" fill-opacity="0.6"/>
+    <text x="18" y="49" font-size="5.5" fill="white" text-anchor="middle" font-weight="bold">G</text>
+    <line x1="62" y1="35.5" x2="62" y2="43" stroke="${g}" stroke-width="1.8"/>
+    <path d="M62 51.5 C62 51.5 57 47.5 57 45.2 C57 43.2 58.5 42 60.2 42 C61.2 42 62 42.7 62 42.7 C62 42.7 62.8 42 63.8 42 C65.5 42 67 43.2 67 45.2 C67 47.5 62 51.5 62 51.5Z" fill="${g}" fill-opacity="0.7"/>
+  </svg>`;
+}
+
+// ── CHART ──────────────────────────────────────────────────────────────────────
+function miniChart() {
+  const max=280, H=100, W=300, pad=20;
+  const x=i=>pad+(i/6)*(W-pad*2);
+  const y=v=>H-pad-(v/max)*(H-pad*2);
+  const fp=WEEK.map((d,i)=>`${i===0?'M':'L'}${x(i)},${y(d.f)}`).join(' ');
+  const rp=WEEK.map((d,i)=>`${i===0?'M':'L'}${x(i)},${y(d.r)}`).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:110px">
+    <defs><linearGradient id="gfp" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1278d4" stop-opacity="0.2"/><stop offset="100%" stop-color="#1278d4" stop-opacity="0"/></linearGradient></defs>
+    ${[70,140,200].map(v=>`<line x1="${pad}" y1="${y(v)}" x2="${W-pad}" y2="${y(v)}" stroke="#cde2f5" stroke-width="0.8" stroke-dasharray="4,4"/><text x="${W-pad+3}" y="${y(v)+4}" font-size="8" fill="#7a9bb5">${v}</text>`).join('')}
+    <path d="${fp} L${x(6)},${H-pad} L${x(0)},${H-pad} Z" fill="url(#gfp)"/>
+    <path d="${fp}" fill="none" stroke="#1278d4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${rp}" fill="none" stroke="#14a854" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    ${WEEK.map((d,i)=>`<circle cx="${x(i)}" cy="${y(d.f)}" r="3.5" fill="#fff" stroke="#1278d4" stroke-width="2"/><circle cx="${x(i)}" cy="${y(d.r)}" r="3.5" fill="#fff" stroke="#14a854" stroke-width="2"/><text x="${x(i)}" y="${H-4}" text-anchor="middle" font-size="9" fill="#7a9bb5">${d.d}</text>`).join('')}
+  </svg>
+  <div style="display:flex;gap:16px;justify-content:center;margin-top:4px">
+    <span style="font-size:12px;color:#7a9bb5;display:flex;align-items:center;gap:4px"><span style="width:18px;height:3px;background:#1278d4;border-radius:2px;display:inline-block"></span>Fasting</span>
+    <span style="font-size:12px;color:#7a9bb5;display:flex;align-items:center;gap:4px"><span style="width:18px;height:3px;background:#14a854;border-radius:2px;display:inline-block"></span>Random</span>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// RENDER FUNCTIONS
+// ══════════════════════════════════════════════════════════════════════════════
+function renderToast() {
+  if(!state.toast) return '';
+  const bg = state.toast.type==='error'?'#e8344a':state.toast.type==='warn'?'#f0831a':'#108242';
+  const icon = state.toast.type==='error'?'❌':state.toast.type==='warn'?'⚠️':'✅';
+  return `<div class="toast" style="background:${bg}">${icon} ${state.toast.msg}</div>`;
+}
+
+function renderOffline() {
+  if(state.online) return '';
+  return `<div class="offline-bar">📵 ${t().offline}</div>`;
+}
+
+function renderHeader(title, showLogout=true) {
+  return `<div class="header">
+    <div style="display:flex;align-items:center;gap:10px">
+      ${logoSVG(28,true)}
+      <div><div style="color:#fff;font-weight:800;font-size:13px">${t().appName}</div><div style="color:rgba(255,255,255,0.4);font-size:10px;letter-spacing:1px">${t().tagline.toUpperCase()}</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="lang-toggle">
+        <button class="lang-btn ${state.lang==='en'?'active':''}" onclick="setState({lang:'en'})">EN</button>
+        <button class="lang-btn ${state.lang==='am'?'active':''}" onclick="setState({lang:'am'})">አማ</button>
+      </div>
+      ${showLogout?`<button onclick="setState({screen:'auth',role:null})" style="background:rgba(255,255,255,0.1);border:none;color:rgba(255,255,255,0.7);padding:6px 10px;border-radius:8px;cursor:pointer;font-size:12px;font-family:Outfit,sans-serif">⏻</button>`:''}
+    </div>
+  </div>`;
+}
+
+function renderTabBar() {
+  const tabs = [
+    {id:'home',icon:'🏠',label:t().home},{id:'glucose',icon:'📊',label:t().glucose},
+    {id:'vitals',icon:'❤️',label:t().vitals},{id:'meds',icon:'💊',label:t().meds},
+    {id:'visits',icon:'📅',label:t().visits},{id:'chat',icon:'💬',label:t().chat},
+    {id:'learn',icon:'📚',label:t().learn},{id:'plans',icon:'⭐',label:t().plans},
+  ];
+  return `<div class="tab-bar">${tabs.map(tb=>`
+    <button class="tab-btn" onclick="setState({tab:'${tb.id}'})" style="color:${state.tab===tb.id?'#1278d4':'#7a9bb5'}">
+      <span class="tab-icon">${tb.icon}</span>
+      <span class="tab-label" style="font-weight:${state.tab===tb.id?800:500}">${tb.label}</span>
+      ${state.tab===tb.id?`<div style="width:16px;height:2px;background:linear-gradient(90deg,#1278d4,#14a854);border-radius:2px"></div>`:'<div style="height:2px"></div>'}
+    </button>`).join('')}</div>`;
+}
+
+// ── AUTH ───────────────────────────────────────────────────────────────────────
+function renderAuth() {
+  return `
+  <div style="min-height:100vh;display:flex;font-family:Outfit,sans-serif">
+    <div style="flex:1;background:linear-gradient(160deg,#0a3d6b,#071a2e 50%,#0a3d22);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;position:relative">
+      ${logoSVG(80,true)}
+      <h1 style="color:#fff;font-size:38px;font-weight:900;margin:16px 0 4px;letter-spacing:-1px">Mizan</h1>
+      <p style="color:rgba(255,255,255,0.45);font-size:13px;letter-spacing:3px;text-transform:uppercase;margin-bottom:32px">Diabetes Care</p>
+      <div style="display:flex;flex-direction:column;gap:12px;max-width:260px;width:100%">
+        ${[['📊','Real-time glucose tracking','ስኳር ክትትል'],['🤖','AI risk stratification','AI አደጋ ምርምር'],['📵','Works offline','ያለ ኢንተርኔት'],['🌐','Amharic & English','አማርኛ & English']].map(f=>`
+          <div style="display:flex;gap:12px;align-items:center;background:rgba(255,255,255,0.06);border-radius:11px;padding:10px 14px">
+            <span style="font-size:18px">${f[0]}</span>
+            <span style="color:rgba(255,255,255,0.7);font-size:13px">${state.lang==='am'?f[2]:f[1]}</span>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div style="width:420px;background:#f0f6ff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;overflow-y:auto">
+      <div style="width:100%;max-width:340px">
+        <div style="margin-bottom:28px">
+          <h2 style="font-size:26px;font-weight:900;color:#0d1f35;margin:0 0 4px">${t().login}</h2>
+          <p style="color:#7a9bb5;font-size:13px">${t().appName}</p>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:20px;background:#fff;border-radius:12px;padding:5px;border:1.5px solid #cde2f5">
+          <button onclick="setState({role:'patient'})" style="flex:1;padding:10px;border-radius:8px;border:none;background:${!state.role||state.role==='patient'?'linear-gradient(135deg,#1278d4,#0a3d6b)':'transparent'};color:${!state.role||state.role==='patient'?'#fff':'#7a9bb5'};font-weight:700;font-size:14px;cursor:pointer;font-family:Outfit,sans-serif">👤 ${t().asPatient}</button>
+          <button onclick="setState({role:'doctor'})" style="flex:1;padding:10px;border-radius:8px;border:none;background:${state.role==='doctor'?'linear-gradient(135deg,#1278d4,#0a3d6b)':'transparent'};color:${state.role==='doctor'?'#fff':'#7a9bb5'};font-weight:700;font-size:14px;cursor:pointer;font-family:Outfit,sans-serif">👨‍⚕️ ${t().asDoctor}</button>
+        </div>
+        <div class="field"><label>${t().email}</label><input type="email" placeholder="you@example.com" id="auth-email"/></div>
+        <div class="field"><label>${t().password}</label><input type="password" placeholder="••••••••" id="auth-pass"/></div>
+        <button class="btn btn-primary btn-full" style="margin-bottom:14px" onclick="doLogin()">→ ${t().login}</button>
+        <div style="text-align:center">
+          <div class="lang-toggle" style="justify-content:center;display:flex;gap:8px">
+            <button onclick="setState({lang:'en'})" style="padding:6px 14px;border-radius:12px;border:1.5px solid ${state.lang==='en'?'#1278d4':'#cde2f5'};background:${state.lang==='en'?'#1278d4':'#fff'};color:${state.lang==='en'?'#fff':'#7a9bb5'};font-weight:700;font-size:12px;cursor:pointer;font-family:Outfit,sans-serif">English</button>
+            <button onclick="setState({lang:'am'})" style="padding:6px 14px;border-radius:12px;border:1.5px solid ${state.lang==='am'?'#1278d4':'#cde2f5'};background:${state.lang==='am'?'#1278d4':'#fff'};color:${state.lang==='am'?'#fff':'#7a9bb5'};font-weight:700;font-size:12px;cursor:pointer;font-family:Outfit,sans-serif">አማርኛ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function doLogin() {
+  const role = state.role || 'patient';
+  setState({screen:'app', role});
+}
+
+// ── PATIENT HOME ───────────────────────────────────────────────────────────────
+function renderHome() {
+  return `
+    <div class="fade">
+      <h2 style="font-size:21px;font-weight:900;color:#0d1f35;margin-bottom:4px">${greeting()}, Almaz! 👋</h2>
+      <p style="color:#7a9bb5;font-size:13px;margin-bottom:16px">${new Date().toDateString()}</p>
+    </div>
+    <div class="fade" style="background:linear-gradient(135deg,#0a3d6b,#0a3d22);border-radius:20px;padding:20px;margin-bottom:14px;color:#fff">
+      <p style="font-size:11px;opacity:0.6;letter-spacing:1px;margin-bottom:4px">LAST READING</p>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><span style="font-size:42px;font-weight:900">142</span><span style="font-size:13px;opacity:0.7"> mg/dL</span>
+        <p style="margin:4px 0 0;font-size:12px;opacity:0.8">🟡 Elevated · Today 7:30 AM</p></div>
+        <div style="text-align:right"><div style="font-size:12px;opacity:0.6;margin-bottom:2px">HbA1c</div><div style="font-size:26px;font-weight:800">9.2%</div></div>
+      </div>
+    </div>
+    <div class="stat-grid">
+      ${[{i:'⚖️',l:'BMI',v:'26.4',u:'kg/m²',c:'#f0831a'},{i:'❤️',l:'BP',v:'132/84',u:'mmHg',c:'#e8344a'},{i:'⚖️',l:'Weight',v:'72',u:'kg',c:'#1278d4'},{i:'🏃',l:'Exercise',v:'20',u:'min',c:'#14a854'}].map(s=>`
+      <div class="stat-box"><div style="font-size:20px;margin-bottom:4px">${s.i}</div>
+        <div style="font-size:11px;color:#7a9bb5;font-weight:700">${s.l}</div>
+        <div style="font-size:20px;font-weight:900;color:${s.c}">${s.v}<span style="font-size:10px;color:#7a9bb5;font-weight:500"> ${s.u}</span></div>
+      </div>`).join('')}
+    </div>
+    <div class="card">
+      <h4 style="font-size:14px;font-weight:800;color:#0d1f35;margin-bottom:12px">📋 Today's Reminders</h4>
+      ${[{l:'Metformin 500mg',t:'07:00 AM',done:true},{l:'Fasting glucose reading',t:'07:30 AM',done:true},{l:'Glibenclamide 5mg',t:'01:00 PM',done:false},{l:'Random glucose reading',t:'02:00 PM',done:false}].map((r,i,a)=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;${i<a.length-1?'border-bottom:1px solid #eaf4ff':''}">
+        <div style="display:flex;gap:10px;align-items:center">
+          <div style="width:20px;height:20px;border-radius:6px;background:${r.done?'#e8faf0':'#eaf4ff'};display:flex;align-items:center;justify-content:center;font-size:10px;color:${r.done?'#108242':'#1278d4'};font-weight:800">${r.done?'✓':'○'}</div>
+          <div><p style="margin:0;font-size:13px;font-weight:600;color:${r.done?'#7a9bb5':'#0d1f35'};text-decoration:${r.done?'line-through':'none'}">${r.l}</p>
+          <p style="margin:0;font-size:11px;color:#7a9bb5">${r.t}</p></div>
+        </div>
+        ${!r.done?'<div style="width:7px;height:7px;border-radius:50%;background:#1278d4;animation:pulse 2s infinite"></div>':''}
+      </div>`).join('')}
+    </div>
+    <div style="background:linear-gradient(135deg,#f4fdf7,#f5faff);border:1.5px solid #97ecb8;border-radius:18px;padding:16px">
+      <p style="font-size:11px;font-weight:700;color:#108242;letter-spacing:1px;margin-bottom:6px">💡 ${t().healthTip}</p>
+      <p style="font-size:14px;color:#0d1f35;line-height:1.7;margin:0">${state.lang==='am'?'ከምግብ በኋላ 30 ደቂቃ መሄድ ስኳርን እስከ 22% ሊቀንስ ይችላል።':'Walking 30 minutes after meals can reduce blood sugar by up to 22%.'}</p>
+    </div>`;
+}
+
+// ── GLUCOSE ────────────────────────────────────────────────────────────────────
+function renderGlucose() {
+  return `
+    <h2 style="font-size:21px;font-weight:900;color:#0d1f35;margin-bottom:16px" class="fade">📊 ${state.lang==='am'?'የስኳር ክትትል':'Glucose Tracker'}</h2>
+    <div class="card fade">
+      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin-bottom:14px">📝 Log Reading</h3>
+      <div class="field"><label>${t().fasting}</label><input type="number" id="gl-fasting" placeholder="e.g. 126"/></div>
+      <div class="field"><label>${t().random}</label><input type="number" id="gl-random" placeholder="e.g. 180"/></div>
+      <button class="btn btn-green btn-full" onclick="logGlucose()">${t().save} ${!state.online?'📵':''}</button>
+    </div>
+    <div class="card fade">
+      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin-bottom:4px">7-Day Trend</h3>
+      ${miniChart()}
+    </div>
+    ${state.readings.length>0?`<div class="card fade">
+      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin-bottom:12px">Recent Readings</h3>
+      ${state.readings.slice(0,5).map((r,i,a)=>{
+        const v=r.fasting||r.random, s=gStatus(v);
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;${i<a.length-1?'border-bottom:1px solid #eaf4ff':''}">
+          <div><p style="margin:0;font-size:13px;font-weight:700;color:#0d1f35">${r.fasting?'Fasting':'Random'} · ${r.date}</p>
+          <p style="margin:0;font-size:11px;color:#7a9bb5">${r.time}</p></div>
+          <div style="text-align:right"><span style="font-size:18px;font-weight:800;color:${s.c}">${v}</span><span style="font-size:11px;color:#7a9bb5"> mg/dL</span>
+          <div style="margin-top:3px"><span class="pill" style="background:${s.bg};color:${s.c}">${s.l}</span></div></div>
+        </div>`;}).join('')}
+    </div>`:''}`;
+}
+
+function logGlucose() {
+  const f = $('gl-fasting')&&$('gl-fasting').value;
+  const r = $('gl-random')&&$('gl-random').value;
+  if(!f&&!r){notify('Enter at least one reading','error');return;}
+  const entry={date:new Date().toLocaleDateString(),time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),fasting:f||null,random:r||null};
+  state.readings.unshift(entry);
+  localStorage.setItem('mz_readings',JSON.stringify(state.readings));
+  notify('Reading saved!'+(state.online?'':' (offline)'));
+  render();
+}
+
+// ── VITALS ─────────────────────────────────────────────────────────────────────
+function renderVitals() {
+  return `
+    <h2 style="font-size:21px;font-weight:900;color:#0d1f35;margin-bottom:16px" class="fade">❤️ ${t().vitals}</h2>
+    <div class="card fade">
+      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin-bottom:14px">Log Today's Vitals</h3>
+      <div class="field"><label>${t().weight}</label><input type="number" id="vt-weight" placeholder="e.g. 72" oninput="updateBMI()"/></div>
+      <div id="bmi-display"></div>
+      <div class="field"><label>${t().systolic}</label><input type="number" id="vt-sbp" placeholder="e.g. 130"/></div>
+      <div class="field"><label>${t().diastolic}</label><input type="number" id="vt-dbp" placeholder="e.g. 80"/></div>
+      <div class="field"><label>${t().exercise}</label><input type="number" id="vt-ex" placeholder="e.g. 30"/></div>
+      <button class="btn btn-primary btn-full" onclick="logVitals()">${t().save} ${!state.online?'📵':''}</button>
+    </div>
+    ${state.vitals.length>0?`<div class="card fade">
+      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin-bottom:12px">Recent Vitals</h3>
+      ${state.vitals.slice(0,4).map((v,i,a)=>`
+        <div style="padding:10px 0;${i<a.length-1?'border-bottom:1px solid #eaf4ff':''}">
+          <p style="margin:0 0 5px;font-size:11px;color:#7a9bb5;font-weight:700">${v.date}</p>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            ${v.weight?`<span style="font-size:13px;color:#0d1f35">⚖️ <strong>${v.weight}</strong> kg</span>`:''}
+            ${v.sbp?`<span style="font-size:13px;color:#0d1f35">❤️ <strong>${v.sbp}/${v.dbp}</strong> mmHg</span>`:''}
+            ${v.bmi?`<span style="font-size:13px;color:#0d1f35">📊 BMI <strong>${v.bmi}</strong></span>`:''}
+            ${v.ex?`<span style="font-size:13px;color:#14a854">🏃 <strong>${v.ex}</strong> min</span>`:''}
+          </div>
+        </div>`).join('')}
+    </div>`:''}`;
+}
+
+function updateBMI() {
+  const w = $('vt-weight')&&$('vt-weight').value;
+  const bmi = w?(w/2.7225).toFixed(1):null;
+  if($('bmi-display')) $('bmi-display').innerHTML = bmi?`<div style="background:#e8faf0;border-radius:10px;padding:9px 13px;margin-bottom:12px;font-size:13px;color:#108242;font-weight:600">📊 BMI: ${bmi} ${bmi<18.5?'(Underweight)':bmi<25?'(Normal)':'(Overweight)'}</div>`:'';
+}
+
+function logVitals() {
+  const w=$('vt-weight')&&$('vt-weight').value;
+  const s=$('vt-sbp')&&$('vt-sbp').value;
+  const d=$('vt-dbp')&&$('vt-dbp').value;
+  const e=$('vt-ex')&&$('vt-ex').value;
+  const entry={date:new Date().toLocaleDateString(),weight:w||null,sbp:s||null,dbp:d||null,ex:e||null,bmi:w?(w/2.7225).toFixed(1):null};
+  state.vitals.unshift(entry);
+  localStorage.setItem('mz_vitals',JSON.stringify(state.vitals));
+  notify('Vitals saved!'+(state.online?'':' (offline)'));
+  render();
+}
+
+// ── MEDS ───────────────────────────────────────────────────────────────────────
+function renderMeds() {
+  const meds=[{name:'Metformin 500mg',cat:'Tablet',freq:'Twice daily',taken:1,total:2,c:'#1278d4',bg:'#eaf4ff',icon:'💊'},{name:'Glibenclamide 5mg',cat:'Tablet',freq:'Once daily',taken:1,total:1,c:'#108242',bg:'#e8faf0',icon:'💊'},{name:'Insulin Glargine 20u',cat:'Injection',freq:'Once nightly',taken:0,total:1,c:'#f0831a',bg:'#fef0e0',icon:'💉'}];
+  return `
+    <h2 style="font-size:21px;font-weight:900;color:#0d1f35;margin-bottom:16px" class="fade">${t().meds}</h2>
+    ${meds.map(m=>`
+    <div class="card fade">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="display:flex;gap:10px;align-items:center">
+          <div style="width:44px;height:44px;border-radius:12px;background:${m.bg};display:flex;align-items:center;justify-content:center;font-size:22px">${m.icon}</div>
+          <div><h4 style="margin:0;font-size:15px;font-weight:800;color:#0d1f35">${m.name}</h4>
+          <p style="margin:2px 0 0;font-size:12px;color:#7a9bb5">${m.cat} · ${m.freq}</p></div>
+        </div>
+        <span class="pill" style="background:${m.taken===m.total?'#e8faf0':'#fef0e0'};color:${m.taken===m.total?'#108242':'#f0831a'}">${m.taken===m.total?'Done ✓':m.taken+'/'+m.total}</span>
+      </div>
+      <div class="progress-bar" style="margin-bottom:12px"><div class="progress-fill" style="width:${(m.taken/m.total)*100}%;background:${m.c}"></div></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="logMissed('${m.name}')" style="flex:1;padding:9px;background:#fde8eb;border:none;color:#e8344a;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif">⚠️ ${t().missedDose}</button>
+        <button onclick="notify('Refill request sent for ${m.name}!')" style="flex:1;padding:9px;background:#e8faf0;border:none;color:#108242;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif">🔄 ${t().refillReq}</button>
+      </div>
+    </div>`).join('')}
+    ${state.missed.length>0?`<div style="background:#fff5f6;border-radius:14px;padding:14px;border:1px solid #fde8eb">
+      <h4 style="color:#e8344a;font-size:13px;font-weight:800;margin:0 0 8px">⚠️ Missed Doses</h4>
+      ${state.missed.slice(0,3).map(m=>`<p style="margin:4px 0;font-size:12px;color:#0d1f35">• ${m.med} — ${m.date} ${m.time}</p>`).join('')}
+    </div>`:''}`;
+}
+
+function logMissed(med) {
+  const entry={med,date:new Date().toLocaleDateString(),time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
+  state.missed.unshift(entry);
+  localStorage.setItem('mz_missed',JSON.stringify(state.missed));
+  notify('Missed dose logged.');
+  render();
+}
+
+// ── VISITS ─────────────────────────────────────────────────────────────────────
+function renderVisits() {
+  return `
+    <h2 style="font-size:21px;font-weight:900;color:#0d1f35;margin-bottom:16px" class="fade">${t().visits}</h2>
+    <div style="background:linear-gradient(135deg,#0a3d6b,#1278d4);border-radius:20px;padding:20px;margin-bottom:14px;color:#fff" class="fade">
+      <p style="font-size:11px;font-weight:700;opacity:0.6;letter-spacing:1px;margin-bottom:6px">NEXT APPOINTMENT</p>
+      <h3 style="font-size:17px;font-weight:800;margin-bottom:10px">Follow-up Consultation</h3>
+      <div style="font-size:13px;opacity:0.8;margin-bottom:14px">📅 May 28, 2025 · ⏰ 10:00 AM · 📍 Mizan Clinic, Gondar</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="notify('Appointment confirmed!')" style="flex:1;padding:10px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:Outfit,sans-serif">✓ Confirm</button>
+        <button onclick="notify('Reschedule request sent')" style="flex:1;padding:10px;background:transparent;border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:Outfit,sans-serif">Reschedule</button>
+      </div>
+    </div>
+    <div class="card fade">
+      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin-bottom:14px">📝 Request Appointment</h3>
+      <div class="field"><label>Reason for Visit</label><input type="text" id="appt-reason" placeholder="e.g. Glucose review, foot check..."/></div>
+      <div class="field"><label>Preferred Date</label><input type="date" id="appt-date"/></div>
+      <button class="btn btn-primary btn-full" onclick="notify('Appointment booked!')">Request →</button>
+    </div>
+    <div class="card fade">
+      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin-bottom:12px">📋 Past Visits</h3>
+      ${[{date:'May 1, 2025',type:'Glucose Review',doc:'Dr. Ayenachew',note:'Metformin dose increased',ok:false},{date:'Apr 1, 2025',type:'Complication Screen',doc:'Dr. Samuel',note:'Eye & foot exam — normal',ok:true},{date:'Mar 3, 2025',type:'Initial Enrollment',doc:'Dr. Ayenachew',note:'Started care plan',ok:true}].map((v,i,a)=>`
+      <div style="padding:11px 0;${i<a.length-1?'border-bottom:1px solid #eaf4ff':''}">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <div><p style="margin:0;font-size:14px;font-weight:700;color:#0d1f35">${v.type}</p>
+          <p style="margin:2px 0;font-size:12px;color:#7a9bb5">${v.date} · ${v.doc}</p>
+          <p style="margin:0;font-size:12px;color:#3a5570;font-style:italic">📋 ${v.note}</p></div>
+          <span class="pill" style="background:${v.ok?'#e8faf0':'#fef0e0'};color:${v.ok?'#108242':'#f0831a'}">${v.ok?'Normal':'Review'}</span>
+        </div>
+      </div>`).join('')}
+    </div>`;
+}
+
+// ── CHAT ───────────────────────────────────────────────────────────────────────
+function renderChat() {
+  return `
+    <h2 style="font-size:21px;font-weight:900;color:#0d1f35;margin-bottom:4px" class="fade">💬 ${t().consultChat}</h2>
+    <p style="color:#7a9bb5;font-size:13px;margin-bottom:14px">Dr. Ayenachew · ${state.online?'🟢 Online':'🔴 Offline'}</p>
+    <div class="card fade" style="padding:0;overflow:hidden">
+      <div id="chat-msgs" style="padding:16px;max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:10px">
+        ${state.chatMsgs.map(m=>`
+        <div style="display:flex;justify-content:${m.from==='doctor'?'flex-start':'flex-end'}">
+          <div style="max-width:80%;background:${m.from==='doctor'?'#f0f6ff':'linear-gradient(135deg,#1278d4,#0a3d6b)'};border-radius:${m.from==='doctor'?'4px 14px 14px 14px':'14px 14px 4px 14px'};padding:10px 13px">
+            <p style="margin:0;font-size:14px;color:${m.from==='doctor'?'#0d1f35':'#fff'};line-height:1.5">${m.text}</p>
+            <p style="margin:4px 0 0;font-size:10px;color:${m.from==='doctor'?'#7a9bb5':'rgba(255,255,255,0.6)'};text-align:right">${m.time}</p>
+          </div>
+        </div>`).join('')}
+      </div>
+      <div style="border-top:1px solid #eaf4ff;padding:10px;display:flex;gap:8px;align-items:flex-end">
+        <textarea id="chat-input" rows="2" placeholder="${t().typeMsg}" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid #cde2f5;font-size:14px;resize:none;font-family:Outfit,sans-serif"></textarea>
+        <button class="btn btn-primary btn-sm" onclick="sendChat()">${t().send}</button>
+      </div>
+    </div>
+    <div class="card fade">
+      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin-bottom:10px">📸 ${t().uploadPhoto}</h3>
+      <p style="font-size:13px;color:#7a9bb5;margin-bottom:14px">Send a photo of your foot, wound, or any concern for the doctor to review.</p>
+      <div style="border:2px dashed #cde2f5;border-radius:12px;padding:24px;text-align:center;background:#f0f6ff">
+        <div style="font-size:32px;margin-bottom:8px">📷</div>
+        <p style="color:#3a5570;font-size:14px;font-weight:600;margin:0 0 10px">Tap to upload photo</p>
+        <button class="btn btn-ghost btn-sm" onclick="notify('Photo upload coming soon in v1.0')">Choose Photo</button>
+      </div>
+    </div>`;
+}
+
+function sendChat() {
+  const inp = $('chat-input');
+  if(!inp||!inp.value.trim()) return;
+  const msg = {from:'patient',text:inp.value,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
+  state.chatMsgs.push(msg);
+  inp.value='';
+  render();
+  setTimeout(()=>{
+    state.chatMsgs.push({from:'doctor',text:'Thank you. I will review and respond shortly.',time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+    render();
+    const cm=$('chat-msgs');
+    if(cm) cm.scrollTop=cm.scrollHeight;
+  },1200);
+}
+
+// ── LEARN ──────────────────────────────────────────────────────────────────────
+function renderLearn() {
+  const cards=state.lang==='am'?[{i:'💉',c:'መሰረታዊ',t:'ስለ ደም ስኳር',col:'#1278d4'},{i:'🦶',c:'መከላከል',t:'የእግር እንክብካቤ',col:'#108242'},{i:'🥗',c:'አመጋገብ',t:'ጤናማ አመጋገብ',col:'#f0831a'},{i:'🚶',c:'አኗኗር',t:'ልምምድ',col:'#0f67b8'},{i:'💊',c:'መድሃኒት',t:'አጠቃቀም',col:'#0a3d22'},{i:'🧠',c:'ጤና',t:'ጭንቀትና ስኳር',col:'#e8344a'}]:[{i:'💉',c:'Basics',t:'Understanding Blood Sugar',col:'#1278d4'},{i:'🦶',c:'Prevention',t:'Daily Foot Care',col:'#108242'},{i:'🥗',c:'Nutrition',t:'Eating Well in Ethiopia',col:'#f0831a'},{i:'🚶',c:'Lifestyle',t:'Exercise & Glucose',col:'#0f67b8'},{i:'💊',c:'Medication',t:'Why Adherence Matters',col:'#0a3d22'},{i:'🧠',c:'Mental Health',t:'Stress & Blood Sugar',col:'#e8344a'}];
+  return `
+    <h2 style="font-size:21px;font-weight:900;color:#0d1f35;margin-bottom:14px" class="fade">${t().learn}</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      ${cards.map(c=>`
+      <div class="card" style="cursor:pointer;padding:14px" onclick="notify('Opening: ${c.t}')">
+        <div style="width:40px;height:40px;border-radius:11px;background:${c.col}18;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:8px">${c.i}</div>
+        <span class="pill" style="background:${c.col}18;color:${c.col};margin-bottom:6px;display:inline-block">${c.c}</span>
+        <h4 style="margin:6px 0 0;font-size:13px;font-weight:700;color:#0d1f35;line-height:1.4">${c.t}</h4>
+      </div>`).join('')}
+    </div>
+    <div style="background:linear-gradient(135deg,#0a3d6b,#0a3d22);border-radius:18px;padding:18px;color:#fff">
+      <p style="font-size:11px;opacity:0.65;margin-bottom:6px">🎙️ ${state.lang==='am'?'በቅርቡ ይገኛል':'COMING SOON'}</p>
+      <h4 style="font-size:14px;font-weight:800;margin-bottom:6px">${state.lang==='am'?'የድምጽ ትምህርት በአማርኛ':'Audio & Video in Amharic'}</h4>
+      <p style="font-size:12px;opacity:0.7;line-height:1.6;margin:0">${state.lang==='am'?'ሁሉም ይዘቶች በድምጽ እየተቀዳ ነው።':'All education content being recorded in Amharic audio.'}</p>
+    </div>`;
+}
+
+// ── PLANS ──────────────────────────────────────────────────────────────────────
+function renderPlans() {
+  const plans=[
+    {id:'basic',price:3,c:'#7a9bb5',inc:{en:['Glucose logging','Med reminders','Basic education','Monthly check-in'],am:['ስኳር ምዝገባ','አስታዋሽ','ትምህርት','ወርሃዊ ክትትል']}},
+    {id:'standard',price:7,c:'#1278d4',popular:true,inc:{en:['Everything in Basic','Teleconsultation ×2/mo','Complication screening','Dietitian access'],am:['ሁሉም መሰረታዊ','ቴሌ ምክክር ×2','ምርምር','ባለሙያ']}},
+    {id:'premium',price:12,c:'#108242',inc:{en:['Everything in Standard','Unlimited teleconsultation','Product delivery','Home visit ×1/mo'],am:['ሁሉም መደበኛ','ያልተገደበ ምክክር','ምርት ማድረስ','የቤት ጉብኝት']}},
+  ];
+  return `
+    <h2 style="font-size:21px;font-weight:900;color:#0d1f35;margin-bottom:4px" class="fade">${t().plans_title}</h2>
+    <p style="color:#7a9bb5;font-size:13px;margin-bottom:16px">${state.lang==='am'?'ተመጣጣኝ ወርሃዊ ዕቅዶች':'Affordable monthly care plans'}</p>
+    ${plans.map(p=>`
+    <div onclick="setState({plan:'${p.id}'})" style="background:${state.plan===p.id?p.c+'08':'#fff'};border-radius:18px;padding:20px;margin-bottom:12px;cursor:pointer;position:relative;border:${state.plan===p.id?`2px solid ${p.c}`:'1.5px solid #cde2f5'};box-shadow:${state.plan===p.id?`0 6px 20px ${p.c}20`:'none'}">
+      ${p.popular?`<div style="position:absolute;top:-10px;right:16px;background:linear-gradient(135deg,#1278d4,#0a3d6b);color:#fff;font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px">POPULAR</div>`:''}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="font-size:18px;font-weight:900;color:${p.c};margin:0">${T[state.lang][p.id]||p.id}</h3>
+        <div><span style="font-size:28px;font-weight:900;color:${p.c}">$${p.price}</span><span style="font-size:12px;color:#7a9bb5">/mo</span></div>
+      </div>
+      ${p.inc[state.lang].map(f=>`<div style="display:flex;gap:8px;align-items:center;margin-bottom:5px;font-size:13px;color:#0d1f35"><div style="width:16px;height:16px;border-radius:4px;background:${p.c}20;display:flex;align-items:center;justify-content:center;font-size:9px;color:${p.c};font-weight:800;flex-shrink:0">✓</div>${f}</div>`).join('')}
+      ${state.plan===p.id?`<div style="margin-top:10px;background:${p.c}15;border-radius:8px;padding:7px 12px;font-size:13px;color:${p.c};font-weight:700;text-align:center">✓ Selected</div>`:''}
+    </div>`).join('')}
+    <button class="btn btn-primary btn-full" onclick="notify('Plan updated! Clinic notified.')">Confirm Plan →</button>`;
+}
+
+// ── PATIENT APP ────────────────────────────────────────────────────────────────
+function renderPatientApp() {
+  const screens = {home:renderHome,glucose:renderGlucose,vitals:renderVitals,meds:renderMeds,visits:renderVisits,chat:renderChat,learn:renderLearn,plans:renderPlans};
+  const fn = screens[state.tab]||renderHome;
+  return `
+    ${renderOffline()}
+    ${renderHeader()}
+    <div class="screen">${fn()}</div>
+    ${renderTabBar()}`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CLINIC DASHBOARD
+// ══════════════════════════════════════════════════════════════════════════════
+function renderClinic() {
+  if(state.selectedPatient) return renderPatientDetail();
+  const views = {overview:renderClinicOverview,patients:renderPatientList,analytics:renderAnalytics,followup:renderFollowup};
+  const fn = views[state.clinicView]||renderClinicOverview;
+  const navItems = [{id:'overview',icon:'📊',label:t().overview},{id:'patients',icon:'👥',label:t().patients},{id:'analytics',icon:'📈',label:t().analytics},{id:'followup',icon:'🔔',label:t().followup}];
+  return `
+    <div style="display:flex;min-height:100vh;font-family:Outfit,sans-serif">
+      <div class="sidebar">
+        <div style="padding:18px 14px 14px;border-bottom:1px solid rgba(255,255,255,0.08)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">${logoSVG(26,true)}<div><div style="color:#fff;font-weight:800;font-size:12px">Mizan Clinic</div><div style="color:rgba(255,255,255,0.4);font-size:10px">Dashboard</div></div></div>
+          <div style="display:flex;gap:4px">${['en','am'].map(l=>`<button onclick="setState({lang:'${l}'})" style="flex:1;padding:5px;border-radius:7px;border:1px solid ${state.lang===l?'rgba(255,255,255,0.5)':'rgba(255,255,255,0.15)'};background:${state.lang===l?'rgba(255,255,255,0.15)':'transparent'};color:${state.lang===l?'#fff':'rgba(255,255,255,0.4)'};font-weight:700;font-size:11px;cursor:pointer;font-family:Outfit,sans-serif">${l==='en'?'EN':'አማ'}</button>`).join('')}</div>
+        </div>
+        <nav style="padding:12px 10px;flex:1">
+          ${navItems.map(n=>`<button onclick="setState({clinicView:'${n.id}',selectedPatient:null})" class="nav-item ${state.clinicView===n.id?'active':''}">${n.icon} ${n.label}</button>`).join('')}
+        </nav>
+        <div style="padding:0 10px 18px">
+          <div style="background:rgba(255,255,255,0.07);border-radius:11px;padding:12px;margin-bottom:8px">
+            <div style="font-size:20px;margin-bottom:4px">👨‍⚕️</div>
+            <p style="color:#fff;margin:0;font-size:13px;font-weight:700">Dr. Ayenachew</p>
+            <p style="color:rgba(255,255,255,0.4);margin:2px 0 0;font-size:10px">CEO & Founder</p>
+          </div>
+          <button onclick="setState({screen:'auth',role:null})" style="width:100%;padding:9px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:rgba(255,255,255,0.55);cursor:pointer;font-size:12px;font-family:Outfit,sans-serif">← Sign Out</button>
+        </div>
+      </div>
+      <div class="main-content">${fn()}</div>
+    </div>`;
+}
+
+function renderClinicOverview() {
+  const pw = PATIENTS.map(p=>({...p,...calcRisk(p)}));
+  const high = pw.filter(p=>p.risk==='high').length;
+  const rev = PATIENTS.reduce((s,p)=>s+(p.sub==='premium'?12:p.sub==='standard'?7:3),0);
+  const overdue = PATIENTS.filter(p=>new Date(p.nextVisit)<new Date()).length;
+  return `
+    <div class="fade" style="margin-bottom:20px">
+      <h1 style="font-size:26px;font-weight:900;color:#0d1f35;margin:0">Good morning, Dr. Ayenachew 👋</h1>
+      <p style="color:#7a9bb5;font-size:13px;margin:3px 0 0">${new Date().toDateString()} · Gondar · ${PATIENTS.length} patients</p>
+    </div>
+    <div class="kpi-grid fade">
+      ${[{l:t().totalPatients,v:PATIENTS.length,i:'👥',c:'#1278d4',bg:'#eaf4ff',sub:'+2 this month'},{l:t().activeSubscriptions,v:PATIENTS.length,i:'⭐',c:'#108242',bg:'#e8faf0',sub:'All enrolled'},{l:t().highRisk,v:high,i:'🚨',c:'#e8344a',bg:'#fde8eb',sub:'Needs attention'},{l:'Monthly Revenue',v:'$'+rev,i:'💰',c:'#f0831a',bg:'#fef0e0',sub:'Subscriptions'}].map(k=>`
+      <div class="kpi">
+        <div style="width:38px;height:38px;border-radius:10px;background:${k.bg};display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px">${k.i}</div>
+        <div style="font-size:28px;font-weight:900;color:${k.c};letter-spacing:-1px;line-height:1">${k.v}</div>
+        <div style="font-size:12px;font-weight:700;color:#0d1f35;margin:4px 0 2px">${k.l}</div>
+        <div style="font-size:11px;color:#7a9bb5">${k.sub}</div>
+      </div>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="card fade">
+        <h3 style="font-size:14px;font-weight:800;color:#0d1f35;margin:0 0 12px">🚨 ${t().highRisk}</h3>
+        ${pw.filter(p=>p.risk==='high').map((p,i,a)=>`
+        <div onclick="setState({selectedPatient:${p.id},patientTab:'overview'})" style="padding:10px 0;${i<a.length-1?'border-bottom:1px solid #eaf4ff':''}cursor:pointer">
+          <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+            <span style="font-size:13px;font-weight:700;color:#0d1f35">${p.name}</span>
+            <span class="pill" style="background:#fde8eb;color:#e8344a">Score: ${p.score}</span>
+          </div>
+          <p style="margin:0;font-size:11px;color:#7a9bb5">Glucose: ${p.glucose} · HbA1c: ${p.hba1c}%</p>
+        </div>`).join('')}
+      </div>
+      <div class="card fade">
+        <h3 style="font-size:14px;font-weight:800;color:#0d1f35;margin:0 0 12px">⏰ Overdue (${overdue})</h3>
+        ${pw.filter(p=>new Date(p.nextVisit)<new Date()).map((p,i,a)=>`
+        <div style="padding:10px 0;${i<a.length-1?'border-bottom:1px solid #eaf4ff':''}">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:700;color:#0d1f35">${p.name}</span>
+            <span class="pill" style="background:#fef0e0;color:#f0831a">OVERDUE</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:11px;color:#7a9bb5">Due: ${p.nextVisit}</span>
+            <button onclick="notify('SMS sent to ${p.name}')" style="background:#eaf4ff;border:none;color:#1278d4;border-radius:7px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif">SMS</button>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>
+    <div style="background:linear-gradient(135deg,#0a3d6b,#0a3d22);border-radius:16px;padding:20px;color:#fff" class="fade">
+      <p style="font-size:11px;font-weight:700;opacity:0.6;letter-spacing:1.5px;margin-bottom:6px">🤖 AI DAILY SUMMARY</p>
+      <h3 style="font-size:16px;font-weight:800;margin:0 0 12px">3 patients require immediate attention today</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        ${[{i:'🚨',n:'Yohannes Assefa',d:'Score 100 · Glucose 341'},{i:'⚠️',n:'Almaz Tadesse',d:'Score 75 · Glucose 312'},{i:'⚠️',n:'Bekele Haile',d:'Score 65 · Glucose 287'}].map(a=>`
+        <div style="background:rgba(255,255,255,0.1);border-radius:10px;padding:10px">
+          <div style="font-size:18px;margin-bottom:4px">${a.i}</div>
+          <p style="margin:0;font-size:12px;font-weight:700">${a.n}</p>
+          <p style="margin:3px 0 0;font-size:11px;opacity:0.7">${a.d}</p>
+        </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function renderPatientList() {
+  const pw = PATIENTS.map(p=>({...p,...calcRisk(p)}));
+  const filtered = state.filter==='all'?pw:pw.filter(p=>p.risk===state.filter);
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px" class="fade">
+      <div><h1 style="font-size:24px;font-weight:900;color:#0d1f35;margin:0">Patient Registry</h1><p style="color:#7a9bb5;font-size:13px;margin:3px 0 0">${filtered.length} patients</p></div>
+      <button class="btn btn-primary btn-sm" onclick="notify('Enrollment form coming soon')">${t().enrollPatient}</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap" class="fade">
+      ${['all','high','medium','low'].map(f=>`<button onclick="setState({filter:'${f}'})" style="padding:7px 14px;border-radius:16px;border:${state.filter===f?'none':'1.5px solid #cde2f5'};background:${state.filter===f?'linear-gradient(135deg,#1278d4,#0a3d6b)':'#fff'};color:${state.filter===f?'#fff':'#7a9bb5'};font-weight:700;font-size:12px;cursor:pointer;font-family:Outfit,sans-serif">${f==='all'?'All Patients':f==='high'?t().highRisk:f==='medium'?t().medRisk:t().lowRisk}</button>`).join('')}
+    </div>
+    <div style="background:#fff;border-radius:16px;border:1.5px solid #cde2f5;overflow:auto" class="fade">
+      <table>
+        <thead><tr>${['Patient','Type','Risk','Glucose','HbA1c','Adherence','Plan',''].map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+        <tbody>
+          ${filtered.map(p=>`
+          <tr class="patient-row" onclick="setState({selectedPatient:${p.id},patientTab:'overview'})">
+            <td><div style="font-weight:700;font-size:13px;color:#0d1f35">${p.name}</div><div style="font-size:11px;color:#7a9bb5">Age ${p.age} · ${p.gender} · ${p.city}</div></td>
+            <td style="font-size:12px;color:#3a5570;font-weight:600">${p.type}</td>
+            <td><div style="display:flex;align-items:center;gap:6px"><div class="risk-badge" style="background:${riskBg(p.risk)};color:${riskC(p.risk)}">${p.score}</div><span class="pill" style="background:${riskBg(p.risk)};color:${riskC(p.risk)}">${p.risk.toUpperCase()}</span></div></td>
+            <td style="font-size:15px;font-weight:800;color:${gStatus(p.glucose).c}">${p.glucose}</td>
+            <td style="font-size:13px;font-weight:700;color:${p.hba1c>8?'#e8344a':p.hba1c>7?'#f0831a':'#14a854'}">${p.hba1c}%</td>
+            <td><div class="progress-bar" style="width:60px;display:inline-block;margin-right:4px"><div class="progress-fill" style="width:${p.adherence}%;background:${p.adherence>70?'#14a854':p.adherence>50?'#f0831a':'#e8344a'}"></div></div><span style="font-size:12px;font-weight:700;color:${p.adherence>70?'#108242':p.adherence>50?'#f0831a':'#e8344a'}">${p.adherence}%</span></td>
+            <td><span class="pill" style="background:${p.sub==='premium'?'#e8faf0':p.sub==='standard'?'#eaf4ff':'#f0f6ff'};color:${p.sub==='premium'?'#108242':p.sub==='standard'?'#1278d4':'#7a9bb5'}">${p.sub}</span></td>
+            <td><button onclick="event.stopPropagation();setState({selectedPatient:${p.id},patientTab:'overview'})" style="background:#eaf4ff;border:none;color:#1278d4;border-radius:8px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif">View →</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function renderPatientDetail() {
+  const p = PATIENTS.find(pt=>pt.id===state.selectedPatient);
+  if(!p) return '';
+  const {score,risk} = calcRisk(p);
+  const tabs = [['overview','📊 Overview'],['history','📋 History'],['investigations','🔬 Labs'],['imaging','🖼️ Imaging'],['actions','⚡ Actions']];
+  return `
+    <button onclick="setState({selectedPatient:null})" style="background:none;border:none;color:#1278d4;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:16px;font-family:Outfit,sans-serif;display:flex;align-items:center;gap:6px">← Back</button>
+    <div style="background:linear-gradient(135deg,#0a3d6b,#0a3d22);border-radius:18px;padding:20px;margin-bottom:16px;color:#fff;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px" class="fade">
+      <div style="display:flex;gap:14px;align-items:center">
+        <div style="width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:22px">👤</div>
+        <div>
+          <h2 style="font-size:18px;font-weight:800;margin:0">${p.name}</h2>
+          <p style="margin:3px 0;font-size:13px;opacity:0.7">${p.type} · Age ${p.age} · ${p.city}</p>
+          <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+            <span class="pill" style="background:rgba(255,255,255,0.15);color:#fff">${risk.toUpperCase()} RISK</span>
+            <span class="pill" style="background:rgba(255,255,255,0.15);color:#fff">Score: ${score}/100</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="notify('SMS sent to ${p.name}')" style="padding:8px 14px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;font-family:Outfit,sans-serif">📱 SMS</button>
+        <button onclick="notify('Appointment booked!')" style="padding:8px 14px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;font-family:Outfit,sans-serif">📅 Book</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px" class="fade">
+      ${tabs.map(([id,label])=>`<button onclick="setState({patientTab:'${id}'})" style="padding:8px 14px;border-radius:11px;border:${state.patientTab===id?'none':'1.5px solid #cde2f5'};background:${state.patientTab===id?'linear-gradient(135deg,#1278d4,#0a3d6b)':'#fff'};color:${state.patientTab===id?'#fff':'#7a9bb5'};font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;font-family:Outfit,sans-serif">${label}</button>`).join('')}
+    </div>
+    ${renderPatientTab(p,score,risk)}`;
+}
+
+function renderPatientTab(p,score,risk) {
+  if(state.patientTab==='overview') return `
+    <div style="display:grid;grid-template-columns:260px 1fr;gap:16px">
+      <div>
+        <div class="card fade">
+          <h4 style="font-size:12px;font-weight:800;color:#0d1f35;margin:0 0 12px;letter-spacing:0.5px">VITALS</h4>
+          ${[{l:'Glucose',v:p.glucose+' mg/dL',c:gStatus(p.glucose).c},{l:'HbA1c',v:p.hba1c+'%',c:p.hba1c>8?'#e8344a':p.hba1c>7?'#f0831a':'#14a854'},{l:'Blood Pressure',v:p.sbp+'/'+p.dbp+' mmHg',c:p.sbp>140?'#e8344a':'#14a854'},{l:'BMI',v:p.bmi+' kg/m²',c:p.bmi>30?'#e8344a':p.bmi>27?'#f0831a':'#14a854'},{l:'Weight',v:p.weight+' kg',c:'#1278d4'},{l:'Adherence',v:p.adherence+'%',c:p.adherence>70?'#14a854':p.adherence>50?'#f0831a':'#e8344a'}].map((s,i)=>`
+          <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #eaf4ff">
+            <span style="font-size:12px;color:#7a9bb5;font-weight:600">${s.l}</span>
+            <span style="font-size:13px;font-weight:800;color:${s.c}">${s.v}</span>
+          </div>`).join('')}
+        </div>
+        <div style="background:${riskBg(risk)};border-radius:16px;padding:16px;border:1.5px solid ${riskC(risk)}30;margin-bottom:12px" class="fade">
+          <p style="font-size:11px;font-weight:700;color:#7a9bb5;margin-bottom:8px">🤖 ${t().aiRec}</p>
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">
+            <div style="width:48px;height:48px;border-radius:50%;background:${riskBg(risk)};border:2px solid ${riskC(risk)};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
+              <span style="font-size:14px;font-weight:900;color:${riskC(risk)}">${score}</span>
+              <span style="font-size:8px;color:${riskC(risk)};font-weight:700">/100</span>
+            </div>
+            <div>
+              <span class="pill" style="background:${riskBg(risk)};color:${riskC(risk)};margin-bottom:4px;display:inline-block">${risk.toUpperCase()} RISK</span>
+              <p style="margin:0;font-size:12px;color:#0d1f35;line-height:1.5">${risk==='high'?'Urgent consultation. Consider insulin or emergency referral.':p.adherence<50?'Poor adherence. Schedule counseling session.':'Patient on track. Continue current care plan.'}</p>
+            </div>
+          </div>
+        </div>
+        ${p.alerts.length>0?`<div style="background:#fff5f6;border-radius:14px;padding:14px;border:1.5px solid #fde8eb" class="fade">
+          <h4 style="color:#e8344a;font-size:12px;font-weight:800;margin:0 0 8px">🚨 Active Alerts</h4>
+          ${p.alerts.map(a=>`<p style="margin:3px 0;font-size:12px;color:#0d1f35">• ${a}</p>`).join('')}
+        </div>`:''}
+      </div>
+      <div>
+        <div class="card fade">
+          <h3 style="font-size:14px;font-weight:800;color:#0d1f35;margin:0 0 8px">7-Day Glucose Trend</h3>
+          ${miniChart()}
+        </div>
+        <div class="card fade" style="display:flex;align-items:center;gap:14px">
+          <div style="width:64px;height:64px;border-radius:50%;background:${riskBg(risk)};border:3px solid ${p.adherence>70?'#14a854':p.adherence>50?'#f0831a':'#e8344a'};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
+            <span style="font-size:16px;font-weight:900;color:${p.adherence>70?'#14a854':p.adherence>50?'#f0831a':'#e8344a'}">${p.adherence}%</span>
+          </div>
+          <div>
+            <p style="margin:0;font-size:14px;font-weight:700;color:#0d1f35">Medication Adherence</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#7a9bb5">${p.adherence>70?'Good — continue plan':p.adherence>50?'Moderate — counseling needed':'Poor — urgent intervention'}</p>
+            <p style="margin:4px 0 0;font-size:11px;color:#7a9bb5">📞 ${p.phone}</p>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  if(state.patientTab==='history') return `
+    <div class="card fade">
+      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin:0 0 16px">📋 ${t().history}</h3>
+      ${p.history.map((h,i,a)=>`
+      <div style="padding:13px 0;${i<a.length-1?'border-bottom:1px solid #eaf4ff':''}">
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+          <span style="font-size:13px;font-weight:800;color:#1278d4">${h.date}</span>
+          <span style="font-size:12px;color:#7a9bb5">👨‍⚕️ ${h.doctor}</span>
+        </div>
+        <p style="margin:0;font-size:14px;color:#0d1f35;line-height:1.7">${h.note}</p>
+      </div>`).join('')}
+    </div>
+    <div class="card fade">
+      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin:0 0 12px">➕ Add Clinical Note</h3>
+      <div class="field"><label>Note</label><textarea id="new-note" rows="4" placeholder="Clinical observations, plan, medications..."></textarea></div>
+      <button class="btn btn-primary btn-full" onclick="if($('new-note')&&$('new-note').value.trim()){notify('Note saved.');$('new-note').value=''}">Save Note →</button>
+    </div>`;
+
+  if(state.patientTab==='investigations') return `
+    <div class="card fade">
+      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin:0 0 14px">🔬 ${t().investigations}</h3>
+      <table>
+        <thead><tr>${['Date','Test','Result','Reference','Status'].map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+        <tbody>${p.investigations.map(inv=>`
+          <tr>
+            <td style="color:#7a9bb5;font-size:11px">${inv.date}</td>
+            <td style="font-weight:700">${inv.test}</td>
+            <td style="font-weight:800;color:${inv.status==='high'?'#e8344a':inv.status==='elevated'?'#f0831a':'#14a854'}">${inv.result}</td>
+            <td style="color:#7a9bb5;font-size:12px">${inv.ref}</td>
+            <td><span class="pill" style="background:${inv.status==='high'?'#fde8eb':inv.status==='elevated'?'#fef0e0':'#e8faf0'};color:${inv.status==='high'?'#e8344a':inv.status==='elevated'?'#f0831a':'#14a854'}">${inv.status.toUpperCase()}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="card fade">
+      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin:0 0 12px">➕ Add Result</h3>
+      <div class="field"><label>Test Name</label><input type="text" id="inv-test" placeholder="e.g. HbA1c"/></div>
+      <div class="field"><label>Result</label><input type="text" id="inv-result" placeholder="e.g. 8.5%"/></div>
+      <div class="field"><label>Reference Range</label><input type="text" id="inv-ref" placeholder="e.g. <7%"/></div>
+      <button class="btn btn-primary btn-full" onclick="if($('inv-test')&&$('inv-test').value){notify('Investigation result saved!');['inv-test','inv-result','inv-ref'].forEach(id=>{if($(id))$(id).value=''})}">Save Result →</button>
+    </div>`;
+
+  if(state.patientTab==='imaging') return `
+    <div class="card fade">
+      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin:0 0 14px">🖼️ ${t().imaging}</h3>
+      ${p.imaging.length===0?`<div style="text-align:center;padding:28px;color:#7a9bb5"><div style="font-size:36px;margin-bottom:8px">🖼️</div><p>No imaging reports yet</p></div>`
+      :p.imaging.map(img=>`
+      <div style="background:#f0f6ff;border-radius:12px;padding:14px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:14px;font-weight:800;color:#0d1f35">🖼️ ${img.type}</span>
+          <span style="font-size:12px;color:#7a9bb5">${img.date}</span>
+        </div>
+        <p style="margin:0 0 4px;font-size:13px;color:#0d1f35;line-height:1.6">${img.finding}</p>
+        <p style="margin:0;font-size:11px;color:#7a9bb5">Reported by: ${img.reported}</p>
+      </div>`).join('')}
+    </div>
+    <div class="card fade">
+      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin:0 0 12px">➕ Add Imaging Report</h3>
+      <div class="field"><label>Imaging Type</label><input type="text" id="img-type" placeholder="e.g. Chest X-Ray, Fundoscopy"/></div>
+      <div class="field"><label>Finding</label><textarea id="img-finding" rows="3" placeholder="Radiologist report finding..."></textarea></div>
+      <div style="border:2px dashed #cde2f5;border-radius:11px;padding:18px;text-align:center;background:#f0f6ff;margin-bottom:12px">
+        <div style="font-size:26px;margin-bottom:6px">📎</div>
+        <p style="color:#7a9bb5;font-size:13px;margin:0 0 8px">Attach image file</p>
+        <button class="btn btn-ghost btn-sm" onclick="notify('File upload coming in v1.0')">Choose File</button>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="if($('img-type')&&$('img-type').value){notify('Imaging report saved!');['img-type','img-finding'].forEach(id=>{if($(id))$(id).value=''})}">Save Report →</button>
+    </div>`;
+
+  if(state.patientTab==='actions') return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" class="fade">
+      ${[['📅 Book Appointment',()=>notify('Appointment booked!'),'#eaf4ff','#0d1f35'],['📱 Send SMS',()=>notify('SMS sent to '+p.name),'#eaf4ff','#0d1f35'],['💊 Update Medications',()=>notify('Opening medication editor...'),'#eaf4ff','#0d1f35'],['📊 Request Lab Work',()=>notify('Lab request sent.'),'#eaf4ff','#0d1f35'],['🖼️ Request Imaging',()=>notify('Imaging request sent.'),'#eaf4ff','#0d1f35'],['📤 Refer to Specialist',()=>notify('Referral sent.'),'#eaf4ff','#0d1f35'],['📞 Call Patient',()=>notify('Opening phone...'),'#eaf4ff','#0d1f35'],['🚨 Flag Emergency',()=>notify('Patient flagged!','warn'),'#fff5f6','#e8344a']].map((a,i)=>`
+      <button onclick="(${a[1]})()" style="padding:16px;background:${a[2]};border:1.5px solid ${a[3]==='#e8344a'?'#fde8eb':'#cde2f5'};border-radius:13px;color:${a[3]};font-weight:700;font-size:13px;cursor:pointer;font-family:Outfit,sans-serif;text-align:left;transition:all 0.15s" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">${a[0]}</button>`).join('')}
+    </div>`;
+
+  return '';
+}
+
+function renderAnalytics() {
+  const pw = PATIENTS.map(p=>({...p,...calcRisk(p)}));
+  const rev = PATIENTS.reduce((s,p)=>s+(p.sub==='premium'?12:p.sub==='standard'?7:3),0);
+  return `
+    <div class="fade" style="margin-bottom:20px">
+      <h1 style="font-size:24px;font-weight:900;color:#0d1f35;margin:0">Analytics</h1>
+      <p style="color:#7a9bb5;font-size:13px;margin:3px 0 0">Clinic performance & patient insights</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="card fade">
+        <h3 style="font-size:14px;font-weight:800;color:#0d1f35;margin:0 0 16px">Risk Distribution</h3>
+        ${[{l:t().highRisk,n:pw.filter(p=>p.risk==='high').length,pct:50,c:'#e8344a'},{l:t().medRisk,n:pw.filter(p=>p.risk==='medium').length,pct:33,c:'#f0831a'},{l:t().lowRisk,n:pw.filter(p=>p.risk==='low').length,pct:17,c:'#14a854'}].map(r=>`
+        <div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+            <span style="font-size:13px;font-weight:700;color:#0d1f35">${r.l}</span>
+            <span style="font-size:12px;font-weight:700;color:${r.c}">${r.n} (${r.pct}%)</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${r.pct}%;background:${r.c}"></div></div>
+        </div>`).join('')}
+      </div>
+      <div class="card fade">
+        <h3 style="font-size:14px;font-weight:800;color:#0d1f35;margin:0 0 16px">Revenue</h3>
+        ${[{p:'Premium ($12)',n:2,rev:24,c:'#108242'},{p:'Standard ($7)',n:2,rev:14,c:'#1278d4'},{p:'Basic ($3)',n:2,rev:6,c:'#7a9bb5'}].map((s,i,a)=>`
+        <div style="display:flex;justify-content:space-between;padding:10px 0;${i<a.length-1?'border-bottom:1px solid #eaf4ff':''}">
+          <div style="display:flex;align-items:center;gap:8px"><div style="width:10px;height:10px;border-radius:50%;background:${s.c}"></div><span style="font-size:13px;color:#0d1f35">${s.p}</span></div>
+          <span style="font-size:14px;font-weight:800;color:${s.c}">$${s.rev}/mo</span>
+        </div>`).join('')}
+        <div style="margin-top:12px;background:linear-gradient(135deg,#e8faf0,#eaf4ff);border-radius:10px;padding:12px;text-align:center">
+          <p style="margin:0;font-size:12px;color:#7a9bb5">Total Monthly</p>
+          <p style="margin:2px 0 0;font-size:26px;font-weight:900;color:#108242">$${rev}<span style="font-size:13px;color:#7a9bb5;font-weight:500">/mo</span></p>
+        </div>
+      </div>
+    </div>
+    <div class="card fade">
+      <h3 style="font-size:14px;font-weight:800;color:#0d1f35;margin:0 0 14px">Patient Growth 2025</h3>
+      <div class="chart-bar">
+        ${[{m:'Jan',n:1},{m:'Feb',n:2},{m:'Mar',n:3},{m:'Apr',n:4},{m:'May',n:6}].map((d,i,a)=>`
+        <div class="bar-wrap">
+          <span style="font-size:13px;font-weight:800;color:${i===a.length-1?'#1278d4':'#7a9bb5'}">${d.n}</span>
+          <div class="bar" style="height:${(d.n/6)*100}px;background:${i===a.length-1?'linear-gradient(180deg,#1278d4,#0a3d6b)':'linear-gradient(180deg,#d4ebfe,#a8d5fc)'}"></div>
+          <span class="bar-label">${d.m}</span>
+        </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function renderFollowup() {
+  const pw = PATIENTS.map(p=>({...p,...calcRisk(p)}));
+  return `
+    <div class="fade" style="margin-bottom:20px">
+      <h1 style="font-size:24px;font-weight:900;color:#0d1f35;margin:0">Follow-up Monitor</h1>
+      <p style="color:#7a9bb5;font-size:13px;margin:3px 0 0">AI-powered patient follow-up management</p>
+    </div>
+    ${pw.map((p,i)=>{
+      const isOD = new Date(p.nextVisit)<new Date();
+      const rec = p.risk==='high'?'Urgent consultation. Consider insulin or emergency referral.':p.adherence<50?'Poor adherence. Schedule counseling.':'Patient on track. Continue plan.';
+      return `
+      <div class="fade" style="background:#fff;border-radius:16px;padding:18px;margin-bottom:12px;border:1.5px solid ${p.risk==='high'?'#e8344a':p.risk==='medium'?'#f0831a':'#cde2f5'};border-left:5px solid ${riskC(p.risk)}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+              <span style="font-size:15px;font-weight:800;color:#0d1f35">${p.name}</span>
+              <span class="pill" style="background:${riskBg(p.risk)};color:${riskC(p.risk)}">${p.risk.toUpperCase()}</span>
+              <span class="pill" style="background:${riskBg(p.risk)};color:${riskC(p.risk)}">Score: ${p.score}</span>
+              ${isOD?'<span class="pill" style="background:#fde8eb;color:#e8344a">OVERDUE</span>':''}
+            </div>
+            <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px">
+              <span style="font-size:12px;color:#7a9bb5">Glucose: <strong style="color:${gStatus(p.glucose).c}">${p.glucose}</strong></span>
+              <span style="font-size:12px;color:#7a9bb5">HbA1c: <strong style="color:${p.hba1c>8?'#e8344a':'#14a854'}">${p.hba1c}%</strong></span>
+              <span style="font-size:12px;color:#7a9bb5">BP: <strong style="color:${p.sbp>140?'#e8344a':'#14a854'}">${p.sbp}/${p.dbp}</strong></span>
+              <span style="font-size:12px;color:#7a9bb5">Adh: <strong style="color:${p.adherence>70?'#14a854':'#e8344a'}">${p.adherence}%</strong></span>
+            </div>
+            <div style="background:${p.risk==='high'?'#fff5f6':p.risk==='medium'?'#fffaf4':'#f4fdf7'};border-radius:9px;padding:8px 11px;display:inline-flex;gap:7px;align-items:flex-start">
+              <span style="font-size:13px">🤖</span>
+              <p style="margin:0;font-size:12px;color:#0d1f35;font-weight:600;line-height:1.5">${rec}</p>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button onclick="notify('SMS sent to ${p.name}')" class="btn btn-primary btn-sm">📱 SMS</button>
+            <button onclick="setState({selectedPatient:${p.id},patientTab:'overview'})" class="btn btn-ghost btn-sm">View</button>
+            <button onclick="notify('Appointment booked!')" style="padding:7px 13px;background:#f0f6ff;border:1.5px solid #cde2f5;color:#7a9bb5;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif">📅 Book</button>
+          </div>
+        </div>
+      </div>`;}).join('')}`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MAIN RENDER
+// ══════════════════════════════════════════════════════════════════════════════
+function render() {
+  let html = '';
+  if(state.screen==='auth') html = renderAuth();
+  else if(state.role==='patient') html = renderPatientApp();
+  else html = renderClinic();
+  document.getElementById('app').innerHTML = html + renderToast();
+  // scroll chat to bottom
+  const cm = document.getElementById('chat-msgs');
+  if(cm) cm.scrollTop = cm.scrollHeight;
+}
+
+// initial render
+render();
+</script>
+</body>
+</html>
