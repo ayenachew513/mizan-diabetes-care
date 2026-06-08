@@ -1220,6 +1220,35 @@ window.addEventListener("offline",()=>{STATE.online=false;render();});
 STATE.readings=load("readings",[]);
 STATE.vitals=load("vitals",[]);
 STATE.missed=load("missed",[]);
+STATE.missed=load("missed",[]);
+
+// 1. Listen for when a user successfully logs in or out
+window.auth.onAuthStateChanged((user) => {
+  if (user) {
+    STATE.screen = "app"; // Skip the login page and open the main app
+    if (user.email.includes("doctor")) {
+      STATE.role = "doctor"; // Grant doctor features
+    } else {
+      STATE.role = "patient"; // Grant patient features
+    }
+  } else {
+    STATE.screen = "auth"; // Keep them on the login page if logged out
+    STATE.role = null;
+  }
+  render(); // Refresh the screen automatically to update the UI
+});
+
+// 2. Connect your app's login button to your Firebase cloud
+window.loginWithFirebase = async (email, password) => {
+  try {
+    await window.auth.signInWithEmailAndPassword(window.auth, email, password);
+    alert("Welcome to Mizan! Logged in successfully.");
+  } catch (error) {
+    alert("Login Failed: " + error.message);
+  }
+};
+
+render();
 
 render();
 </script>
