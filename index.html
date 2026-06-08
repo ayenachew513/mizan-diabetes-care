@@ -24,7 +24,24 @@
 </head>
 <body>
 <div id="app"></div>
-<script>
+<script type="module">
+  // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBholf6d2N75qHOV9GTNBjA1iIqvoopP9M",
+  authDomain: "mizan-diabetes-care-39ce1.firebaseapp.com",
+  projectId: "mizan-diabetes-care-39ce1",
+  storageBucket: "mizan-diabetes-care-39ce1.firebasestorage.app",
+  messagingSenderId: "1077825852205",
+  appId: "1:1077825852205:web:182740393a9d74339979a4"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 // ── COLORS ──────────────────────────────────────────────────────────────
 const C={
   p9:"#0a3d6b",p6:"#1278d4",p3:"#a8d5fc",p2:"#d4ebfe",p1:"#eaf4ff",
