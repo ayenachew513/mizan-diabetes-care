@@ -1,1002 +1,1209 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Mizan Diabetes Care</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Outfit',sans-serif;background:#f0f6ff;min-height:100vh;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
-@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
-.fade{animation:fadeUp 0.4s ease both;}
-.card{background:#fff;border-radius:18px;border:1.5px solid #cde2f5;padding:18px;margin-bottom:14px;box-shadow:0 2px 10px rgba(10,80,160,0.05);}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:12px;border:none;font-family:'Outfit',sans-serif;font-weight:700;font-size:15px;cursor:pointer;transition:all 0.2s;}
-.btn:active{transform:scale(0.97);}
-.btn-primary{background:linear-gradient(135deg,#1278d4,#0a3d6b);color:#fff;box-shadow:0 4px 14px rgba(18,120,212,0.3);}
-.btn-green{background:linear-gradient(135deg,#14a854,#0a3d22);color:#fff;box-shadow:0 4px 14px rgba(20,168,84,0.3);}
-.btn-outline{background:transparent;color:#1278d4;border:2px solid #1278d4;}
-.btn-ghost{background:#eaf4ff;color:#0f67b8;}
-.btn-full{width:100%;}
-.btn-sm{padding:8px 14px;font-size:13px;border-radius:10px;}
-.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
-input,textarea,select{font-family:'Outfit',sans-serif;width:100%;padding:12px 14px;border-radius:11px;border:1.5px solid #cde2f5;font-size:15px;color:#0d1f35;background:#f0f6ff;transition:border 0.2s;}
-input:focus,textarea:focus{outline:none;border-color:#1278d4;background:#fff;}
-label{display:block;margin-bottom:6px;font-size:13px;font-weight:700;color:#0d1f35;}
-.field{margin-bottom:14px;}
-.tab-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #cde2f5;display:flex;z-index:50;max-width:500px;margin:0 auto;}
-.tab-btn{flex:1;padding:8px 4px 6px;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:'Outfit',sans-serif;}
-.tab-icon{font-size:18px;}
-.tab-label{font-size:9px;font-weight:700;letter-spacing:0.2px;}
-.screen{max-width:500px;margin:0 auto;padding:16px 14px 88px;min-height:100vh;}
-.header{background:linear-gradient(135deg,#0a3d6b,#0a3d22);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:40;max-width:500px;margin:0 auto;}
-.toast{position:fixed;top:16px;right:16px;left:16px;max-width:380px;margin:0 auto;z-index:999;padding:14px 18px;border-radius:14px;color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;gap:10px;animation:fadeUp 0.3s ease;box-shadow:0 8px 24px rgba(0,0,0,0.2);}
-.modal-bg{position:fixed;inset:0;background:rgba(13,31,53,0.7);z-index:800;display:flex;align-items:center;justify-content:center;padding:16px;}
-.modal{background:#fff;border-radius:22px;padding:24px;width:100%;max-width:400px;animation:fadeUp 0.3s ease;max-height:90vh;overflow-y:auto;}
-.offline-bar{background:#f0831a;color:#fff;padding:7px 14px;font-size:12px;font-weight:700;text-align:center;position:sticky;top:0;z-index:60;}
-.risk-high{color:#e8344a;} .risk-med{color:#f0831a;} .risk-low{color:#14a854;}
-.bg-high{background:#fde8eb;} .bg-med{background:#fef0e0;} .bg-low{background:#e8faf0;}
-.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
-.stat-box{background:#fff;border-radius:14px;padding:14px;border:1.5px solid #cde2f5;}
-table{width:100%;border-collapse:collapse;}
-th{padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#7a9bb5;background:#f0f6ff;letter-spacing:0.8px;}
-td{padding:10px 12px;font-size:13px;border-top:1px solid #eaf4ff;}
-.lang-toggle{display:flex;gap:4px;}
-.lang-btn{padding:4px 10px;border-radius:10px;border:1.5px solid rgba(255,255,255,0.3);background:transparent;color:rgba(255,255,255,0.6);font-weight:700;font-size:11px;cursor:pointer;font-family:'Outfit',sans-serif;}
-.lang-btn.active{background:rgba(255,255,255,0.2);color:#fff;border-color:rgba(255,255,255,0.6);}
-.chart-bar{display:flex;align-items:flex-end;gap:8px;height:120px;padding:0 4px;}
-.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
-.bar{width:100%;border-radius:6px 6px 0 0;transition:height 0.5s ease;}
-.bar-label{font-size:10px;color:#7a9bb5;font-weight:600;}
-.sidebar{width:200px;background:linear-gradient(180deg,#0a3d6b,#071a2e);min-height:100vh;position:fixed;left:0;top:0;display:flex;flex-direction:column;z-index:30;}
-.main-content{margin-left:200px;padding:24px;min-height:100vh;}
-.nav-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:rgba(255,255,255,0.55);border:none;background:transparent;width:100%;font-family:'Outfit',sans-serif;text-align:left;border-left:3px solid transparent;margin-bottom:2px;transition:all 0.2s;}
-.nav-item.active{background:rgba(255,255,255,0.13);color:#fff;border-left-color:#18c965;}
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
-.kpi{background:#fff;border-radius:16px;padding:18px;border:1.5px solid #cde2f5;}
-.patient-row{border-top:1px solid #eaf4ff;cursor:pointer;transition:background 0.15s;}
-.patient-row:hover{background:#f5faff;}
-.risk-badge{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;font-size:11px;font-weight:800;}
-.progress-bar{height:5px;background:#eaf4ff;border-radius:3px;overflow:hidden;}
-.progress-fill{height:100%;border-radius:3px;}
-@media(max-width:640px){
-  .sidebar{display:none;}
-  .main-content{margin-left:0;padding:14px;}
-  .kpi-grid{grid-template-columns:1fr 1fr;}
-}
-</style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mizan Diabetes Care</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Outfit',sans-serif;background:#f0f6ff;min-height:100vh;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+    @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+    @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+    .fu{animation:fadeUp .4s ease both;}
+    .fu1{animation:fadeUp .4s .08s ease both;}
+    .fu2{animation:fadeUp .4s .16s ease both;}
+    .fu3{animation:fadeUp .4s .24s ease both;}
+    button{font-family:'Outfit',sans-serif;cursor:pointer;}
+    input,textarea,select{font-family:'Outfit',sans-serif;}
+    input:focus,textarea:focus{outline:2px solid #1278d4;outline-offset:1px;}
+    ::-webkit-scrollbar{width:5px;}
+    ::-webkit-scrollbar-thumb{background:#b8d4ee;border-radius:3px;}
+  </style>
 </head>
 <body>
 <div id="app"></div>
 <script>
-// ── STATE ──────────────────────────────────────────────────────────────────────
-let state = {
-  screen: 'auth', // auth | patient | clinic
-  role: null,
-  lang: 'en',
-  tab: 'home',
-  clinicView: 'overview',
-  selectedPatient: null,
-  patientTab: 'overview',
-  filter: 'all',
-  online: navigator.onLine,
-  toast: null,
-  readings: JSON.parse(localStorage.getItem('mz_readings')||'[]'),
-  vitals: JSON.parse(localStorage.getItem('mz_vitals')||'[]'),
-  missed: JSON.parse(localStorage.getItem('mz_missed')||'[]'),
-  chatMsgs: [{from:'doctor',text:'Hello! I am Dr. Ayenachew. How are you feeling today?',time:'09:00'}],
-  plan: 'standard',
-  modal: null,
+// ── COLORS ──────────────────────────────────────────────────────────────
+const C={
+  p9:"#0a3d6b",p6:"#1278d4",p3:"#a8d5fc",p2:"#d4ebfe",p1:"#eaf4ff",
+  g9:"#0a3d22",g7:"#108242",g6:"#14a854",g2:"#c8f5d8",g1:"#e8faf0",
+  r5:"#e8344a",r1:"#fde8eb",o5:"#f0831a",o1:"#fef0e0",
+  dk:"#0d1f35",md:"#3a5570",mu:"#7a9bb5",bd:"#cde2f5",
+  bg:"#f0f6ff",wh:"#ffffff"
 };
 
-// ── TRANSLATIONS ───────────────────────────────────────────────────────────────
-const T = {
-  en:{
-    appName:'Mizan Diabetes Care',tagline:'Care Closer',
-    login:'Sign In',register:'Create Account',email:'Email',password:'Password',name:'Full Name',
-    asPatient:'Patient',asDoctor:'Clinic Doctor',
-    home:'Home',glucose:'Glucose',vitals:'Vitals',meds:'Meds',visits:'Visits',chat:'Chat',learn:'Learn',plans:'Plans',
-    offline:'Offline — saved locally',syncing:'Syncing...',
-    save:'Save',cancel:'Cancel',send:'Send',
-    fasting:'Fasting (mg/dL)',random:'Random (mg/dL)',
-    weight:'Weight (kg)',systolic:'Systolic (mmHg)',diastolic:'Diastolic (mmHg)',exercise:'Exercise (minutes)',
-    missedDose:'Log Missed Dose',refillReq:'Request Refill',
-    history:'Patient History',investigations:'Investigation Results',imaging:'Imaging Reports',
-    overview:'Overview',patients:'Patients',analytics:'Analytics',followup:'Follow-up',
-    highRisk:'High Risk',medRisk:'Medium Risk',lowRisk:'Low Risk',
-    aiRec:'AI Recommendation',sendSms:'Send SMS',
-    consultChat:'Consultation Chat',typeMsg:'Type a message...',uploadPhoto:'Send Photo',
-    plans_title:'Care Plans',basic:'Basic',standard:'Standard',premium:'Premium',
-    goodMorning:'Good morning',goodAfternoon:'Good afternoon',goodEvening:'Good evening',
-    healthTip:'Health Tip',enrollPatient:'+ Enroll Patient',
-  },
-  am:{
-    appName:'ሚዛን የስኳር ህክምና',tagline:'ቅርብ ህክምና',
-    login:'ግባ',register:'መለያ ፍጠር',email:'ኢሜይል',password:'የይለፍ ቃል',name:'ሙሉ ስም',
-    asPatient:'ታካሚ',asDoctor:'ዶክተር',
-    home:'ዋና',glucose:'ስኳር',vitals:'ምልክቶች',meds:'መድሃኒት',visits:'ቀጠሮ',chat:'ውይይት',learn:'ይማሩ',plans:'ዕቅዶች',
-    offline:'ከኔት ተቋርጧል — ተቀምጧል',syncing:'እየተመሳሰለ...',
-    save:'አስቀምጥ',cancel:'ሰርዝ',send:'ላክ',
-    fasting:'ጾም (mg/dL)',random:'ማንኛውም ሰዓት (mg/dL)',
-    weight:'ክብደት (ኪ.ግ)',systolic:'ሲስቶሊክ',diastolic:'ዳያስቶሊክ',exercise:'ልምምድ (ደቂቃ)',
-    missedDose:'ያለፈ መድሃኒት',refillReq:'መሙሌ ጠይቅ',
-    history:'የታካሚ ታሪክ',investigations:'የምርምር ውጤቶች',imaging:'የምስል ሪፖርቶች',
-    overview:'አጠቃላይ',patients:'ታካሚዎች',analytics:'ትንታኔ',followup:'ክትትል',
-    highRisk:'ከፍተኛ አደጋ',medRisk:'መካከለኛ',lowRisk:'ዝቅተኛ',
-    aiRec:'AI ምክር',sendSms:'SMS ላክ',
-    consultChat:'ምክክር',typeMsg:'መልእክት ይፃፉ...',uploadPhoto:'ፎቶ ላክ',
-    plans_title:'የህክምና ዕቅዶች',basic:'መሰረታዊ',standard:'መደበኛ',premium:'ፕሪሚየም',
-    goodMorning:'እንደምን አደሩ',goodAfternoon:'እንደምን ዋሉ',goodEvening:'እንደምን አመሹ',
-    healthTip:'የጤና ምክር',enrollPatient:'+ ምዝገባ',
-  }
+// ── TRANSLATIONS ─────────────────────────────────────────────────────────
+const T={
+  en:{appName:"Mizan Diabetes Care",tagline:"Care Closer",
+    login:"Sign In",register:"Create Account",email:"Email",password:"Password",name:"Full Name",
+    asPatient:"Patient",asDoctor:"Clinic Doctor",
+    home:"Home",glucose:"Glucose",vitals:"Vitals",meds:"Meds",visits:"Visits",chat:"Chat",learn:"Learn",plans:"Plans",
+    logGlucose:"Log Reading",save:"Save",send:"Send",cancel:"Cancel",
+    fasting:"Fasting (mg/dL)",random:"Random (mg/dL)",
+    weight:"Weight (kg)",systolic:"Systolic (mmHg)",diastolic:"Diastolic (mmHg)",exercise:"Exercise (min)",
+    medications:"Medications",missedDose:"Missed Dose",refill:"Request Refill",
+    nextAppt:"Next Appointment",pastVisits:"Past Visits",requestAppt:"Request Appointment",
+    consultChat:"Consultation Chat",typeMsg:"Type a message...",sendPhoto:"Send Photo",
+    healthTip:"Health Tip of the Day",
+    overview:"Overview",patients:"Patients",analytics:"Analytics",followup:"Follow-up",
+    enrollPt:"+ Enroll Patient",allPts:"All Patients",
+    highRisk:"High Risk",medRisk:"Medium Risk",lowRisk:"Low Risk",
+    aiRec:"AI Recommendation",history:"History",investigations:"Investigations",imaging:"Imaging",actions:"Actions",
+    vitalsSnap:"Vitals Snapshot",addNote:"Add Clinical Note",addInv:"Add Investigation",addImg:"Add Imaging Report",
+    plans_title:"Care Plans",monthly:"Monthly subscription",
+    offline:"Offline — saved locally",syncing:"Syncing...",
+    basic:"Basic",standard:"Standard",premium:"Premium",
+    goodMorning:"Good morning",goodAfternoon:"Good afternoon",goodEvening:"Good evening"},
+  am:{appName:"ሚዛን የስኳር ህክምና",tagline:"ቅርብ ህክምና",
+    login:"ግባ",register:"መለያ ፍጠር",email:"ኢሜይል",password:"የይለፍ ቃል",name:"ሙሉ ስም",
+    asPatient:"ታካሚ",asDoctor:"ዶክተር",
+    home:"ዋና",glucose:"ስኳር",vitals:"ምልክቶች",meds:"መድሃኒት",visits:"ቀጠሮ",chat:"ውይይት",learn:"ይማሩ",plans:"ዕቅዶች",
+    logGlucose:"ንባብ ያስገቡ",save:"አስቀምጥ",send:"ላክ",cancel:"ሰርዝ",
+    fasting:"ጾም (mg/dL)",random:"ማንኛውም ሰዓት (mg/dL)",
+    weight:"ክብደት (ኪ.ግ)",systolic:"ሲስቶሊክ",diastolic:"ዳያስቶሊክ",exercise:"ልምምድ (ደቂቃ)",
+    medications:"መድሃኒቶች",missedDose:"ያለፈ መድሃኒት",refill:"መሙሌ ጠይቅ",
+    nextAppt:"ቀጣይ ቀጠሮ",pastVisits:"ያለፉ ጉብኝቶች",requestAppt:"ቀጠሮ ጠይቅ",
+    consultChat:"የምክክር ውይይት",typeMsg:"መልእክት ይፃፉ...",sendPhoto:"ፎቶ ላክ",
+    healthTip:"የዛሬ የጤና ምክር",
+    overview:"አጠቃላይ",patients:"ታካሚዎች",analytics:"ትንታኔ",followup:"ክትትል",
+    enrollPt:"+ ታካሚ ምዝገባ",allPts:"ሁሉም ታካሚዎች",
+    highRisk:"ከፍተኛ አደጋ",medRisk:"መካከለኛ አደጋ",lowRisk:"ዝቅተኛ አደጋ",
+    aiRec:"የAI ምክር",history:"ታሪክ",investigations:"ምርምሮች",imaging:"ምስሎች",actions:"እርምጃዎች",
+    vitalsSnap:"አስፈላጊ ምልክቶች",addNote:"ማስታወሻ ጨምር",addInv:"ምርምር ጨምር",addImg:"ምስል ጨምር",
+    plans_title:"የህክምና ዕቅዶች",monthly:"ወርሃዊ ምዝገባ",
+    offline:"ያለ ኢንተርኔት ተቀምጧል",syncing:"እየተመሳሰለ...",
+    basic:"መሰረታዊ",standard:"መደበኛ",premium:"ፕሪሚየም",
+    goodMorning:"እንደምን አደሩ",goodAfternoon:"እንደምን ዋሉ",goodEvening:"እንደምን አመሹ"}
 };
 
-// ── MOCK DATA ──────────────────────────────────────────────────────────────────
-const PATIENTS = [
-  {id:1,name:'Almaz Tadesse',age:54,gender:'F',type:'Type 2',glucose:312,hba1c:9.2,sbp:158,dbp:96,bmi:28.4,adherence:42,sub:'standard',weight:72,city:'Gondar',phone:'+251-911-234567',nextVisit:'2025-04-24',
-   alerts:['Glucose >300','Missed 2 visits'],
-   history:[{date:'2025-04-10',note:'Glucose uncontrolled. Metformin dose increased to 1g BD.',doctor:'Dr. Ayenachew'},{date:'2025-03-01',note:'Initial enrollment. Started Metformin 500mg.',doctor:'Dr. Samuel'}],
-   investigations:[{date:'2025-04-10',test:'HbA1c',result:'9.2%',ref:'<7%',status:'high'},{date:'2025-04-10',test:'Fasting Glucose',result:'312 mg/dL',ref:'70-130',status:'high'},{date:'2025-03-01',test:'Creatinine',result:'0.9 mg/dL',ref:'0.6-1.2',status:'normal'}],
-   imaging:[{date:'2025-03-15',type:'Chest X-Ray',finding:'Normal cardiac silhouette. No active pulmonary lesion.',reported:'Dr. Radiology'}]},
-  {id:2,name:'Bekele Haile',age:62,gender:'M',type:'Type 2',glucose:287,hba1c:8.8,sbp:145,dbp:88,bmi:26.1,adherence:58,sub:'basic',weight:80,city:'Gondar',phone:'+251-921-345678',nextVisit:'2025-05-06',
-   alerts:['Glucose >250'],
-   history:[{date:'2025-04-22',note:'BP slightly improved. Continue Metformin + Glibenclamide.',doctor:'Dr. Ayenachew'}],
-   investigations:[{date:'2025-04-22',test:'HbA1c',result:'8.8%',ref:'<7%',status:'high'},{date:'2025-04-22',test:'Fasting Glucose',result:'287 mg/dL',ref:'70-130',status:'high'}],
+// ── STATE ────────────────────────────────────────────────────────────────
+let STATE={
+  screen:"auth",role:null,lang:"en",
+  patTab:"home",clinicView:"overview",selectedPt:null,ptDetailTab:"overview",
+  toast:null,online:navigator.onLine,
+  readings:[],vitals:[],missed:[],chat:[{from:"doctor",text:"Hello! I am Dr. Ayenachew. How are you feeling today?",time:"09:00"}],
+  chatInput:"",
+  clinicFilter:"all",newNote:"",newInv:{test:"",result:"",ref:""},newImg:{type:"",finding:""},
+};
+
+// ── PATIENTS DATA ────────────────────────────────────────────────────────
+const PTS=[
+  {id:1,name:"Almaz Tadesse",age:54,gender:"F",type:"Type 2",glucose:312,hba1c:9.2,sbp:158,dbp:96,bmi:28.4,adherence:42,phone:"+251-911-234567",sub:"standard",weight:72,city:"Gondar",
+   alerts:["Glucose >300","Missed 2 visits"],
+   history:[{date:"2025-04-10",note:"Glucose uncontrolled. Metformin dose increased to 1g BD.",doc:"Dr. Ayenachew"},{date:"2025-03-01",note:"Initial enrollment. Started on Metformin 500mg.",doc:"Dr. Samuel"}],
+   investigations:[{date:"2025-04-10",test:"HbA1c",result:"9.2%",ref:"<7%",status:"high"},{date:"2025-04-10",test:"Fasting Glucose",result:"312 mg/dL",ref:"70-130",status:"high"},{date:"2025-03-01",test:"Urine Microalbumin",result:"45 mg/L",ref:"<30",status:"high"}],
+   imaging:[{date:"2025-03-15",type:"Chest X-Ray",finding:"Normal cardiac silhouette. No active pulmonary lesion.",rep:"Dr. Radiology"}]},
+  {id:2,name:"Bekele Haile",age:62,gender:"M",type:"Type 2",glucose:287,hba1c:8.8,sbp:145,dbp:88,bmi:26.1,adherence:58,phone:"+251-921-345678",sub:"basic",weight:80,city:"Gondar",
+   alerts:["Glucose >250"],
+   history:[{date:"2025-04-22",note:"Follow-up. BP slightly improved. Still on Metformin + Glibenclamide.",doc:"Dr. Ayenachew"}],
+   investigations:[{date:"2025-04-22",test:"HbA1c",result:"8.8%",ref:"<7%",status:"high"},{date:"2025-04-22",test:"Fasting Glucose",result:"287 mg/dL",ref:"70-130",status:"high"}],
    imaging:[]},
-  {id:3,name:'Tigist Worku',age:41,gender:'F',type:'Type 1',glucose:168,hba1c:7.4,sbp:118,dbp:76,bmi:22.3,adherence:78,sub:'premium',weight:58,city:'Debark',phone:'+251-931-456789',nextVisit:'2025-06-01',
+  {id:3,name:"Tigist Worku",age:41,gender:"F",type:"Type 1",glucose:168,hba1c:7.4,sbp:118,dbp:76,bmi:22.3,adherence:78,phone:"+251-931-456789",sub:"premium",weight:58,city:"Debark",
    alerts:[],
-   history:[{date:'2025-05-01',note:'Good glucose control. Insulin dose maintained.',doctor:'Dr. Amare'}],
-   investigations:[{date:'2025-05-01',test:'HbA1c',result:'7.4%',ref:'<7.5%',status:'normal'}],
-   imaging:[{date:'2025-04-01',type:'Fundoscopy',finding:'No diabetic retinopathy detected.',reported:'Dr. Eye'}]},
-  {id:4,name:'Dawit Mengiste',age:48,gender:'M',type:'Type 2',glucose:126,hba1c:6.8,sbp:122,dbp:78,bmi:24.8,adherence:91,sub:'premium',weight:75,city:'Gondar',phone:'+251-941-567890',nextVisit:'2025-06-10',
+   history:[{date:"2025-05-01",note:"Good glucose control. Insulin dose maintained.",doc:"Dr. Amare"}],
+   investigations:[{date:"2025-05-01",test:"HbA1c",result:"7.4%",ref:"<7.5%",status:"normal"}],
+   imaging:[{date:"2025-04-01",type:"Fundoscopy",finding:"No diabetic retinopathy detected.",rep:"Dr. Eye"}]},
+  {id:4,name:"Dawit Mengiste",age:48,gender:"M",type:"Type 2",glucose:126,hba1c:6.8,sbp:122,dbp:78,bmi:24.8,adherence:91,phone:"+251-941-567890",sub:"premium",weight:75,city:"Gondar",
    alerts:[],
-   history:[{date:'2025-05-10',note:'Excellent adherence. Glucose well controlled.',doctor:'Dr. Ayenachew'}],
-   investigations:[{date:'2025-05-10',test:'HbA1c',result:'6.8%',ref:'<7%',status:'normal'}],
+   history:[{date:"2025-05-10",note:"Excellent adherence. Glucose well controlled.",doc:"Dr. Ayenachew"}],
+   investigations:[{date:"2025-05-10",test:"HbA1c",result:"6.8%",ref:"<7%",status:"normal"}],
    imaging:[]},
-  {id:5,name:'Yohannes Assefa',age:71,gender:'M',type:'Type 2',glucose:341,hba1c:10.1,sbp:168,dbp:102,bmi:29.2,adherence:31,sub:'basic',weight:68,city:'Gondar',phone:'+251-911-789012',nextVisit:'2025-04-20',
-   alerts:['Glucose >300','HbA1c >10','Missed 3 visits'],
-   history:[{date:'2025-03-20',note:'Very poor control. Insulin initiation discussed. Referred to specialist.',doctor:'Dr. Ayenachew'}],
-   investigations:[{date:'2025-03-20',test:'HbA1c',result:'10.1%',ref:'<7%',status:'high'},{date:'2025-03-20',test:'Fasting Glucose',result:'341 mg/dL',ref:'70-130',status:'high'},{date:'2025-03-20',test:'Creatinine',result:'1.4 mg/dL',ref:'0.6-1.2',status:'elevated'}],
-   imaging:[{date:'2025-02-20',type:'Chest X-Ray',finding:'Cardiomegaly noted. Recommend cardiology review.',reported:'Dr. Radiology'}]},
+  {id:5,name:"Selamawit Girma",age:37,gender:"F",type:"Type 2",glucose:194,hba1c:7.9,sbp:132,dbp:84,bmi:27.6,adherence:65,phone:"+251-951-678901",sub:"standard",weight:64,city:"Maksegnit",
+   alerts:["Adherence <70%"],
+   history:[{date:"2025-04-15",note:"Struggles with adherence. Counseling session done.",doc:"Dr. Samuel"}],
+   investigations:[{date:"2025-04-15",test:"HbA1c",result:"7.9%",ref:"<7%",status:"high"}],
+   imaging:[]},
+  {id:6,name:"Yohannes Assefa",age:71,gender:"M",type:"Type 2",glucose:341,hba1c:10.1,sbp:168,dbp:102,bmi:29.2,adherence:31,phone:"+251-911-789012",sub:"basic",weight:68,city:"Gondar",
+   alerts:["Glucose >300","HbA1c >10","Missed 3 visits","Adherence <40%"],
+   history:[{date:"2025-03-20",note:"Very poor control. Insulin initiation discussed. Referred to specialist.",doc:"Dr. Ayenachew"}],
+   investigations:[{date:"2025-03-20",test:"HbA1c",result:"10.1%",ref:"<7%",status:"high"},{date:"2025-03-20",test:"Fasting Glucose",result:"341 mg/dL",ref:"70-130",status:"high"},{date:"2025-03-20",test:"Creatinine",result:"1.4 mg/dL",ref:"0.6-1.2",status:"high"}],
+   imaging:[{date:"2025-02-20",type:"Chest X-Ray",finding:"Cardiomegaly noted. Recommend cardiology review.",rep:"Dr. Radiology"}]},
 ];
 
-const WEEK = [{d:'M',f:142,r:198},{d:'T',f:156,r:221},{d:'W',f:138,r:187},{d:'T',f:163,r:234},{d:'F',f:147,r:205},{d:'S',f:129,r:176},{d:'S',f:134,r:189}];
-
-// ── HELPERS ────────────────────────────────────────────────────────────────────
-const t = () => T[state.lang];
-const $  = id => document.getElementById(id);
-const gStatus = v => v<70?{l:'LOW',c:'#e8344a',bg:'#fde8eb'}:v<=140?{l:'NORMAL',c:'#14a854',bg:'#e8faf0'}:v<=200?{l:'ELEVATED',c:'#f0831a',bg:'#fef0e0'}:{l:'HIGH',c:'e8344a',bg:'#fde8eb'};
-const calcRisk = p => {
+// ── HELPERS ──────────────────────────────────────────────────────────────
+function risk(p){
   let s=0;
-  if(p.glucose>300)s+=30;else if(p.glucose>200)s+=20;else s+=10;
-  if(p.hba1c>9)s+=25;else if(p.hba1c>8)s+=15;else s+=8;
-  if(p.sbp>160)s+=20;else if(p.sbp>140)s+=12;else s+=6;
+  if(p.glucose>300)s+=30;else if(p.glucose>200)s+=20;else if(p.glucose>140)s+=10;
+  if(p.hba1c>9)s+=25;else if(p.hba1c>8)s+=15;else if(p.hba1c>7)s+=8;
+  if(p.sbp>160)s+=20;else if(p.sbp>140)s+=12;else if(p.sbp>130)s+=6;
   if(p.bmi>30)s+=10;else if(p.bmi>27)s+=5;
-  if(p.adherence<40)s+=15;else if(p.adherence<60)s+=8;else s+=3;
-  return {score:s,risk:s>=60?'high':s>=30?'medium':'low'};
-};
-const riskC = r => r==='high'?'#e8344a':r==='medium'?'#f0831a':'#14a854';
-const riskBg = r => r==='high'?'#fde8eb':r==='medium'?'#fef0e0':'#e8faf0';
-const hour = new Date().getHours();
-const greeting = () => hour<12?t().goodMorning:hour<17?t().goodAfternoon:t().goodEvening;
-
-function notify(msg, type='ok') {
-  state.toast = {msg, type};
-  render();
-  setTimeout(()=>{state.toast=null;render();}, 3000);
+  if(p.adherence<40)s+=15;else if(p.adherence<60)s+=8;else if(p.adherence<75)s+=3;
+  return{score:s,level:s>=60?"high":s>=30?"medium":"low"};
 }
-
-function setState(updates) {
-  Object.assign(state, updates);
-  render();
+function gSt(v){
+  if(v<70)return{label:"LOW",c:C.r5,bg:C.r1};
+  if(v<=140)return{label:"NORMAL",c:C.g7,bg:C.g1};
+  if(v<=200)return{label:"ELEVATED",c:C.o5,bg:C.o1};
+  return{label:"HIGH",c:C.r5,bg:C.r1};
 }
+function rC(r){return r==="high"?C.r5:r==="medium"?C.o5:C.g6;}
+function rBg(r){return r==="high"?C.r1:r==="medium"?C.o1:C.g1;}
+function aiMsg(p){
+  const {level}=risk(p);
+  if(level==="high")return"Urgent: Consider insulin initiation or emergency referral.";
+  if(p.adherence<50)return"Poor adherence. Schedule counseling session.";
+  if(new Date(p.nextVisit)<new Date())return"Overdue follow-up. Call to reschedule.";
+  return"Patient on track. Continue current care plan.";
+}
+function h(tag,attrs,...children){
+  const el=document.createElement(tag);
+  if(attrs)Object.entries(attrs).forEach(([k,v])=>{
+    if(k==="style"&&typeof v==="object")Object.assign(el.style,v);
+    else if(k.startsWith("on")&&typeof v==="function")el.addEventListener(k.slice(2).toLowerCase(),v);
+    else if(k==="className")el.className=v;
+    else el.setAttribute(k,v);
+  });
+  children.flat(Infinity).forEach(c=>{
+    if(c==null||c===false)return;
+    el.appendChild(typeof c==="string"||typeof c==="number"?document.createTextNode(c):c);
+  });
+  return el;
+}
+function toast(msg,type="ok"){
+  STATE.toast&&STATE.toast.remove();
+  const colors={ok:C.g7,warn:C.o5,error:C.r5};
+  const icons={ok:"✅",warn:"⚠️",error:"❌"};
+  const t=h("div",{style:{position:"fixed",top:"20px",right:"20px",zIndex:"9999",
+    background:colors[type],color:"#fff",padding:"14px 18px",borderRadius:"14px",
+    fontWeight:"700",fontSize:"14px",boxShadow:"0 8px 24px rgba(0,0,0,.2)",
+    display:"flex",gap:"10px",alignItems:"center",maxWidth:"300px",animation:"fadeUp .3s ease"}},
+    icons[type]," ",msg,
+    h("button",{onClick:()=>t.remove(),style:{background:"none",border:"none",color:"rgba(255,255,255,.8)",fontSize:"18px",marginLeft:"4px"}},"×")
+  );
+  document.body.appendChild(t);
+  STATE.toast=t;
+  setTimeout(()=>t.remove(),3000);
+}
+function save(k,v){try{localStorage.setItem("mz_"+k,JSON.stringify(v));}catch(e){}}
+function load(k,d){try{const v=localStorage.getItem("mz_"+k);return v?JSON.parse(v):d;}catch(e){return d;}}
 
-// ── OFFLINE ────────────────────────────────────────────────────────────────────
-window.addEventListener('online', () => setState({online:true}));
-window.addEventListener('offline', () => setState({online:false}));
-
-// ── SVG LOGO ───────────────────────────────────────────────────────────────────
-function logoSVG(size=32, dark=false) {
-  const b = dark?'#60b3f8':'#1278d4', g = dark?'#52db8c':'#108242';
+// ── LOGO SVG ─────────────────────────────────────────────────────────────
+function logoSVG(size=36,dark=false){
+  const b=dark?"#60b3f8":"#1278d4",g=dark?"#52db8c":"#108242";
+  const id="lg"+size;
   return `<svg width="${size}" height="${size}" viewBox="0 0 80 80" fill="none">
-    <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${b}"/><stop offset="100%" stop-color="${g}"/></linearGradient></defs>
-    <rect x="14" y="32" width="52" height="3.5" rx="1.75" fill="url(#lg)"/>
-    <rect x="38" y="16" width="4" height="42" rx="2" fill="url(#lg)"/>
-    <rect x="28" y="58" width="24" height="3.5" rx="1.75" fill="url(#lg)"/>
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="${b}"/><stop offset="100%" stop-color="${g}"/>
+    </linearGradient></defs>
+    <rect x="14" y="32" width="52" height="3.5" rx="1.75" fill="url(#${id})"/>
+    <rect x="38" y="16" width="4" height="42" rx="2" fill="url(#${id})"/>
+    <rect x="28" y="58" width="24" height="3.5" rx="1.75" fill="url(#${id})"/>
     <path d="M40 18 C45 21,45 24,40 27 C35 30,35 33,40 36 C45 39,45 42,40 45 C35 48,35 51,40 54" stroke="${g}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
     <ellipse cx="40.5" cy="17" rx="3.2" ry="2.2" fill="${g}" transform="rotate(-8 40.5 17)"/>
     <line x1="18" y1="35.5" x2="18" y2="43" stroke="${b}" stroke-width="1.8"/>
-    <path d="M18 41.5 C18 41.5 14 45 14 47.2 C14 49.4 15.8 50.8 18 50.8 C20.2 50.8 22 49.4 22 47.2 C22 45 18 41.5 18 41.5Z" fill="${b}" fill-opacity="0.6"/>
+    <ellipse cx="18" cy="47" rx="7" ry="5" fill="${b}" fill-opacity="0.15" stroke="${b}" stroke-width="1.5"/>
+    <path d="M18 41.5 C18 41.5 14 45 14 47.2 C14 49.4 15.8 50.8 18 50.8 C20.2 50.8 22 49.4 22 47.2 C22 45 18 41.5 18 41.5Z" fill="${b}" fill-opacity="0.55"/>
     <text x="18" y="49" font-size="5.5" fill="white" text-anchor="middle" font-weight="bold">G</text>
     <line x1="62" y1="35.5" x2="62" y2="43" stroke="${g}" stroke-width="1.8"/>
+    <ellipse cx="62" cy="47" rx="7" ry="5" fill="${g}" fill-opacity="0.15" stroke="${g}" stroke-width="1.5"/>
     <path d="M62 51.5 C62 51.5 57 47.5 57 45.2 C57 43.2 58.5 42 60.2 42 C61.2 42 62 42.7 62 42.7 C62 42.7 62.8 42 63.8 42 C65.5 42 67 43.2 67 45.2 C67 47.5 62 51.5 62 51.5Z" fill="${g}" fill-opacity="0.7"/>
   </svg>`;
 }
 
-// ── CHART ──────────────────────────────────────────────────────────────────────
-function miniChart() {
-  const max=280, H=100, W=300, pad=20;
-  const x=i=>pad+(i/6)*(W-pad*2);
-  const y=v=>H-pad-(v/max)*(H-pad*2);
-  const fp=WEEK.map((d,i)=>`${i===0?'M':'L'}${x(i)},${y(d.f)}`).join(' ');
-  const rp=WEEK.map((d,i)=>`${i===0?'M':'L'}${x(i)},${y(d.r)}`).join(' ');
-  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:110px">
-    <defs><linearGradient id="gfp" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1278d4" stop-opacity="0.2"/><stop offset="100%" stop-color="#1278d4" stop-opacity="0"/></linearGradient></defs>
-    ${[70,140,200].map(v=>`<line x1="${pad}" y1="${y(v)}" x2="${W-pad}" y2="${y(v)}" stroke="#cde2f5" stroke-width="0.8" stroke-dasharray="4,4"/><text x="${W-pad+3}" y="${y(v)+4}" font-size="8" fill="#7a9bb5">${v}</text>`).join('')}
-    <path d="${fp} L${x(6)},${H-pad} L${x(0)},${H-pad} Z" fill="url(#gfp)"/>
-    <path d="${fp}" fill="none" stroke="#1278d4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="${rp}" fill="none" stroke="#14a854" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-    ${WEEK.map((d,i)=>`<circle cx="${x(i)}" cy="${y(d.f)}" r="3.5" fill="#fff" stroke="#1278d4" stroke-width="2"/><circle cx="${x(i)}" cy="${y(d.r)}" r="3.5" fill="#fff" stroke="#14a854" stroke-width="2"/><text x="${x(i)}" y="${H-4}" text-anchor="middle" font-size="9" fill="#7a9bb5">${d.d}</text>`).join('')}
-  </svg>
-  <div style="display:flex;gap:16px;justify-content:center;margin-top:4px">
-    <span style="font-size:12px;color:#7a9bb5;display:flex;align-items:center;gap:4px"><span style="width:18px;height:3px;background:#1278d4;border-radius:2px;display:inline-block"></span>Fasting</span>
-    <span style="font-size:12px;color:#7a9bb5;display:flex;align-items:center;gap:4px"><span style="width:18px;height:3px;background:#14a854;border-radius:2px;display:inline-block"></span>Random</span>
-  </div>`;
+// ── UI COMPONENTS ─────────────────────────────────────────────────────────
+function btn(label,onClick,opts={}){
+  const {v="primary",full=false,sm=false,disabled=false}=opts;
+  const styles={
+    primary:{background:`linear-gradient(135deg,${C.p6},${C.p9})`,color:"#fff",border:"none"},
+    green:{background:`linear-gradient(135deg,${C.g6},${C.g9})`,color:"#fff",border:"none"},
+    outline:{background:"transparent",color:C.p6,border:`2px solid ${C.p6}`},
+    ghost:{background:C.p1,color:C.p6,border:"none"},
+    danger:{background:C.r1,color:C.r5,border:"none"},
+    muted:{background:C.bg,color:C.mu,border:`1.5px solid ${C.bd}`},
+  };
+  const b=h("button",{onClick,style:{...styles[v],padding:sm?"8px 14px":"12px 22px",
+    borderRadius:"12px",fontWeight:"700",fontSize:sm?"13px":"15px",
+    width:full?"100%":"auto",opacity:disabled?0.6:1,
+    cursor:disabled?"not-allowed":"pointer",transition:"all .2s",letterSpacing:".2px"}},label);
+  if(disabled)b.disabled=true;
+  return b;
+}
+function field(label,opts={}){
+  const {type="text",value="",onChange,placeholder="",hint="",rows=0}=opts;
+  const wrap=h("div",{style:{marginBottom:"16px"}});
+  if(label)wrap.appendChild(h("label",{style:{display:"block",marginBottom:"6px",fontSize:"13px",fontWeight:"700",color:C.dk}},label));
+  const inputStyle={width:"100%",padding:"12px 14px",borderRadius:"12px",
+    border:`1.5px solid ${C.bd}`,fontSize:"15px",color:C.dk,background:C.bg,resize:"vertical"};
+  let inp;
+  if(rows>0){inp=h("textarea",{style:inputStyle,placeholder,rows:""+rows},value||"");}
+  else{inp=h("input",{type,style:inputStyle,placeholder,value:value||""});}
+  if(onChange){inp.addEventListener("input",e=>onChange(e.target.value));}
+  inp.addEventListener("focus",()=>inp.style.border=`1.5px solid ${C.p6}`);
+  inp.addEventListener("blur",()=>inp.style.border=`1.5px solid ${C.bd}`);
+  wrap.appendChild(inp);
+  if(hint)wrap.appendChild(h("p",{style:{fontSize:"12px",color:C.mu,marginTop:"4px"}},hint));
+  return wrap;
+}
+function pill(label,c,bg,size=12){
+  return h("span",{style:{background:bg,color:c,borderRadius:"20px",padding:size===12?"3px 9px":"4px 12px",
+    fontSize:size+"px",fontWeight:"700",whiteSpace:"nowrap"}},label);
+}
+function card(children,opts={}){
+  const {mb=14,p=20}=opts;
+  const el=h("div",{style:{background:C.wh,borderRadius:"20px",padding:p+"px",
+    marginBottom:mb+"px",border:`1.5px solid ${C.bd}`,boxShadow:"0 2px 10px rgba(10,80,160,.05)"}});
+  children.forEach(c=>c&&el.appendChild(c));
+  return el;
+}
+function langToggle(){
+  const wrap=h("div",{style:{display:"flex",gap:"5px"}});
+  ["en","am"].forEach(l=>{
+    const active=STATE.lang===l;
+    const b=h("button",{onClick:()=>{STATE.lang=l;render();},
+      style:{padding:"5px 12px",borderRadius:"20px",fontWeight:"700",fontSize:"12px",
+        border:`2px solid ${active?"rgba(255,255,255,.6)":"rgba(255,255,255,.2)"}`,
+        background:active?"rgba(255,255,255,.18)":"transparent",
+        color:active?"#fff":"rgba(255,255,255,.5)"}},l==="en"?"EN":"አማ");
+    wrap.appendChild(b);
+  });
+  return wrap;
+}
+function offlineBanner(){
+  if(STATE.online)return null;
+  const t=T[STATE.lang];
+  return h("div",{style:{background:C.o5,color:"#fff",padding:"8px 16px",
+    fontSize:"12px",fontWeight:"700",textAlign:"center",position:"sticky",top:"0",zIndex:"80"}},
+    "📵 ",t.offline);
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// RENDER FUNCTIONS
-// ══════════════════════════════════════════════════════════════════════════════
-function renderToast() {
-  if(!state.toast) return '';
-  const bg = state.toast.type==='error'?'#e8344a':state.toast.type==='warn'?'#f0831a':'#108242';
-  const icon = state.toast.type==='error'?'❌':state.toast.type==='warn'?'⚠️':'✅';
-  return `<div class="toast" style="background:${bg}">${icon} ${state.toast.msg}</div>`;
+// ══════════════════════════════════════════════════════════════════════
+// AUTH SCREEN
+// ══════════════════════════════════════════════════════════════════════
+function renderAuth(){
+  const t=T[STATE.lang];
+  let mode="login",role="patient",email="",pass="",name="";
+
+  function rebuild(){
+    const old=document.getElementById("authWrap");
+    if(old)old.replaceWith(build());
+  }
+
+  function build(){
+    const wrap=h("div",{id:"authWrap",style:{minHeight:"100vh",display:"flex",fontFamily:"'Outfit',sans-serif"}});
+
+    // Left panel
+    const left=h("div",{style:{flex:"1",background:`linear-gradient(160deg,${C.p9} 0%,#071a2e 50%,${C.g9} 100%)`,
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      padding:"48px",gap:"24px"}});
+    const logoWrap=h("div",{style:{textAlign:"center"}});
+    logoWrap.innerHTML=logoSVG(80,true);
+    left.appendChild(logoWrap);
+    left.appendChild(h("div",{style:{textAlign:"center"}},
+      h("h1",{style:{color:"#fff",fontSize:"40px",fontWeight:"900",margin:"12px 0 4px",letterSpacing:"-1px"}},"Mizan"),
+      h("p",{style:{color:"rgba(255,255,255,.45)",fontSize:"13px",letterSpacing:"3px",textTransform:"uppercase"}},t.appName)
+    ));
+    [["📊",t.lang==="am"?"የስኳር ደረጃ ክትትል":"Real-time glucose tracking"],
+     ["🤖","AI-powered risk stratification"],
+     ["📵","Works offline, syncs automatically"],
+     ["🌐","Amharic & English support"]
+    ].forEach(([icon,text])=>{
+      left.appendChild(h("div",{style:{display:"flex",gap:"12px",alignItems:"center",
+        background:"rgba(255,255,255,.07)",borderRadius:"12px",padding:"11px 16px",width:"100%",maxWidth:"280px"}},
+        h("span",{style:{fontSize:"20px"}},icon),
+        h("span",{style:{color:"rgba(255,255,255,.75)",fontSize:"13px"}},text)
+      ));
+    });
+    wrap.appendChild(left);
+
+    // Right panel
+    const right=h("div",{style:{width:"420px",background:C.bg,display:"flex",flexDirection:"column",
+      alignItems:"center",justifyContent:"center",padding:"40px",overflowY:"auto"}});
+
+    // Lang toggle
+    const lt=h("div",{style:{position:"absolute",top:"16px",right:"16px",display:"flex",gap:"6px"}});
+    ["en","am"].forEach(l=>{
+      const active=STATE.lang===l;
+      lt.appendChild(h("button",{onClick:()=>{STATE.lang=l;render();},
+        style:{padding:"6px 14px",borderRadius:"20px",fontWeight:"700",fontSize:"12px",
+          border:`2px solid ${active?C.p6:C.bd}`,
+          background:active?C.p6:C.wh,color:active?"#fff":C.md}},l==="en"?"EN":"አማ"));
+    });
+    right.appendChild(lt);
+
+    const inner=h("div",{style:{width:"100%",maxWidth:"340px"}});
+    inner.appendChild(h("div",{style:{marginBottom:"24px"}},
+      h("h2",{style:{fontSize:"26px",fontWeight:"900",color:C.dk,marginBottom:"4px"}},
+        mode==="login"?t.login:mode==="register"?t.register:"Reset Password"),
+      h("p",{style:{color:C.mu,fontSize:"13px"}},t.appName+" · "+t.tagline)
+    ));
+
+    // Role selector
+    if(mode!=="forgot"){
+      const rs=h("div",{style:{display:"flex",gap:"8px",marginBottom:"20px",
+        background:C.wh,borderRadius:"12px",padding:"5px",border:`1.5px solid ${C.bd}`}});
+      [["patient","👤 "+t.asPatient],["doctor","👨‍⚕️ "+t.asDoctor]].forEach(([r,label])=>{
+        rs.appendChild(h("button",{onClick:()=>{role=r;rebuild();},
+          style:{flex:"1",padding:"10px",borderRadius:"9px",border:"none",
+            background:role===r?`linear-gradient(135deg,${C.p6},${C.p9})`:"transparent",
+            color:role===r?"#fff":C.mu,fontWeight:"700",fontSize:"14px"}},label));
+      });
+      inner.appendChild(rs);
+    }
+
+    if(mode==="register")inner.appendChild(field(t.name,{placeholder:"Almaz Tadesse",onChange:v=>name=v}));
+    inner.appendChild(field(t.email,{type:"email",placeholder:"you@example.com",onChange:v=>email=v}));
+    if(mode!=="forgot")inner.appendChild(field(t.password,{type:"password",placeholder:"••••••••",onChange:v=>pass=v}));
+
+    inner.appendChild(btn(mode==="login"?t.login:mode==="register"?t.register:"Send Reset",()=>{
+      if(!email){toast("Please enter email","error");return;}
+      if(mode==="forgot"){toast("Reset link sent!");return;}
+      if(!pass){toast("Please enter password","error");return;}
+      STATE.role=role;STATE.screen="app";render();
+    },{full:true}));
+
+    inner.appendChild(h("div",{style:{textAlign:"center",marginTop:"14px",fontSize:"13px",color:C.mu}},
+      mode==="login"?h("span",{onClick:()=>{mode="register";rebuild();},
+        style:{color:C.p6,fontWeight:"700",cursor:"pointer"}},t.register)
+      :h("span",{onClick:()=>{mode="login";rebuild();},
+        style:{color:C.p6,fontWeight:"700",cursor:"pointer"}},"← "+t.login)
+    ));
+    right.appendChild(inner);
+    wrap.appendChild(right);
+    return wrap;
+  }
+  return build();
 }
 
-function renderOffline() {
-  if(state.online) return '';
-  return `<div class="offline-bar">📵 ${t().offline}</div>`;
-}
-
-function renderHeader(title, showLogout=true) {
-  return `<div class="header">
-    <div style="display:flex;align-items:center;gap:10px">
-      ${logoSVG(28,true)}
-      <div><div style="color:#fff;font-weight:800;font-size:13px">${t().appName}</div><div style="color:rgba(255,255,255,0.4);font-size:10px;letter-spacing:1px">${t().tagline.toUpperCase()}</div></div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <div class="lang-toggle">
-        <button class="lang-btn ${state.lang==='en'?'active':''}" onclick="setState({lang:'en'})">EN</button>
-        <button class="lang-btn ${state.lang==='am'?'active':''}" onclick="setState({lang:'am'})">አማ</button>
-      </div>
-      ${showLogout?`<button onclick="setState({screen:'auth',role:null})" style="background:rgba(255,255,255,0.1);border:none;color:rgba(255,255,255,0.7);padding:6px 10px;border-radius:8px;cursor:pointer;font-size:12px;font-family:Outfit,sans-serif">⏻</button>`:''}
-    </div>
-  </div>`;
-}
-
-function renderTabBar() {
-  const tabs = [
-    {id:'home',icon:'🏠',label:t().home},{id:'glucose',icon:'📊',label:t().glucose},
-    {id:'vitals',icon:'❤️',label:t().vitals},{id:'meds',icon:'💊',label:t().meds},
-    {id:'visits',icon:'📅',label:t().visits},{id:'chat',icon:'💬',label:t().chat},
-    {id:'learn',icon:'📚',label:t().learn},{id:'plans',icon:'⭐',label:t().plans},
+// ══════════════════════════════════════════════════════════════════════
+// PATIENT APP
+// ══════════════════════════════════════════════════════════════════════
+function renderPatient(){
+  const t=T[STATE.lang];
+  const tabs=[
+    {id:"home",icon:"🏠",label:t.home},
+    {id:"glucose",icon:"📊",label:t.glucose},
+    {id:"vitals",icon:"❤️",label:t.vitals},
+    {id:"meds",icon:"💊",label:t.meds},
+    {id:"visits",icon:"📅",label:t.visits},
+    {id:"chat",icon:"💬",label:t.chat},
+    {id:"learn",icon:"📚",label:t.learn},
+    {id:"plans",icon:"⭐",label:t.plans},
   ];
-  return `<div class="tab-bar">${tabs.map(tb=>`
-    <button class="tab-btn" onclick="setState({tab:'${tb.id}'})" style="color:${state.tab===tb.id?'#1278d4':'#7a9bb5'}">
-      <span class="tab-icon">${tb.icon}</span>
-      <span class="tab-label" style="font-weight:${state.tab===tb.id?800:500}">${tb.label}</span>
-      ${state.tab===tb.id?`<div style="width:16px;height:2px;background:linear-gradient(90deg,#1278d4,#14a854);border-radius:2px"></div>`:'<div style="height:2px"></div>'}
-    </button>`).join('')}</div>`;
+
+  // Header
+  function buildHeader(){
+    const hdr=h("div",{style:{background:`linear-gradient(135deg,${C.p9},${C.g9})`,
+      padding:"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",
+      position:"sticky",top:"0",zIndex:"50"}});
+    const left=h("div",{style:{display:"flex",alignItems:"center",gap:"10px"}});
+    const logo=h("div"); logo.innerHTML=logoSVG(30,true); left.appendChild(logo);
+    left.appendChild(h("div",{},
+      h("div",{style:{color:"#fff",fontWeight:"800",fontSize:"13px"}},"Mizan"),
+      h("div",{style:{color:"rgba(255,255,255,.4)",fontSize:"10px",letterSpacing:"1px"}},"DIABETES CARE")
+    ));
+    hdr.appendChild(left);
+    const right=h("div",{style:{display:"flex",gap:"8px",alignItems:"center"}});
+    right.appendChild(langToggle());
+    right.appendChild(h("button",{onClick:()=>{STATE.screen="auth";render();},
+      style:{background:"rgba(255,255,255,.12)",border:"none",color:"rgba(255,255,255,.7)",
+        padding:"6px 10px",borderRadius:"8px",fontSize:"12px"}},"⏻"));
+    hdr.appendChild(right);
+    return hdr;
+  }
+
+  // Bottom nav
+  function buildNav(){
+    const nav=h("div",{style:{position:"fixed",bottom:"0",left:"50%",transform:"translateX(-50%)",
+      width:"100%",maxWidth:"500px",background:C.wh,borderTop:`1px solid ${C.bd}`,
+      display:"flex",zIndex:"50",overflowX:"auto"}});
+    tabs.forEach(tb=>{
+      const active=STATE.patTab===tb.id;
+      const b=h("button",{onClick:()=>{STATE.patTab=tb.id;renderPatientContent();},
+        style:{flex:"0 0 auto",minWidth:"54px",padding:"8px 4px 5px",border:"none",
+          background:"transparent",display:"flex",flexDirection:"column",alignItems:"center",gap:"2px"}},
+        h("span",{style:{fontSize:"18px"}},tb.icon),
+        h("span",{style:{fontSize:"8px",fontWeight:active?"800":"500",
+          color:active?C.p6:C.mu,whiteSpace:"nowrap"}},tb.label)
+      );
+      if(active){const bar=h("div",{style:{width:"16px",height:"2px",background:C.p6,borderRadius:"2px"}});b.appendChild(bar);}
+      nav.appendChild(b);
+    });
+    return nav;
+  }
+
+  const wrap=h("div",{style:{minHeight:"100vh",background:C.bg,maxWidth:"500px",margin:"0 auto",paddingBottom:"80px"}});
+  const ob=offlineBanner();
+  if(ob)wrap.appendChild(ob);
+  wrap.appendChild(buildHeader());
+  const content=h("div",{id:"ptContent",style:{padding:"20px 16px"}});
+  wrap.appendChild(content);
+  wrap.appendChild(buildNav());
+
+  function renderPatientContent(){
+    content.innerHTML="";
+    const tb=STATE.patTab;
+    const hr=new Date().getHours();
+    const greeting=hr<12?t.goodMorning:hr<17?t.goodAfternoon:t.goodEvening;
+
+    if(tb==="home"){
+      content.appendChild(h("div",{className:"fu"},
+        h("h2",{style:{fontSize:"22px",fontWeight:"900",color:C.dk}},"Hi, Almaz! 👋"),
+        h("p",{style:{color:C.mu,fontSize:"13px",marginTop:"4px"}},new Date().toDateString())
+      ));
+      // Glucose card
+      const gc=h("div",{className:"fu1",style:{background:`linear-gradient(135deg,${C.p9},${C.g9})`,
+        borderRadius:"20px",padding:"20px",marginTop:"16px",marginBottom:"14px",color:"#fff"}});
+      gc.innerHTML=`<p style="font-size:11px;opacity:.6;letter-spacing:1px;margin-bottom:4px">LAST READING</p>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><span style="font-size:42px;font-weight:900;letter-spacing:-1px">142</span><span style="font-size:13px;opacity:.7"> mg/dL</span>
+          <p style="margin-top:4px;font-size:12px;opacity:.8">🟡 Elevated · Today 7:30 AM</p></div>
+          <div style="text-align:right"><div style="font-size:12px;opacity:.7">HbA1c</div><div style="font-size:26px;font-weight:800">9.2%</div></div>
+        </div>`;
+      content.appendChild(gc);
+      // Quick stats
+      const grid=h("div",{className:"fu2",style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"14px"}});
+      [{i:"⚖️",l:"BMI",v:"26.4",s:"kg/m²",c:C.o5},{i:"❤️",l:"BP",v:"132/84",s:"mmHg",c:C.r5},
+       {i:"⚖️",l:"Weight",v:"72",s:"kg",c:C.p6},{i:"🏃",l:"Exercise",v:"20",s:"min",c:C.g7}].forEach(s=>{
+        const card=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"14px",border:`1.5px solid ${C.bd}`}},
+          h("div",{style:{fontSize:"20px",marginBottom:"4px"}},s.i),
+          h("div",{style:{fontSize:"11px",color:C.mu,fontWeight:"700"}},s.l),
+          h("div",{style:{fontSize:"20px",fontWeight:"900",color:s.c}},s.v,
+            h("span",{style:{fontSize:"10px",color:C.mu,fontWeight:"500"}}," "+s.s))
+        );
+        grid.appendChild(card);
+      });
+      content.appendChild(grid);
+      // Tip
+      content.appendChild(h("div",{className:"fu3",style:{background:`linear-gradient(135deg,${C.g1},${C.p1})`,
+        border:`1.5px solid ${C.g2}`,borderRadius:"18px",padding:"16px"}},
+        h("p",{style:{fontSize:"11px",fontWeight:"700",color:C.g7,letterSpacing:"1px",marginBottom:"6px"}},"💡 "+t.healthTip),
+        h("p",{style:{fontSize:"14px",color:C.dk,lineHeight:"1.7"}},"Walking 30 minutes after meals can reduce blood sugar by up to 22%.")
+      ));
+    }
+
+    else if(tb==="glucose"){
+      content.appendChild(h("h2",{className:"fu",style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"16px"}},"📊 "+t.glucose));
+      let f="",r="";
+      const fc=card([
+        h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.dk,marginBottom:"14px"}},"📝 "+t.logGlucose),
+        field(t.fasting,{type:"number",placeholder:"e.g. 126",onChange:v=>f=v}),
+        field(t.random,{type:"number",placeholder:"e.g. 180",onChange:v=>r=v}),
+        btn(t.save,()=>{
+          if(!f&&!r){toast("Enter at least one reading","error");return;}
+          const entry={date:new Date().toLocaleDateString(),time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),fasting:f||null,random:r||null};
+          STATE.readings.unshift(entry);save("readings",STATE.readings);
+          toast("Reading saved!"+(STATE.online?"":" (offline)"));
+          renderPatientContent();
+        },{full:true,v:"green"})
+      ]);
+      content.appendChild(fc);
+      if(STATE.readings.length>0){
+        const rc=card([h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"Recent Readings")]);
+        STATE.readings.slice(0,5).forEach((rd,i,arr)=>{
+          const val=rd.fasting||rd.random;
+          const s=gSt(Number(val));
+          const row=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",
+            padding:"10px 0",borderBottom:i<arr.length-1?`1px solid ${C.bd}`:"none"}},
+            h("div",{},
+              h("p",{style:{margin:"0",fontSize:"13px",fontWeight:"700",color:C.dk}},(rd.fasting?"Fasting":"Random")+" · "+rd.date),
+              h("p",{style:{margin:"2px 0 0",fontSize:"11px",color:C.mu}},rd.time)
+            ),
+            h("div",{style:{textAlign:"right"}},
+              h("span",{style:{fontSize:"18px",fontWeight:"800",color:s.c}},val),
+              h("span",{style:{fontSize:"11px",color:C.mu}}," mg/dL"),
+              h("div",{style:{marginTop:"3px"}},pill(s.label,s.c,s.bg))
+            )
+          );
+          rc.appendChild(row);
+        });
+        content.appendChild(rc);
+      }
+    }
+
+    else if(tb==="vitals"){
+      content.appendChild(h("h2",{className:"fu",style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"16px"}},"❤️ "+t.vitals));
+      let w="",s="",d="",ex="";
+      const vc=card([
+        h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.dk,marginBottom:"14px"}},"Log Today's Vitals"),
+        field(t.weight,{type:"number",placeholder:"e.g. 72",onChange:v=>w=v}),
+        field(t.systolic,{type:"number",placeholder:"e.g. 130",onChange:v=>s=v}),
+        field(t.diastolic,{type:"number",placeholder:"e.g. 80",onChange:v=>d=v}),
+        field(t.exercise,{type:"number",placeholder:"e.g. 30",onChange:v=>ex=v}),
+        btn(t.save,()=>{
+          const entry={date:new Date().toLocaleDateString(),weight:w||null,sbp:s||null,dbp:d||null,
+            exerciseMin:ex||null,bmi:w?(w/(1.65*1.65)).toFixed(1):null};
+          STATE.vitals.unshift(entry);save("vitals",STATE.vitals);
+          toast("Vitals saved!");renderPatientContent();
+        },{full:true})
+      ]);
+      content.appendChild(vc);
+      if(STATE.vitals.length>0){
+        const vr=card([h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"Recent Vitals")]);
+        STATE.vitals.slice(0,4).forEach((v,i,arr)=>{
+          const row=h("div",{style:{padding:"10px 0",borderBottom:i<arr.length-1?`1px solid ${C.bd}`:"none"}},
+            h("p",{style:{margin:"0 0 5px",fontSize:"12px",color:C.mu,fontWeight:"700"}},v.date),
+            h("div",{style:{display:"flex",gap:"14px",flexWrap:"wrap"}},
+              v.weight&&h("span",{style:{fontSize:"13px",color:C.dk}},"⚖️ ",h("strong",{},v.weight)," kg"),
+              v.sbp&&h("span",{style:{fontSize:"13px",color:C.dk}},"❤️ ",h("strong",{},v.sbp+"/"+v.dbp)," mmHg"),
+              v.bmi&&h("span",{style:{fontSize:"13px",color:C.dk}},"📊 BMI ",h("strong",{},v.bmi)),
+              v.exerciseMin&&h("span",{style:{fontSize:"13px",color:C.g7}},"🏃 ",h("strong",{},v.exerciseMin)," min")
+            )
+          );
+          vr.appendChild(row);
+        });
+        content.appendChild(vr);
+      }
+    }
+
+    else if(tb==="meds"){
+      content.appendChild(h("h2",{className:"fu",style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"16px"}},"💊 "+t.medications));
+      [{name:"Metformin 500mg",taken:1,total:2,c:C.p6,bg:C.p1,icon:"💊"},
+       {name:"Glibenclamide 5mg",taken:1,total:1,c:C.g7,bg:C.g1,icon:"💊"},
+       {name:"Insulin Glargine 20u",taken:0,total:1,c:C.o5,bg:C.o1,icon:"💉"}
+      ].forEach(m=>{
+        const mc=h("div",{style:{background:C.wh,borderRadius:"18px",padding:"18px",
+          marginBottom:"12px",border:`1.5px solid ${C.bd}`}});
+        mc.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}},
+          h("div",{style:{display:"flex",gap:"10px",alignItems:"center"}},
+            h("div",{style:{width:"44px",height:"44px",borderRadius:"12px",background:m.bg,
+              display:"flex",alignItems:"center",justifyContent:"center",fontSize:"22px"}},m.icon),
+            h("div",{},
+              h("div",{style:{fontWeight:"800",fontSize:"14px",color:C.dk}},m.name),
+              h("div",{style:{fontSize:"12px",color:C.mu}},m.taken===m.total?"Completed":"Pending")
+            )
+          ),
+          pill(m.taken===m.total?"Done ✓":`${m.taken}/${m.total}`,m.taken===m.total?C.g7:C.o5,m.taken===m.total?C.g1:C.o1)
+        ));
+        const prog=h("div",{style:{height:"5px",background:C.bg,borderRadius:"3px",overflow:"hidden",marginBottom:"12px"}});
+        prog.appendChild(h("div",{style:{height:"100%",width:`${(m.taken/m.total)*100}%`,background:m.c,borderRadius:"3px"}}));
+        mc.appendChild(prog);
+        mc.appendChild(h("div",{style:{display:"flex",gap:"8px"}},
+          h("button",{onClick:()=>{STATE.missed.unshift({med:m.name,date:new Date().toLocaleDateString()});save("missed",STATE.missed);toast("Missed dose logged.");},
+            style:{flex:"1",padding:"8px",background:C.r1,border:"none",color:C.r5,borderRadius:"10px",fontSize:"12px",fontWeight:"700"}},
+            "⚠️ "+t.missedDose),
+          h("button",{onClick:()=>toast("Refill request sent to clinic!"),
+            style:{flex:"1",padding:"8px",background:C.g1,border:"none",color:C.g7,borderRadius:"10px",fontSize:"12px",fontWeight:"700"}},
+            "🔄 "+t.refill)
+        ));
+        content.appendChild(mc);
+      });
+    }
+
+    else if(tb==="visits"){
+      content.appendChild(h("h2",{className:"fu",style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"16px"}},"📅 "+t.visits));
+      // Next appointment
+      const na=h("div",{style:{background:`linear-gradient(135deg,${C.p9},${C.p6})`,borderRadius:"20px",padding:"20px",marginBottom:"14px",color:"#fff"}});
+      na.innerHTML=`<p style="font-size:11px;opacity:.65;letter-spacing:1px;margin-bottom:6px">${t.nextAppt.toUpperCase()}</p>
+        <h3 style="font-size:17px;font-weight:800;margin-bottom:10px">Follow-up Consultation</h3>
+        <p style="font-size:13px;opacity:.85;margin-bottom:14px">📅 May 28, 2025 &nbsp; ⏰ 10:00 AM &nbsp; 📍 Mizan Clinic, Gondar</p>`;
+      na.appendChild(h("div",{style:{display:"flex",gap:"8px"}},
+        h("button",{onClick:()=>toast("Appointment confirmed!"),style:{flex:"1",padding:"10px",background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:"10px",fontWeight:"700",fontSize:"13px"}},"✓ Confirm"),
+        h("button",{onClick:()=>toast("Reschedule request sent"),style:{flex:"1",padding:"10px",background:"transparent",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:"10px",fontWeight:"700",fontSize:"13px"}},"Reschedule")
+      ));
+      content.appendChild(na);
+      // Past visits
+      const pv=card([h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"📋 "+t.pastVisits)]);
+      [{date:"May 1, 2025",type:"Glucose Review",doc:"Dr. Ayenachew",note:"Metformin dose increased"},
+       {date:"Apr 1, 2025",type:"Complication Screen",doc:"Dr. Samuel",note:"Eye & foot exam normal"},
+       {date:"Mar 3, 2025",type:"Initial Enrollment",doc:"Dr. Ayenachew",note:"Started care plan"}
+      ].forEach((v,i,arr)=>{
+        pv.appendChild(h("div",{style:{padding:"10px 0",borderBottom:i<arr.length-1?`1px solid ${C.bd}`:"none"}},
+          h("p",{style:{margin:"0 0 2px",fontSize:"14px",fontWeight:"700",color:C.dk}},v.type),
+          h("p",{style:{margin:"0 0 2px",fontSize:"12px",color:C.mu}},v.date+" · "+v.doc),
+          h("p",{style:{margin:"0",fontSize:"12px",color:C.md,fontStyle:"italic"}},"📋 "+v.note)
+        ));
+      });
+      content.appendChild(pv);
+    }
+
+    else if(tb==="chat"){
+      content.appendChild(h("h2",{className:"fu",style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"4px"}},"💬 "+t.consultChat));
+      content.appendChild(h("p",{style:{color:C.mu,fontSize:"13px",marginBottom:"14px"}},"Dr. Ayenachew · "+(STATE.online?"🟢 Online":"🔴 Offline")));
+      const chatBox=h("div",{style:{background:C.wh,borderRadius:"18px",border:`1.5px solid ${C.bd}`,marginBottom:"14px",overflow:"hidden"}});
+      const msgs=h("div",{id:"chatMsgs",style:{padding:"14px",maxHeight:"300px",overflowY:"auto",display:"flex",flexDirection:"column",gap:"10px"}});
+      STATE.chat.forEach(m=>{
+        const isDoc=m.from==="doctor";
+        msgs.appendChild(h("div",{style:{display:"flex",justifyContent:isDoc?"flex-start":"flex-end"}},
+          h("div",{style:{maxWidth:"78%",background:isDoc?C.bg:`linear-gradient(135deg,${C.p6},${C.p9})`,
+            borderRadius:isDoc?"4px 14px 14px 14px":"14px 14px 4px 14px",padding:"10px 13px"}},
+            h("p",{style:{margin:"0",fontSize:"14px",color:isDoc?C.dk:"#fff",lineHeight:"1.5"}},m.text),
+            h("p",{style:{margin:"4px 0 0",fontSize:"10px",color:isDoc?C.mu:"rgba(255,255,255,.6)",textAlign:"right"}},m.time)
+          )
+        ));
+      });
+      chatBox.appendChild(msgs);
+      const inputRow=h("div",{style:{borderTop:`1px solid ${C.bd}`,padding:"10px",display:"flex",gap:"8px",alignItems:"flex-end"}});
+      const ta=h("textarea",{style:{flex:"1",padding:"10px 13px",borderRadius:"10px",border:`1.5px solid ${C.bd}`,
+        fontSize:"14px",resize:"none",fontFamily:"'Outfit',sans-serif",color:C.dk,background:C.bg},
+        rows:"2",placeholder:t.typeMsg},STATE.chatInput||"");
+      ta.addEventListener("input",e=>STATE.chatInput=e.target.value);
+      ta.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat();}});
+      function sendChat(){
+        if(!STATE.chatInput.trim())return;
+        STATE.chat.push({from:"patient",text:STATE.chatInput,time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})});
+        STATE.chatInput="";
+        renderPatientContent();
+        setTimeout(()=>{
+          STATE.chat.push({from:"doctor",text:"Thank you. I will review and respond shortly.",time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})});
+          renderPatientContent();
+        },1500);
+      }
+      inputRow.appendChild(ta);
+      inputRow.appendChild(btn(t.send,sendChat,{sm:true}));
+      chatBox.appendChild(inputRow);
+      content.appendChild(chatBox);
+      // Photo upload
+      content.appendChild(card([
+        h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.dk,marginBottom:"10px"}},"📸 "+t.sendPhoto),
+        h("p",{style:{fontSize:"13px",color:C.mu,marginBottom:"12px"}},"Send a photo of your foot, wound, or any concern."),
+        h("div",{style:{border:`2px dashed ${C.bd}`,borderRadius:"12px",padding:"24px",textAlign:"center",background:C.bg}},
+          h("div",{style:{fontSize:"32px",marginBottom:"8px"}},"📷"),
+          h("p",{style:{color:C.md,fontSize:"13px",fontWeight:"600",marginBottom:"10px"}},"Tap to upload a photo"),
+          h("button",{style:{padding:"8px 18px",background:`linear-gradient(135deg,${C.p6},${C.p9})`,
+            color:"#fff",border:"none",borderRadius:"10px",fontWeight:"700",fontSize:"13px"}},"Choose Photo")
+        )
+      ]));
+    }
+
+    else if(tb==="learn"){
+      content.appendChild(h("h2",{className:"fu",style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"14px"}},"📚 "+t.learn));
+      const grid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"14px"}});
+      [{icon:"💉",cat:"Basics",title:"Understanding Blood Sugar",time:"5 min",c:C.p6},
+       {icon:"🦶",cat:"Prevention",title:"Daily Foot Care",time:"4 min",c:C.g7},
+       {icon:"🥗",cat:"Nutrition",title:"Eating Well in Ethiopia",time:"7 min",c:C.o5},
+       {icon:"🚶",cat:"Lifestyle",title:"Exercise & Glucose",time:"6 min",c:C.p6},
+       {icon:"💊",cat:"Medication",title:"Why Adherence Matters",time:"3 min",c:C.g7},
+       {icon:"🧠",cat:"Mental Health",title:"Stress & Blood Sugar",time:"5 min",c:C.r5}
+      ].forEach(e=>{
+        const card=h("div",{onClick:()=>toast("Opening: "+e.title),
+          style:{background:C.wh,borderRadius:"16px",padding:"14px",border:`1.5px solid ${C.bd}`,cursor:"pointer"}},
+          h("div",{style:{width:"40px",height:"40px",borderRadius:"10px",background:e.c+"20",
+            display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",marginBottom:"8px"}},e.icon),
+          pill(e.cat,e.c,e.c+"20"),
+          h("h4",{style:{margin:"7px 0 5px",fontSize:"13px",fontWeight:"700",color:C.dk,lineHeight:"1.4"}},e.title),
+          h("p",{style:{margin:"0",fontSize:"12px",color:e.c,fontWeight:"600"}},"▶ "+e.time)
+        );
+        grid.appendChild(card);
+      });
+      content.appendChild(grid);
+    }
+
+    else if(tb==="plans"){
+      content.appendChild(h("h2",{className:"fu",style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"14px"}},"⭐ "+t.plans_title));
+      [{name:"basic",price:3,c:C.md,inc:["Glucose logging","Medication reminders","Basic education","Monthly check-in"]},
+       {name:"standard",price:7,c:C.p6,inc:["Everything in Basic","Teleconsultation ×2/mo","Complication screening","Dietitian access"],popular:true},
+       {name:"premium",price:12,c:C.g7,inc:["Everything in Standard","Unlimited teleconsultation","Product delivery","Home visit ×1/mo","Priority support"]}
+      ].forEach(p=>{
+        const pc=h("div",{onClick:()=>toast("Plan selected: "+p.name),
+          style:{background:C.wh,borderRadius:"18px",padding:"20px",marginBottom:"12px",
+            border:`1.5px solid ${C.bd}`,cursor:"pointer",position:"relative"}});
+        if(p.popular){
+          const tag=h("div",{style:{position:"absolute",top:"-10px",right:"16px",
+            background:`linear-gradient(135deg,${C.p6},${C.p9})`,color:"#fff",
+            fontSize:"11px",fontWeight:"700",padding:"3px 12px",borderRadius:"20px"}},"MOST POPULAR");
+          pc.appendChild(tag);
+        }
+        pc.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"12px"}},
+          h("h3",{style:{fontSize:"18px",fontWeight:"900",color:p.c}},t[p.name]||p.name),
+          h("div",{},h("span",{style:{fontSize:"28px",fontWeight:"900",color:p.c}},"$"+p.price),
+            h("span",{style:{fontSize:"12px",color:C.mu}},"/mo"))
+        ));
+        p.inc.forEach(f=>{
+          pc.appendChild(h("div",{style:{display:"flex",gap:"8px",alignItems:"center",marginBottom:"5px",fontSize:"13px",color:C.dk}},
+            h("span",{style:{color:p.c,fontWeight:"700"}},"✓")," ",f
+          ));
+        });
+        content.appendChild(pc);
+      });
+    }
+
+    msgs&&msgs.scrollTop&&(msgs.scrollTop=msgs.scrollHeight);
+  }
+
+  renderPatientContent();
+  return wrap;
 }
 
-// ── AUTH ───────────────────────────────────────────────────────────────────────
-function renderAuth() {
-  return `
-  <div style="min-height:100vh;display:flex;font-family:Outfit,sans-serif">
-    <div style="flex:1;background:linear-gradient(160deg,#0a3d6b,#071a2e 50%,#0a3d22);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;position:relative">
-      ${logoSVG(80,true)}
-      <h1 style="color:#fff;font-size:38px;font-weight:900;margin:16px 0 4px;letter-spacing:-1px">Mizan</h1>
-      <p style="color:rgba(255,255,255,0.45);font-size:13px;letter-spacing:3px;text-transform:uppercase;margin-bottom:32px">Diabetes Care</p>
-      <div style="display:flex;flex-direction:column;gap:12px;max-width:260px;width:100%">
-        ${[['📊','Real-time glucose tracking','ስኳር ክትትል'],['🤖','AI risk stratification','AI አደጋ ምርምር'],['📵','Works offline','ያለ ኢንተርኔት'],['🌐','Amharic & English','አማርኛ & English']].map(f=>`
-          <div style="display:flex;gap:12px;align-items:center;background:rgba(255,255,255,0.06);border-radius:11px;padding:10px 14px">
-            <span style="font-size:18px">${f[0]}</span>
-            <span style="color:rgba(255,255,255,0.7);font-size:13px">${state.lang==='am'?f[2]:f[1]}</span>
-          </div>`).join('')}
-      </div>
-    </div>
-    <div style="width:420px;background:#f0f6ff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;overflow-y:auto">
-      <div style="width:100%;max-width:340px">
-        <div style="margin-bottom:28px">
-          <h2 style="font-size:26px;font-weight:900;color:#0d1f35;margin:0 0 4px">${t().login}</h2>
-          <p style="color:#7a9bb5;font-size:13px">${t().appName}</p>
-        </div>
-        <div style="display:flex;gap:8px;margin-bottom:20px;background:#fff;border-radius:12px;padding:5px;border:1.5px solid #cde2f5">
-          <button onclick="setState({role:'patient'})" style="flex:1;padding:10px;border-radius:8px;border:none;background:${!state.role||state.role==='patient'?'linear-gradient(135deg,#1278d4,#0a3d6b)':'transparent'};color:${!state.role||state.role==='patient'?'#fff':'#7a9bb5'};font-weight:700;font-size:14px;cursor:pointer;font-family:Outfit,sans-serif">👤 ${t().asPatient}</button>
-          <button onclick="setState({role:'doctor'})" style="flex:1;padding:10px;border-radius:8px;border:none;background:${state.role==='doctor'?'linear-gradient(135deg,#1278d4,#0a3d6b)':'transparent'};color:${state.role==='doctor'?'#fff':'#7a9bb5'};font-weight:700;font-size:14px;cursor:pointer;font-family:Outfit,sans-serif">👨‍⚕️ ${t().asDoctor}</button>
-        </div>
-        <div class="field"><label>${t().email}</label><input type="email" placeholder="you@example.com" id="auth-email"/></div>
-        <div class="field"><label>${t().password}</label><input type="password" placeholder="••••••••" id="auth-pass"/></div>
-        <button class="btn btn-primary btn-full" style="margin-bottom:14px" onclick="doLogin()">→ ${t().login}</button>
-        <div style="text-align:center">
-          <div class="lang-toggle" style="justify-content:center;display:flex;gap:8px">
-            <button onclick="setState({lang:'en'})" style="padding:6px 14px;border-radius:12px;border:1.5px solid ${state.lang==='en'?'#1278d4':'#cde2f5'};background:${state.lang==='en'?'#1278d4':'#fff'};color:${state.lang==='en'?'#fff':'#7a9bb5'};font-weight:700;font-size:12px;cursor:pointer;font-family:Outfit,sans-serif">English</button>
-            <button onclick="setState({lang:'am'})" style="padding:6px 14px;border-radius:12px;border:1.5px solid ${state.lang==='am'?'#1278d4':'#cde2f5'};background:${state.lang==='am'?'#1278d4':'#fff'};color:${state.lang==='am'?'#fff':'#7a9bb5'};font-weight:700;font-size:12px;cursor:pointer;font-family:Outfit,sans-serif">አማርኛ</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>`;
-}
-
-function doLogin() {
-  const role = state.role || 'patient';
-  setState({screen:'app', role});
-}
-
-// ── PATIENT HOME ───────────────────────────────────────────────────────────────
-function renderHome() {
-  return `
-    <div class="fade">
-      <h2 style="font-size:21px;font-weight:900;color:#0d1f35;margin-bottom:4px">${greeting()}, Almaz! 👋</h2>
-      <p style="color:#7a9bb5;font-size:13px;margin-bottom:16px">${new Date().toDateString()}</p>
-    </div>
-    <div class="fade" style="background:linear-gradient(135deg,#0a3d6b,#0a3d22);border-radius:20px;padding:20px;margin-bottom:14px;color:#fff">
-      <p style="font-size:11px;opacity:0.6;letter-spacing:1px;margin-bottom:4px">LAST READING</p>
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><span style="font-size:42px;font-weight:900">142</span><span style="font-size:13px;opacity:0.7"> mg/dL</span>
-        <p style="margin:4px 0 0;font-size:12px;opacity:0.8">🟡 Elevated · Today 7:30 AM</p></div>
-        <div style="text-align:right"><div style="font-size:12px;opacity:0.6;margin-bottom:2px">HbA1c</div><div style="font-size:26px;font-weight:800">9.2%</div></div>
-      </div>
-    </div>
-    <div class="stat-grid">
-      ${[{i:'⚖️',l:'BMI',v:'26.4',u:'kg/m²',c:'#f0831a'},{i:'❤️',l:'BP',v:'132/84',u:'mmHg',c:'#e8344a'},{i:'⚖️',l:'Weight',v:'72',u:'kg',c:'#1278d4'},{i:'🏃',l:'Exercise',v:'20',u:'min',c:'#14a854'}].map(s=>`
-      <div class="stat-box"><div style="font-size:20px;margin-bottom:4px">${s.i}</div>
-        <div style="font-size:11px;color:#7a9bb5;font-weight:700">${s.l}</div>
-        <div style="font-size:20px;font-weight:900;color:${s.c}">${s.v}<span style="font-size:10px;color:#7a9bb5;font-weight:500"> ${s.u}</span></div>
-      </div>`).join('')}
-    </div>
-    <div class="card">
-      <h4 style="font-size:14px;font-weight:800;color:#0d1f35;margin-bottom:12px">📋 Today's Reminders</h4>
-      ${[{l:'Metformin 500mg',t:'07:00 AM',done:true},{l:'Fasting glucose reading',t:'07:30 AM',done:true},{l:'Glibenclamide 5mg',t:'01:00 PM',done:false},{l:'Random glucose reading',t:'02:00 PM',done:false}].map((r,i,a)=>`
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;${i<a.length-1?'border-bottom:1px solid #eaf4ff':''}">
-        <div style="display:flex;gap:10px;align-items:center">
-          <div style="width:20px;height:20px;border-radius:6px;background:${r.done?'#e8faf0':'#eaf4ff'};display:flex;align-items:center;justify-content:center;font-size:10px;color:${r.done?'#108242':'#1278d4'};font-weight:800">${r.done?'✓':'○'}</div>
-          <div><p style="margin:0;font-size:13px;font-weight:600;color:${r.done?'#7a9bb5':'#0d1f35'};text-decoration:${r.done?'line-through':'none'}">${r.l}</p>
-          <p style="margin:0;font-size:11px;color:#7a9bb5">${r.t}</p></div>
-        </div>
-        ${!r.done?'<div style="width:7px;height:7px;border-radius:50%;background:#1278d4;animation:pulse 2s infinite"></div>':''}
-      </div>`).join('')}
-    </div>
-    <div style="background:linear-gradient(135deg,#f4fdf7,#f5faff);border:1.5px solid #97ecb8;border-radius:18px;padding:16px">
-      <p style="font-size:11px;font-weight:700;color:#108242;letter-spacing:1px;margin-bottom:6px">💡 ${t().healthTip}</p>
-      <p style="font-size:14px;color:#0d1f35;line-height:1.7;margin:0">${state.lang==='am'?'ከምግብ በኋላ 30 ደቂቃ መሄድ ስኳርን እስከ 22% ሊቀንስ ይችላል።':'Walking 30 minutes after meals can reduce blood sugar by up to 22%.'}</p>
-    </div>`;
-}
-
-// ── GLUCOSE ────────────────────────────────────────────────────────────────────
-function renderGlucose() {
-  return `
-    <h2 style="font-size:21px;font-weight:900;color:#0d1f35;margin-bottom:16px" class="fade">📊 ${state.lang==='am'?'የስኳር ክትትል':'Glucose Tracker'}</h2>
-    <div class="card fade">
-      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin-bottom:14px">📝 Log Reading</h3>
-      <div class="field"><label>${t().fasting}</label><input type="number" id="gl-fasting" placeholder="e.g. 126"/></div>
-      <div class="field"><label>${t().random}</label><input type="number" id="gl-random" placeholder="e.g. 180"/></div>
-      <button class="btn btn-green btn-full" onclick="logGlucose()">${t().save} ${!state.online?'📵':''}</button>
-    </div>
-    <div class="card fade">
-      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin-bottom:4px">7-Day Trend</h3>
-      ${miniChart()}
-    </div>
-    ${state.readings.length>0?`<div class="card fade">
-      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin-bottom:12px">Recent Readings</h3>
-      ${state.readings.slice(0,5).map((r,i,a)=>{
-        const v=r.fasting||r.random, s=gStatus(v);
-        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;${i<a.length-1?'border-bottom:1px solid #eaf4ff':''}">
-          <div><p style="margin:0;font-size:13px;font-weight:700;color:#0d1f35">${r.fasting?'Fasting':'Random'} · ${r.date}</p>
-          <p style="margin:0;font-size:11px;color:#7a9bb5">${r.time}</p></div>
-          <div style="text-align:right"><span style="font-size:18px;font-weight:800;color:${s.c}">${v}</span><span style="font-size:11px;color:#7a9bb5"> mg/dL</span>
-          <div style="margin-top:3px"><span class="pill" style="background:${s.bg};color:${s.c}">${s.l}</span></div></div>
-        </div>`;}).join('')}
-    </div>`:''}`;
-}
-
-function logGlucose() {
-  const f = $('gl-fasting')&&$('gl-fasting').value;
-  const r = $('gl-random')&&$('gl-random').value;
-  if(!f&&!r){notify('Enter at least one reading','error');return;}
-  const entry={date:new Date().toLocaleDateString(),time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),fasting:f||null,random:r||null};
-  state.readings.unshift(entry);
-  localStorage.setItem('mz_readings',JSON.stringify(state.readings));
-  notify('Reading saved!'+(state.online?'':' (offline)'));
-  render();
-}
-
-// ── VITALS ─────────────────────────────────────────────────────────────────────
-function renderVitals() {
-  return `
-    <h2 style="font-size:21px;font-weight:900;color:#0d1f35;margin-bottom:16px" class="fade">❤️ ${t().vitals}</h2>
-    <div class="card fade">
-      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin-bottom:14px">Log Today's Vitals</h3>
-      <div class="field"><label>${t().weight}</label><input type="number" id="vt-weight" placeholder="e.g. 72" oninput="updateBMI()"/></div>
-      <div id="bmi-display"></div>
-      <div class="field"><label>${t().systolic}</label><input type="number" id="vt-sbp" placeholder="e.g. 130"/></div>
-      <div class="field"><label>${t().diastolic}</label><input type="number" id="vt-dbp" placeholder="e.g. 80"/></div>
-      <div class="field"><label>${t().exercise}</label><input type="number" id="vt-ex" placeholder="e.g. 30"/></div>
-      <button class="btn btn-primary btn-full" onclick="logVitals()">${t().save} ${!state.online?'📵':''}</button>
-    </div>
-    ${state.vitals.length>0?`<div class="card fade">
-      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin-bottom:12px">Recent Vitals</h3>
-      ${state.vitals.slice(0,4).map((v,i,a)=>`
-        <div style="padding:10px 0;${i<a.length-1?'border-bottom:1px solid #eaf4ff':''}">
-          <p style="margin:0 0 5px;font-size:11px;color:#7a9bb5;font-weight:700">${v.date}</p>
-          <div style="display:flex;gap:12px;flex-wrap:wrap">
-            ${v.weight?`<span style="font-size:13px;color:#0d1f35">⚖️ <strong>${v.weight}</strong> kg</span>`:''}
-            ${v.sbp?`<span style="font-size:13px;color:#0d1f35">❤️ <strong>${v.sbp}/${v.dbp}</strong> mmHg</span>`:''}
-            ${v.bmi?`<span style="font-size:13px;color:#0d1f35">📊 BMI <strong>${v.bmi}</strong></span>`:''}
-            ${v.ex?`<span style="font-size:13px;color:#14a854">🏃 <strong>${v.ex}</strong> min</span>`:''}
-          </div>
-        </div>`).join('')}
-    </div>`:''}`;
-}
-
-function updateBMI() {
-  const w = $('vt-weight')&&$('vt-weight').value;
-  const bmi = w?(w/2.7225).toFixed(1):null;
-  if($('bmi-display')) $('bmi-display').innerHTML = bmi?`<div style="background:#e8faf0;border-radius:10px;padding:9px 13px;margin-bottom:12px;font-size:13px;color:#108242;font-weight:600">📊 BMI: ${bmi} ${bmi<18.5?'(Underweight)':bmi<25?'(Normal)':'(Overweight)'}</div>`:'';
-}
-
-function logVitals() {
-  const w=$('vt-weight')&&$('vt-weight').value;
-  const s=$('vt-sbp')&&$('vt-sbp').value;
-  const d=$('vt-dbp')&&$('vt-dbp').value;
-  const e=$('vt-ex')&&$('vt-ex').value;
-  const entry={date:new Date().toLocaleDateString(),weight:w||null,sbp:s||null,dbp:d||null,ex:e||null,bmi:w?(w/2.7225).toFixed(1):null};
-  state.vitals.unshift(entry);
-  localStorage.setItem('mz_vitals',JSON.stringify(state.vitals));
-  notify('Vitals saved!'+(state.online?'':' (offline)'));
-  render();
-}
-
-// ── MEDS ───────────────────────────────────────────────────────────────────────
-function renderMeds() {
-  const meds=[{name:'Metformin 500mg',cat:'Tablet',freq:'Twice daily',taken:1,total:2,c:'#1278d4',bg:'#eaf4ff',icon:'💊'},{name:'Glibenclamide 5mg',cat:'Tablet',freq:'Once daily',taken:1,total:1,c:'#108242',bg:'#e8faf0',icon:'💊'},{name:'Insulin Glargine 20u',cat:'Injection',freq:'Once nightly',taken:0,total:1,c:'#f0831a',bg:'#fef0e0',icon:'💉'}];
-  return `
-    <h2 style="font-size:21px;font-weight:900;color:#0d1f35;margin-bottom:16px" class="fade">${t().meds}</h2>
-    ${meds.map(m=>`
-    <div class="card fade">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <div style="display:flex;gap:10px;align-items:center">
-          <div style="width:44px;height:44px;border-radius:12px;background:${m.bg};display:flex;align-items:center;justify-content:center;font-size:22px">${m.icon}</div>
-          <div><h4 style="margin:0;font-size:15px;font-weight:800;color:#0d1f35">${m.name}</h4>
-          <p style="margin:2px 0 0;font-size:12px;color:#7a9bb5">${m.cat} · ${m.freq}</p></div>
-        </div>
-        <span class="pill" style="background:${m.taken===m.total?'#e8faf0':'#fef0e0'};color:${m.taken===m.total?'#108242':'#f0831a'}">${m.taken===m.total?'Done ✓':m.taken+'/'+m.total}</span>
-      </div>
-      <div class="progress-bar" style="margin-bottom:12px"><div class="progress-fill" style="width:${(m.taken/m.total)*100}%;background:${m.c}"></div></div>
-      <div style="display:flex;gap:8px">
-        <button onclick="logMissed('${m.name}')" style="flex:1;padding:9px;background:#fde8eb;border:none;color:#e8344a;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif">⚠️ ${t().missedDose}</button>
-        <button onclick="notify('Refill request sent for ${m.name}!')" style="flex:1;padding:9px;background:#e8faf0;border:none;color:#108242;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif">🔄 ${t().refillReq}</button>
-      </div>
-    </div>`).join('')}
-    ${state.missed.length>0?`<div style="background:#fff5f6;border-radius:14px;padding:14px;border:1px solid #fde8eb">
-      <h4 style="color:#e8344a;font-size:13px;font-weight:800;margin:0 0 8px">⚠️ Missed Doses</h4>
-      ${state.missed.slice(0,3).map(m=>`<p style="margin:4px 0;font-size:12px;color:#0d1f35">• ${m.med} — ${m.date} ${m.time}</p>`).join('')}
-    </div>`:''}`;
-}
-
-function logMissed(med) {
-  const entry={med,date:new Date().toLocaleDateString(),time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
-  state.missed.unshift(entry);
-  localStorage.setItem('mz_missed',JSON.stringify(state.missed));
-  notify('Missed dose logged.');
-  render();
-}
-
-// ── VISITS ─────────────────────────────────────────────────────────────────────
-function renderVisits() {
-  return `
-    <h2 style="font-size:21px;font-weight:900;color:#0d1f35;margin-bottom:16px" class="fade">${t().visits}</h2>
-    <div style="background:linear-gradient(135deg,#0a3d6b,#1278d4);border-radius:20px;padding:20px;margin-bottom:14px;color:#fff" class="fade">
-      <p style="font-size:11px;font-weight:700;opacity:0.6;letter-spacing:1px;margin-bottom:6px">NEXT APPOINTMENT</p>
-      <h3 style="font-size:17px;font-weight:800;margin-bottom:10px">Follow-up Consultation</h3>
-      <div style="font-size:13px;opacity:0.8;margin-bottom:14px">📅 May 28, 2025 · ⏰ 10:00 AM · 📍 Mizan Clinic, Gondar</div>
-      <div style="display:flex;gap:8px">
-        <button onclick="notify('Appointment confirmed!')" style="flex:1;padding:10px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:Outfit,sans-serif">✓ Confirm</button>
-        <button onclick="notify('Reschedule request sent')" style="flex:1;padding:10px;background:transparent;border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:Outfit,sans-serif">Reschedule</button>
-      </div>
-    </div>
-    <div class="card fade">
-      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin-bottom:14px">📝 Request Appointment</h3>
-      <div class="field"><label>Reason for Visit</label><input type="text" id="appt-reason" placeholder="e.g. Glucose review, foot check..."/></div>
-      <div class="field"><label>Preferred Date</label><input type="date" id="appt-date"/></div>
-      <button class="btn btn-primary btn-full" onclick="notify('Appointment booked!')">Request →</button>
-    </div>
-    <div class="card fade">
-      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin-bottom:12px">📋 Past Visits</h3>
-      ${[{date:'May 1, 2025',type:'Glucose Review',doc:'Dr. Ayenachew',note:'Metformin dose increased',ok:false},{date:'Apr 1, 2025',type:'Complication Screen',doc:'Dr. Samuel',note:'Eye & foot exam — normal',ok:true},{date:'Mar 3, 2025',type:'Initial Enrollment',doc:'Dr. Ayenachew',note:'Started care plan',ok:true}].map((v,i,a)=>`
-      <div style="padding:11px 0;${i<a.length-1?'border-bottom:1px solid #eaf4ff':''}">
-        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-          <div><p style="margin:0;font-size:14px;font-weight:700;color:#0d1f35">${v.type}</p>
-          <p style="margin:2px 0;font-size:12px;color:#7a9bb5">${v.date} · ${v.doc}</p>
-          <p style="margin:0;font-size:12px;color:#3a5570;font-style:italic">📋 ${v.note}</p></div>
-          <span class="pill" style="background:${v.ok?'#e8faf0':'#fef0e0'};color:${v.ok?'#108242':'#f0831a'}">${v.ok?'Normal':'Review'}</span>
-        </div>
-      </div>`).join('')}
-    </div>`;
-}
-
-// ── CHAT ───────────────────────────────────────────────────────────────────────
-function renderChat() {
-  return `
-    <h2 style="font-size:21px;font-weight:900;color:#0d1f35;margin-bottom:4px" class="fade">💬 ${t().consultChat}</h2>
-    <p style="color:#7a9bb5;font-size:13px;margin-bottom:14px">Dr. Ayenachew · ${state.online?'🟢 Online':'🔴 Offline'}</p>
-    <div class="card fade" style="padding:0;overflow:hidden">
-      <div id="chat-msgs" style="padding:16px;max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:10px">
-        ${state.chatMsgs.map(m=>`
-        <div style="display:flex;justify-content:${m.from==='doctor'?'flex-start':'flex-end'}">
-          <div style="max-width:80%;background:${m.from==='doctor'?'#f0f6ff':'linear-gradient(135deg,#1278d4,#0a3d6b)'};border-radius:${m.from==='doctor'?'4px 14px 14px 14px':'14px 14px 4px 14px'};padding:10px 13px">
-            <p style="margin:0;font-size:14px;color:${m.from==='doctor'?'#0d1f35':'#fff'};line-height:1.5">${m.text}</p>
-            <p style="margin:4px 0 0;font-size:10px;color:${m.from==='doctor'?'#7a9bb5':'rgba(255,255,255,0.6)'};text-align:right">${m.time}</p>
-          </div>
-        </div>`).join('')}
-      </div>
-      <div style="border-top:1px solid #eaf4ff;padding:10px;display:flex;gap:8px;align-items:flex-end">
-        <textarea id="chat-input" rows="2" placeholder="${t().typeMsg}" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid #cde2f5;font-size:14px;resize:none;font-family:Outfit,sans-serif"></textarea>
-        <button class="btn btn-primary btn-sm" onclick="sendChat()">${t().send}</button>
-      </div>
-    </div>
-    <div class="card fade">
-      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin-bottom:10px">📸 ${t().uploadPhoto}</h3>
-      <p style="font-size:13px;color:#7a9bb5;margin-bottom:14px">Send a photo of your foot, wound, or any concern for the doctor to review.</p>
-      <div style="border:2px dashed #cde2f5;border-radius:12px;padding:24px;text-align:center;background:#f0f6ff">
-        <div style="font-size:32px;margin-bottom:8px">📷</div>
-        <p style="color:#3a5570;font-size:14px;font-weight:600;margin:0 0 10px">Tap to upload photo</p>
-        <button class="btn btn-ghost btn-sm" onclick="notify('Photo upload coming soon in v1.0')">Choose Photo</button>
-      </div>
-    </div>`;
-}
-
-function sendChat() {
-  const inp = $('chat-input');
-  if(!inp||!inp.value.trim()) return;
-  const msg = {from:'patient',text:inp.value,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
-  state.chatMsgs.push(msg);
-  inp.value='';
-  render();
-  setTimeout(()=>{
-    state.chatMsgs.push({from:'doctor',text:'Thank you. I will review and respond shortly.',time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
-    render();
-    const cm=$('chat-msgs');
-    if(cm) cm.scrollTop=cm.scrollHeight;
-  },1200);
-}
-
-// ── LEARN ──────────────────────────────────────────────────────────────────────
-function renderLearn() {
-  const cards=state.lang==='am'?[{i:'💉',c:'መሰረታዊ',t:'ስለ ደም ስኳር',col:'#1278d4'},{i:'🦶',c:'መከላከል',t:'የእግር እንክብካቤ',col:'#108242'},{i:'🥗',c:'አመጋገብ',t:'ጤናማ አመጋገብ',col:'#f0831a'},{i:'🚶',c:'አኗኗር',t:'ልምምድ',col:'#0f67b8'},{i:'💊',c:'መድሃኒት',t:'አጠቃቀም',col:'#0a3d22'},{i:'🧠',c:'ጤና',t:'ጭንቀትና ስኳር',col:'#e8344a'}]:[{i:'💉',c:'Basics',t:'Understanding Blood Sugar',col:'#1278d4'},{i:'🦶',c:'Prevention',t:'Daily Foot Care',col:'#108242'},{i:'🥗',c:'Nutrition',t:'Eating Well in Ethiopia',col:'#f0831a'},{i:'🚶',c:'Lifestyle',t:'Exercise & Glucose',col:'#0f67b8'},{i:'💊',c:'Medication',t:'Why Adherence Matters',col:'#0a3d22'},{i:'🧠',c:'Mental Health',t:'Stress & Blood Sugar',col:'#e8344a'}];
-  return `
-    <h2 style="font-size:21px;font-weight:900;color:#0d1f35;margin-bottom:14px" class="fade">${t().learn}</h2>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-      ${cards.map(c=>`
-      <div class="card" style="cursor:pointer;padding:14px" onclick="notify('Opening: ${c.t}')">
-        <div style="width:40px;height:40px;border-radius:11px;background:${c.col}18;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:8px">${c.i}</div>
-        <span class="pill" style="background:${c.col}18;color:${c.col};margin-bottom:6px;display:inline-block">${c.c}</span>
-        <h4 style="margin:6px 0 0;font-size:13px;font-weight:700;color:#0d1f35;line-height:1.4">${c.t}</h4>
-      </div>`).join('')}
-    </div>
-    <div style="background:linear-gradient(135deg,#0a3d6b,#0a3d22);border-radius:18px;padding:18px;color:#fff">
-      <p style="font-size:11px;opacity:0.65;margin-bottom:6px">🎙️ ${state.lang==='am'?'በቅርቡ ይገኛል':'COMING SOON'}</p>
-      <h4 style="font-size:14px;font-weight:800;margin-bottom:6px">${state.lang==='am'?'የድምጽ ትምህርት በአማርኛ':'Audio & Video in Amharic'}</h4>
-      <p style="font-size:12px;opacity:0.7;line-height:1.6;margin:0">${state.lang==='am'?'ሁሉም ይዘቶች በድምጽ እየተቀዳ ነው።':'All education content being recorded in Amharic audio.'}</p>
-    </div>`;
-}
-
-// ── PLANS ──────────────────────────────────────────────────────────────────────
-function renderPlans() {
-  const plans=[
-    {id:'basic',price:3,c:'#7a9bb5',inc:{en:['Glucose logging','Med reminders','Basic education','Monthly check-in'],am:['ስኳር ምዝገባ','አስታዋሽ','ትምህርት','ወርሃዊ ክትትል']}},
-    {id:'standard',price:7,c:'#1278d4',popular:true,inc:{en:['Everything in Basic','Teleconsultation ×2/mo','Complication screening','Dietitian access'],am:['ሁሉም መሰረታዊ','ቴሌ ምክክር ×2','ምርምር','ባለሙያ']}},
-    {id:'premium',price:12,c:'#108242',inc:{en:['Everything in Standard','Unlimited teleconsultation','Product delivery','Home visit ×1/mo'],am:['ሁሉም መደበኛ','ያልተገደበ ምክክር','ምርት ማድረስ','የቤት ጉብኝት']}},
-  ];
-  return `
-    <h2 style="font-size:21px;font-weight:900;color:#0d1f35;margin-bottom:4px" class="fade">${t().plans_title}</h2>
-    <p style="color:#7a9bb5;font-size:13px;margin-bottom:16px">${state.lang==='am'?'ተመጣጣኝ ወርሃዊ ዕቅዶች':'Affordable monthly care plans'}</p>
-    ${plans.map(p=>`
-    <div onclick="setState({plan:'${p.id}'})" style="background:${state.plan===p.id?p.c+'08':'#fff'};border-radius:18px;padding:20px;margin-bottom:12px;cursor:pointer;position:relative;border:${state.plan===p.id?`2px solid ${p.c}`:'1.5px solid #cde2f5'};box-shadow:${state.plan===p.id?`0 6px 20px ${p.c}20`:'none'}">
-      ${p.popular?`<div style="position:absolute;top:-10px;right:16px;background:linear-gradient(135deg,#1278d4,#0a3d6b);color:#fff;font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px">POPULAR</div>`:''}
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <h3 style="font-size:18px;font-weight:900;color:${p.c};margin:0">${T[state.lang][p.id]||p.id}</h3>
-        <div><span style="font-size:28px;font-weight:900;color:${p.c}">$${p.price}</span><span style="font-size:12px;color:#7a9bb5">/mo</span></div>
-      </div>
-      ${p.inc[state.lang].map(f=>`<div style="display:flex;gap:8px;align-items:center;margin-bottom:5px;font-size:13px;color:#0d1f35"><div style="width:16px;height:16px;border-radius:4px;background:${p.c}20;display:flex;align-items:center;justify-content:center;font-size:9px;color:${p.c};font-weight:800;flex-shrink:0">✓</div>${f}</div>`).join('')}
-      ${state.plan===p.id?`<div style="margin-top:10px;background:${p.c}15;border-radius:8px;padding:7px 12px;font-size:13px;color:${p.c};font-weight:700;text-align:center">✓ Selected</div>`:''}
-    </div>`).join('')}
-    <button class="btn btn-primary btn-full" onclick="notify('Plan updated! Clinic notified.')">Confirm Plan →</button>`;
-}
-
-// ── PATIENT APP ────────────────────────────────────────────────────────────────
-function renderPatientApp() {
-  const screens = {home:renderHome,glucose:renderGlucose,vitals:renderVitals,meds:renderMeds,visits:renderVisits,chat:renderChat,learn:renderLearn,plans:renderPlans};
-  const fn = screens[state.tab]||renderHome;
-  return `
-    ${renderOffline()}
-    ${renderHeader()}
-    <div class="screen">${fn()}</div>
-    ${renderTabBar()}`;
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════
 // CLINIC DASHBOARD
-// ══════════════════════════════════════════════════════════════════════════════
-function renderClinic() {
-  if(state.selectedPatient) return renderPatientDetail();
-  const views = {overview:renderClinicOverview,patients:renderPatientList,analytics:renderAnalytics,followup:renderFollowup};
-  const fn = views[state.clinicView]||renderClinicOverview;
-  const navItems = [{id:'overview',icon:'📊',label:t().overview},{id:'patients',icon:'👥',label:t().patients},{id:'analytics',icon:'📈',label:t().analytics},{id:'followup',icon:'🔔',label:t().followup}];
-  return `
-    <div style="display:flex;min-height:100vh;font-family:Outfit,sans-serif">
-      <div class="sidebar">
-        <div style="padding:18px 14px 14px;border-bottom:1px solid rgba(255,255,255,0.08)">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">${logoSVG(26,true)}<div><div style="color:#fff;font-weight:800;font-size:12px">Mizan Clinic</div><div style="color:rgba(255,255,255,0.4);font-size:10px">Dashboard</div></div></div>
-          <div style="display:flex;gap:4px">${['en','am'].map(l=>`<button onclick="setState({lang:'${l}'})" style="flex:1;padding:5px;border-radius:7px;border:1px solid ${state.lang===l?'rgba(255,255,255,0.5)':'rgba(255,255,255,0.15)'};background:${state.lang===l?'rgba(255,255,255,0.15)':'transparent'};color:${state.lang===l?'#fff':'rgba(255,255,255,0.4)'};font-weight:700;font-size:11px;cursor:pointer;font-family:Outfit,sans-serif">${l==='en'?'EN':'አማ'}</button>`).join('')}</div>
-        </div>
-        <nav style="padding:12px 10px;flex:1">
-          ${navItems.map(n=>`<button onclick="setState({clinicView:'${n.id}',selectedPatient:null})" class="nav-item ${state.clinicView===n.id?'active':''}">${n.icon} ${n.label}</button>`).join('')}
-        </nav>
-        <div style="padding:0 10px 18px">
-          <div style="background:rgba(255,255,255,0.07);border-radius:11px;padding:12px;margin-bottom:8px">
-            <div style="font-size:20px;margin-bottom:4px">👨‍⚕️</div>
-            <p style="color:#fff;margin:0;font-size:13px;font-weight:700">Dr. Ayenachew</p>
-            <p style="color:rgba(255,255,255,0.4);margin:2px 0 0;font-size:10px">CEO & Founder</p>
-          </div>
-          <button onclick="setState({screen:'auth',role:null})" style="width:100%;padding:9px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:rgba(255,255,255,0.55);cursor:pointer;font-size:12px;font-family:Outfit,sans-serif">← Sign Out</button>
-        </div>
-      </div>
-      <div class="main-content">${fn()}</div>
-    </div>`;
+// ══════════════════════════════════════════════════════════════════════
+function renderClinic(){
+  const t=T[STATE.lang];
+  const ptsWithRisk=PTS.map(p=>({...p,...risk(p)}));
+
+  const wrap=h("div",{style:{minHeight:"100vh",display:"flex",fontFamily:"'Outfit',sans-serif",background:C.bg}});
+  const ob=offlineBanner();
+  if(ob){wrap.style.flexDirection="column";wrap.appendChild(ob);}
+
+  const inner=h("div",{style:{display:"flex",flex:"1"}});
+
+  // Sidebar
+  const sidebar=h("div",{style:{width:"200px",background:`linear-gradient(180deg,${C.p9} 0%,#071a2e 100%)`,
+    display:"flex",flexDirection:"column",position:"sticky",top:"0",height:"100vh",flexShrink:"0"}});
+  const slogo=h("div",{style:{padding:"20px 14px 16px",borderBottom:"1px solid rgba(255,255,255,.08)"}});
+  const sl=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"10px"}});
+  const slp=h("div"); slp.innerHTML=logoSVG(28,true); sl.appendChild(slp);
+  sl.appendChild(h("div",{},
+    h("div",{style:{color:"#fff",fontWeight:"800",fontSize:"12px"}},"Mizan Clinic"),
+    h("div",{style:{color:"rgba(255,255,255,.4)",fontSize:"10px"}},"Dashboard")
+  ));
+  slogo.appendChild(sl);
+  slogo.appendChild(langToggle());
+  sidebar.appendChild(slogo);
+
+  const nav=h("nav",{style:{padding:"12px 8px",flex:"1"}});
+  [{id:"overview",icon:"📊",label:t.overview},{id:"patients",icon:"👥",label:t.patients},
+   {id:"analytics",icon:"📈",label:t.analytics},{id:"followup",icon:"🔔",label:t.followup}
+  ].forEach(n=>{
+    const active=STATE.clinicView===n.id&&!STATE.selectedPt;
+    const b=h("button",{onClick:()=>{STATE.clinicView=n.id;STATE.selectedPt=null;renderMain();},
+      style:{width:"100%",display:"flex",alignItems:"center",gap:"8px",padding:"9px 10px",
+        borderRadius:"10px",border:"none",marginBottom:"2px",textAlign:"left",
+        background:active?"rgba(255,255,255,.13)":"transparent",
+        color:active?"#fff":"rgba(255,255,255,.5)",fontWeight:active?"700":"500",fontSize:"13px",
+        borderLeft:active?`3px solid ${C.g6}`:"3px solid transparent",transition:"all .2s"}},
+      h("span",{style:{fontSize:"15px"}},n.icon),n.label);
+    nav.appendChild(b);
+  });
+  sidebar.appendChild(nav);
+
+  const sdoc=h("div",{style:{padding:"0 8px 16px"}});
+  sdoc.appendChild(h("div",{style:{background:"rgba(255,255,255,.07)",borderRadius:"10px",padding:"10px 12px",marginBottom:"8px"}},
+    h("div",{style:{fontSize:"18px",marginBottom:"4px"}},"👨‍⚕️"),
+    h("p",{style:{color:"#fff",margin:"0",fontSize:"12px",fontWeight:"700"}},"Dr. Ayenachew"),
+    h("p",{style:{color:"rgba(255,255,255,.4)",margin:"2px 0 0",fontSize:"10px"}},"CEO & Founder")
+  ));
+  sdoc.appendChild(h("button",{onClick:()=>{STATE.screen="auth";render();},
+    style:{width:"100%",padding:"8px",borderRadius:"8px",border:"1px solid rgba(255,255,255,.12)",
+      background:"transparent",color:"rgba(255,255,255,.55)",fontSize:"12px",fontWeight:"600"}},"← Sign Out"));
+  sidebar.appendChild(sdoc);
+  inner.appendChild(sidebar);
+
+  // Main content
+  const main=h("div",{id:"clinicMain",style:{flex:"1",padding:"24px",overflowY:"auto",maxHeight:"100vh"}});
+  inner.appendChild(main);
+  wrap.appendChild(inner);
+
+  function renderMain(){
+    main.innerHTML="";
+    // Update sidebar active state
+    sidebar.querySelectorAll("nav button").forEach(b=>{
+      const active=b.textContent.includes(T[STATE.lang][STATE.clinicView]||"");
+    });
+
+    if(STATE.selectedPt){renderPtDetail();return;}
+
+    if(STATE.clinicView==="overview"){
+      main.appendChild(h("div",{className:"fu",style:{marginBottom:"22px"}},
+        h("h1",{style:{fontSize:"26px",fontWeight:"900",color:C.dk,margin:"0"}},"Good morning, Dr. Ayenachew 👋"),
+        h("p",{style:{color:C.mu,fontSize:"13px",marginTop:"3px"}},new Date().toDateString()+" · "+PTS.length+" patients enrolled")
+      ));
+      // KPIs
+      const high=ptsWithRisk.filter(p=>p.level==="high").length;
+      const totalRev=PTS.reduce((s,p)=>s+(p.sub==="premium"?12:p.sub==="standard"?7:3),0);
+      const grid=h("div",{className:"fu1",style:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"12px",marginBottom:"20px"}});
+      [{l:"Total Patients",v:PTS.length,i:"👥",c:C.p6,bg:C.p1},{l:"Subscriptions",v:PTS.length,i:"⭐",c:C.g7,bg:C.g1},
+       {l:"High Risk",v:high,i:"🚨",c:C.r5,bg:C.r1},{l:"Monthly Rev",v:"$"+totalRev,i:"💰",c:C.o5,bg:C.o1}
+      ].forEach(k=>{
+        grid.appendChild(h("div",{style:{background:C.wh,borderRadius:"16px",padding:"16px",border:`1.5px solid ${C.bd}`}},
+          h("div",{style:{width:"38px",height:"38px",borderRadius:"10px",background:k.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"18px",marginBottom:"10px"}},k.i),
+          h("div",{style:{fontSize:"28px",fontWeight:"900",color:k.c,letterSpacing:"-1px",lineHeight:"1"}},k.v),
+          h("div",{style:{fontSize:"12px",fontWeight:"700",color:C.dk,margin:"4px 0 2px"}},k.l)
+        ));
+      });
+      main.appendChild(grid);
+      // High risk list
+      const twoCol=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px",marginBottom:"16px"}});
+      const hrCard=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"18px",border:`1.5px solid ${C.bd}`}});
+      hrCard.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"🚨 "+t.highRisk));
+      ptsWithRisk.filter(p=>p.level==="high").forEach((p,i,arr)=>{
+        const row=h("div",{onClick:()=>{STATE.selectedPt=p;STATE.ptDetailTab="overview";renderMain();},
+          style:{padding:"9px 0",borderBottom:i<arr.length-1?`1px solid ${C.bd}`:"none",cursor:"pointer"}},
+          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"2px"}},
+            h("span",{style:{fontSize:"13px",fontWeight:"700",color:C.dk}},p.name),
+            pill("Score: "+p.score,C.r5,C.r1)
+          ),
+          h("p",{style:{margin:"0",fontSize:"11px",color:C.mu}},"Glucose: "+p.glucose+" · HbA1c: "+p.hba1c+"%")
+        );
+        hrCard.appendChild(row);
+      });
+      twoCol.appendChild(hrCard);
+      // AI summary
+      const aiCard=h("div",{style:{background:`linear-gradient(135deg,${C.p9},${C.g9})`,borderRadius:"16px",padding:"18px",color:"#fff"}});
+      aiCard.innerHTML=`<p style="font-size:11px;opacity:.6;letter-spacing:1.5px;margin-bottom:8px">🤖 AI DAILY SUMMARY</p>
+        <h3 style="font-size:16px;font-weight:800;margin-bottom:12px">3 patients need attention today</h3>`;
+      [{icon:"🚨",name:"Yohannes Assefa",detail:"Score 100 · Glucose 341"},{icon:"⚠️",name:"Almaz Tadesse",detail:"Score 75 · HbA1c 9.2%"},{icon:"⚠️",name:"Bekele Haile",detail:"Score 65 · Glucose 287"}].forEach(a=>{
+        aiCard.appendChild(h("div",{style:{background:"rgba(255,255,255,.1)",borderRadius:"10px",padding:"10px",marginBottom:"8px"}},
+          h("p",{style:{margin:"0 0 2px",fontSize:"13px",fontWeight:"700"}},a.icon+" "+a.name),
+          h("p",{style:{margin:"0",fontSize:"11px",opacity:".7"}},a.detail)
+        ));
+      });
+      twoCol.appendChild(aiCard);
+      main.appendChild(twoCol);
+    }
+
+    else if(STATE.clinicView==="patients"){
+      main.appendChild(h("div",{className:"fu",style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}},
+        h("div",{},
+          h("h1",{style:{fontSize:"24px",fontWeight:"900",color:C.dk,margin:"0"}},"Patient Registry"),
+          h("p",{style:{color:C.mu,fontSize:"13px",margin:"3px 0 0"}},PTS.length+" patients enrolled")
+        ),
+        btn(t.enrollPt,()=>toast("Opening enrollment form..."),{sm:true})
+      ));
+      // Filter
+      const filters=h("div",{className:"fu1",style:{display:"flex",gap:"8px",marginBottom:"16px",flexWrap:"wrap"}});
+      ["all","high","medium","low"].forEach(f=>{
+        const active=STATE.clinicFilter===f;
+        filters.appendChild(h("button",{onClick:()=>{STATE.clinicFilter=f;renderMain();},
+          style:{padding:"7px 14px",borderRadius:"16px",border:active?"none":`1.5px solid ${C.bd}`,
+            background:active?`linear-gradient(135deg,${C.p6},${C.p9})`:C.wh,
+            color:active?"#fff":C.md,fontWeight:"700",fontSize:"12px"}},
+          f==="all"?t.allPts:f==="high"?t.highRisk:f==="medium"?t.medRisk:t.lowRisk));
+      });
+      main.appendChild(filters);
+      // Table
+      const filtered=STATE.clinicFilter==="all"?ptsWithRisk:ptsWithRisk.filter(p=>p.level===STATE.clinicFilter);
+      const tbl=h("div",{className:"fu2",style:{background:C.wh,borderRadius:"16px",border:`1.5px solid ${C.bd}`,overflow:"auto"}});
+      const thead=h("div",{style:{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr 1fr 80px",
+        background:C.bg,padding:"10px 16px",gap:"12px"}});
+      ["Patient","Risk","Glucose","HbA1c","Adherence","Plan",""].forEach(h2=>{
+        thead.appendChild(h("span",{style:{fontSize:"10px",fontWeight:"700",color:C.mu,letterSpacing:".8px"}},h2.toUpperCase()));
+      });
+      tbl.appendChild(thead);
+      filtered.forEach(p=>{
+        const row=h("div",{onClick:()=>{STATE.selectedPt=p;STATE.ptDetailTab="overview";renderMain();},
+          style:{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr 1fr 80px",
+            padding:"12px 16px",gap:"12px",borderTop:`1px solid ${C.bd}`,cursor:"pointer",alignItems:"center"}});
+        row.addEventListener("mouseover",()=>row.style.background=C.bg);
+        row.addEventListener("mouseout",()=>row.style.background="");
+        row.appendChild(h("div",{},
+          h("div",{style:{fontWeight:"700",fontSize:"13px",color:C.dk}},p.name),
+          h("div",{style:{fontSize:"11px",color:C.mu}},"Age "+p.age+" · "+p.city)
+        ));
+        row.appendChild(pill(p.level.toUpperCase(),rC(p.level),rBg(p.level)));
+        row.appendChild(h("span",{style:{fontSize:"14px",fontWeight:"800",color:gSt(p.glucose).c}},p.glucose+" mg/dL"));
+        row.appendChild(h("span",{style:{fontSize:"13px",fontWeight:"700",color:p.hba1c>8?C.r5:p.hba1c>7?C.o5:C.g7}},p.hba1c+"%"));
+        const adhWrap=h("div",{style:{display:"flex",alignItems:"center",gap:"6px"}});
+        const bar=h("div",{style:{width:"40px",height:"4px",background:C.bd,borderRadius:"2px"}});
+        bar.appendChild(h("div",{style:{height:"100%",width:p.adherence+"%",background:p.adherence>70?C.g6:p.adherence>50?C.o5:C.r5,borderRadius:"2px"}}));
+        adhWrap.appendChild(bar);
+        adhWrap.appendChild(h("span",{style:{fontSize:"12px",fontWeight:"700",color:p.adherence>70?C.g7:C.r5}},p.adherence+"%"));
+        row.appendChild(adhWrap);
+        row.appendChild(pill(p.sub,p.sub==="premium"?C.g7:p.sub==="standard"?C.p6:C.mu,p.sub==="premium"?C.g1:p.sub==="standard"?C.p1:C.bg));
+        row.appendChild(h("button",{onClick:(e)=>{e.stopPropagation();STATE.selectedPt=p;STATE.ptDetailTab="overview";renderMain();},
+          style:{background:C.p1,border:"none",color:C.p6,borderRadius:"8px",padding:"6px 10px",fontSize:"12px",fontWeight:"700"}},"View →"));
+        tbl.appendChild(row);
+      });
+      main.appendChild(tbl);
+    }
+
+    else if(STATE.clinicView==="analytics"){
+      main.appendChild(h("h1",{className:"fu",style:{fontSize:"24px",fontWeight:"900",color:C.dk,marginBottom:"20px"}},"📈 Analytics"));
+      const high2=ptsWithRisk.filter(p=>p.level==="high").length;
+      const med2=ptsWithRisk.filter(p=>p.level==="medium").length;
+      const low2=ptsWithRisk.filter(p=>p.level==="low").length;
+      const totalRev=PTS.reduce((s,p)=>s+(p.sub==="premium"?12:p.sub==="standard"?7:3),0);
+      const twoCol=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"16px"}});
+      // Risk dist
+      const rd=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"20px",border:`1.5px solid ${C.bd}`}});
+      rd.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"16px"}},"Patient Risk Distribution"));
+      [{l:t.highRisk,n:high2,pct:Math.round(high2/PTS.length*100),c:C.r5},
+       {l:t.medRisk,n:med2,pct:Math.round(med2/PTS.length*100),c:C.o5},
+       {l:t.lowRisk,n:low2,pct:Math.round(low2/PTS.length*100),c:C.g6}
+      ].forEach(r=>{
+        rd.appendChild(h("div",{style:{marginBottom:"12px"}},
+          h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"5px"}},
+            h("span",{style:{fontSize:"13px",fontWeight:"700",color:C.dk}},r.l),
+            h("span",{style:{fontSize:"12px",fontWeight:"700",color:r.c}},r.n+" pts ("+r.pct+"%)")
+          ),
+          h("div",{style:{height:"6px",background:C.bg,borderRadius:"3px",overflow:"hidden"}},
+            h("div",{style:{height:"100%",width:r.pct+"%",background:r.c,borderRadius:"3px"}})
+          )
+        ));
+      });
+      twoCol.appendChild(rd);
+      // Revenue
+      const rev=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"20px",border:`1.5px solid ${C.bd}`}});
+      rev.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"16px"}},"Subscription Revenue"));
+      [{plan:"Premium ($12)",n:2,rev:24,c:C.g7},{plan:"Standard ($7)",n:2,rev:14,c:C.p6},{plan:"Basic ($3)",n:2,rev:6,c:C.mu}].forEach((s,i)=>{
+        rev.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",
+          padding:"10px 0",borderBottom:i<2?`1px solid ${C.bd}`:"none"}},
+          h("div",{style:{display:"flex",alignItems:"center",gap:"8px"}},
+            h("div",{style:{width:"9px",height:"9px",borderRadius:"50%",background:s.c}}),
+            h("span",{style:{fontSize:"13px",fontWeight:"600",color:C.dk}},s.plan)
+          ),
+          h("span",{style:{fontSize:"13px",fontWeight:"800",color:s.c}},"$"+s.rev+"/mo")
+        ));
+      });
+      rev.appendChild(h("div",{style:{marginTop:"12px",background:`linear-gradient(135deg,${C.g1},${C.p1})`,
+        borderRadius:"10px",padding:"12px",textAlign:"center"}},
+        h("p",{style:{margin:"0 0 2px",fontSize:"12px",color:C.md,fontWeight:"600"}},"Total Monthly Revenue"),
+        h("p",{style:{margin:"0",fontSize:"26px",fontWeight:"900",color:C.g7,letterSpacing:"-1px"}},"$"+totalRev,
+          h("span",{style:{fontSize:"12px",color:C.mu,fontWeight:"500"}},"/mo"))
+      ));
+      twoCol.appendChild(rev);
+      main.appendChild(twoCol);
+    }
+
+    else if(STATE.clinicView==="followup"){
+      main.appendChild(h("div",{style:{marginBottom:"20px"}},
+        h("h1",{style:{fontSize:"24px",fontWeight:"900",color:C.dk,margin:"0"}},"🔔 Follow-up Monitor"),
+        h("p",{style:{color:C.mu,fontSize:"13px",margin:"3px 0 0"}},"AI-powered patient follow-up")
+      ));
+      ptsWithRisk.forEach((p,i)=>{
+        const rec=aiMsg(p);
+        const lvl=p.level;
+        const fc=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"18px",marginBottom:"10px",
+          border:`1.5px solid ${C.bd}`,borderLeft:`5px solid ${rC(lvl)}`}});
+        fc.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"12px"}},
+          h("div",{style:{flex:"1"}},
+            h("div",{style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"6px",flexWrap:"wrap"}},
+              h("span",{style:{fontSize:"15px",fontWeight:"800",color:C.dk}},p.name),
+              pill(p.level.toUpperCase(),rC(p.level),rBg(p.level)),
+              pill("Score: "+p.score,rC(p.level),rBg(p.level))
+            ),
+            h("div",{style:{display:"flex",gap:"14px",flexWrap:"wrap",marginBottom:"8px"}},
+              h("span",{style:{fontSize:"12px",color:C.mu}},"Glucose: ",h("strong",{style:{color:gSt(p.glucose).c}},p.glucose)),
+              h("span",{style:{fontSize:"12px",color:C.mu}},"HbA1c: ",h("strong",{style:{color:p.hba1c>8?C.r5:C.g7}},p.hba1c+"%")),
+              h("span",{style:{fontSize:"12px",color:C.mu}},"Adh: ",h("strong",{style:{color:p.adherence>70?C.g6:C.r5}},p.adherence+"%"))
+            ),
+            h("div",{style:{background:lvl==="high"?C.r1:lvl==="medium"?C.o1:C.g1,
+              borderRadius:"8px",padding:"8px 12px",fontSize:"12px",color:C.dk,fontWeight:"600",display:"inline-flex",gap:"6px"}},
+              "🤖 ",rec)
+          ),
+          h("div",{style:{display:"flex",flexDirection:"column",gap:"6px"}},
+            h("button",{onClick:()=>toast("SMS sent to "+p.name),
+              style:{padding:"7px 12px",background:`linear-gradient(135deg,${C.p6},${C.p9})`,border:"none",color:"#fff",borderRadius:"8px",fontSize:"12px",fontWeight:"700"}},"📱 SMS"),
+            h("button",{onClick:()=>{STATE.selectedPt=p;STATE.ptDetailTab="overview";renderMain();},
+              style:{padding:"7px 12px",background:C.p1,border:"none",color:C.p6,borderRadius:"8px",fontSize:"12px",fontWeight:"700"}},"View")
+          )
+        ));
+        main.appendChild(fc);
+      });
+    }
+  }
+
+  function renderPtDetail(){
+    const p=STATE.selectedPt;
+    const {score,level}=risk(p);
+    // Back button
+    main.appendChild(h("button",{onClick:()=>{STATE.selectedPt=null;renderMain();},
+      style:{background:"none",border:"none",color:C.p6,fontWeight:"700",fontSize:"14px",
+        cursor:"pointer",marginBottom:"18px",display:"flex",alignItems:"center",gap:"6px"}},"← Back to patients"));
+    // Patient header
+    const ph=h("div",{className:"fu",style:{background:`linear-gradient(135deg,${C.p9},${C.g9})`,
+      borderRadius:"18px",padding:"20px",marginBottom:"16px",color:"#fff",
+      display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"12px"}});
+    ph.appendChild(h("div",{style:{display:"flex",gap:"14px",alignItems:"center"}},
+      h("div",{style:{width:"52px",height:"52px",borderRadius:"50%",background:"rgba(255,255,255,.15)",
+        display:"flex",alignItems:"center",justifyContent:"center",fontSize:"24px"}},"👤"),
+      h("div",{},
+        h("h2",{style:{fontSize:"18px",fontWeight:"800",margin:"0"}},p.name),
+        h("p",{style:{margin:"3px 0 0",fontSize:"12px",opacity:".7"}},p.type+" · Age "+p.age+" · "+p.city),
+        h("div",{style:{marginTop:"6px",display:"flex",gap:"6px"}},
+          pill(level.toUpperCase()+" RISK",rC(level),"rgba(255,255,255,.2)"),
+          pill("Score: "+score+"/100","#fff","rgba(255,255,255,.15)")
+        )
+      )
+    ));
+    ph.appendChild(h("div",{style:{display:"flex",gap:"8px"}},
+      h("button",{onClick:()=>toast("SMS sent to "+p.name),
+        style:{padding:"8px 14px",background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",
+          color:"#fff",borderRadius:"10px",fontWeight:"700",fontSize:"12px"}},"📱 SMS"),
+      h("button",{onClick:()=>toast("Appointment booked!"),
+        style:{padding:"8px 14px",background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",
+          color:"#fff",borderRadius:"10px",fontWeight:"700",fontSize:"12px"}},"📅 Book")
+    ));
+    main.appendChild(ph);
+
+    // Sub-tabs
+    const ptTabs=h("div",{style:{display:"flex",gap:"6px",marginBottom:"16px",overflowX:"auto",paddingBottom:"4px"}});
+    [["overview","📊 Overview"],["history","📋 History"],["investigations","🔬 Investigations"],
+     ["imaging","🖼️ Imaging"],["actions","⚡ Actions"]].forEach(([id,label])=>{
+      const active=STATE.ptDetailTab===id;
+      ptTabs.appendChild(h("button",{onClick:()=>{STATE.ptDetailTab=id;renderMain();},
+        style:{padding:"7px 14px",borderRadius:"10px",border:active?"none":`1.5px solid ${C.bd}`,
+          background:active?`linear-gradient(135deg,${C.p6},${C.p9})`:C.wh,
+          color:active?"#fff":C.md,fontWeight:"700",fontSize:"12px",whiteSpace:"nowrap"}},label));
+    });
+    main.appendChild(ptTabs);
+
+    const dtb=STATE.ptDetailTab;
+
+    if(dtb==="overview"){
+      const twoCol=h("div",{style:{display:"grid",gridTemplateColumns:"260px 1fr",gap:"16px"}});
+      // Vitals
+      const vc=h("div",{});
+      const vs=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"18px",marginBottom:"12px",border:`1.5px solid ${C.bd}`}});
+      vs.appendChild(h("h4",{style:{fontSize:"13px",fontWeight:"800",color:C.dk,margin:"0 0 12px",letterSpacing:".5px"}},"VITALS SNAPSHOT"));
+      [{l:"Glucose",v:p.glucose+" mg/dL",c:gSt(p.glucose).c},{l:"HbA1c",v:p.hba1c+"%",c:p.hba1c>8?C.r5:p.hba1c>7?C.o5:C.g7},
+       {l:"Blood Pressure",v:p.sbp+"/"+p.dbp+" mmHg",c:p.sbp>140?C.r5:C.g7},{l:"BMI",v:p.bmi+" kg/m²",c:p.bmi>30?C.r5:p.bmi>27?C.o5:C.g7},
+       {l:"Weight",v:p.weight+" kg",c:C.p6},{l:"Adherence",v:p.adherence+"%",c:p.adherence>70?C.g6:p.adherence>50?C.o5:C.r5}
+      ].forEach((s,i)=>{
+        vs.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${C.bd}`}},
+          h("span",{style:{fontSize:"12px",color:C.mu,fontWeight:"600"}},s.l),
+          h("span",{style:{fontSize:"13px",fontWeight:"800",color:s.c}},s.v)
+        ));
+      });
+      vc.appendChild(vs);
+      // AI Risk
+      const arc=h("div",{style:{background:level==="high"?C.r1:level==="medium"?C.o1:C.g1,
+        borderRadius:"16px",padding:"16px",border:`1.5px solid ${rC(level)}30`}});
+      arc.appendChild(h("p",{style:{fontSize:"11px",fontWeight:"700",color:C.mu,letterSpacing:"1px",marginBottom:"8px"}},"🤖 "+t.aiRec));
+      arc.appendChild(h("div",{style:{display:"flex",alignItems:"center",gap:"12px",marginBottom:"8px"}},
+        h("div",{style:{width:"52px",height:"52px",borderRadius:"50%",background:rBg(level),
+          display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+          border:`2px solid ${rC(level)}`}},
+          h("span",{style:{fontSize:"15px",fontWeight:"900",color:rC(level)}},score),
+          h("span",{style:{fontSize:"8px",color:rC(level),fontWeight:"700"}},"/100")
+        ),
+        h("div",{},
+          pill(level.toUpperCase()+" RISK",rC(level),rBg(level),13),
+          h("p",{style:{margin:"6px 0 0",fontSize:"12px",color:C.dk,lineHeight:"1.5",fontWeight:"600"}},aiMsg(p))
+        )
+      ));
+      vc.appendChild(arc);
+      if(p.alerts.length>0){
+        const al=h("div",{style:{marginTop:"12px",background:C.r1,borderRadius:"12px",padding:"14px",border:`1px solid ${C.r5}30`}});
+        al.appendChild(h("h4",{style:{color:C.r5,fontSize:"12px",fontWeight:"800",margin:"0 0 8px"}},"🚨 Active Alerts"));
+        p.alerts.forEach(a=>al.appendChild(h("p",{style:{margin:"3px 0",fontSize:"12px",color:C.dk}},"• "+a)));
+        vc.appendChild(al);
+      }
+      twoCol.appendChild(vc);
+      // Right
+      const rc2=h("div",{});
+      const adh=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"18px",border:`1.5px solid ${C.bd}`}});
+      adh.appendChild(h("p",{style:{fontSize:"14px",fontWeight:"700",color:C.dk,marginBottom:"6px"}},"Medication Adherence"));
+      const bar2=h("div",{style:{height:"8px",background:C.bg,borderRadius:"4px",overflow:"hidden",marginBottom:"6px"}});
+      bar2.appendChild(h("div",{style:{height:"100%",width:p.adherence+"%",background:p.adherence>70?C.g6:p.adherence>50?C.o5:C.r5,borderRadius:"4px"}}));
+      adh.appendChild(bar2);
+      adh.appendChild(h("p",{style:{fontSize:"13px",fontWeight:"800",color:p.adherence>70?C.g6:C.r5}},p.adherence+"% — "+(p.adherence>70?"Good":"Needs improvement")));
+      adh.appendChild(h("p",{style:{fontSize:"12px",color:C.mu,marginTop:"4px"}},"📞 "+p.phone));
+      rc2.appendChild(adh);
+      twoCol.appendChild(rc2);
+      main.appendChild(twoCol);
+    }
+
+    else if(dtb==="history"){
+      const hc=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"20px",marginBottom:"14px",border:`1.5px solid ${C.bd}`}});
+      hc.appendChild(h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.dk,marginBottom:"14px"}},"📋 "+t.history));
+      p.history.forEach((hst,i,arr)=>{
+        hc.appendChild(h("div",{style:{padding:"12px 0",borderBottom:i<arr.length-1?`1px solid ${C.bd}`:"none"}},
+          h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"4px"}},
+            h("span",{style:{fontSize:"13px",fontWeight:"800",color:C.p6}},hst.date),
+            h("span",{style:{fontSize:"12px",color:C.mu}},"👨‍⚕️ "+hst.doc)
+          ),
+          h("p",{style:{margin:"0",fontSize:"14px",color:C.dk,lineHeight:"1.7"}},hst.note)
+        ));
+      });
+      main.appendChild(hc);
+      let noteVal="";
+      main.appendChild(h("div",{style:{background:C.wh,borderRadius:"16px",padding:"20px",border:`1.5px solid ${C.bd}`}},
+        h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"➕ "+t.addNote),
+        field("Clinical Note",{rows:4,placeholder:"Enter clinical observations...",onChange:v=>noteVal=v}),
+        btn("Save Note →",()=>{if(noteVal.trim()){toast("Note saved!");noteVal="";}},{full:true})
+      ));
+    }
+
+    else if(dtb==="investigations"){
+      const ic=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"20px",marginBottom:"14px",border:`1.5px solid ${C.bd}`,overflowX:"auto"}});
+      ic.appendChild(h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.dk,marginBottom:"14px"}},"🔬 "+t.investigations));
+      const thead2=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 2fr 1.5fr 1fr 1fr",background:C.bg,padding:"8px 14px",gap:"10px",borderRadius:"8px",marginBottom:"4px"}});
+      ["Date","Test","Result","Reference","Status"].forEach(h2=>{
+        thead2.appendChild(h("span",{style:{fontSize:"10px",fontWeight:"700",color:C.mu,letterSpacing:".8px"}},h2.toUpperCase()));
+      });
+      ic.appendChild(thead2);
+      p.investigations.forEach((inv,i,arr)=>{
+        const sc=inv.status==="high"?C.r5:inv.status==="elevated"?C.o5:C.g6;
+        const sbg=inv.status==="high"?C.r1:inv.status==="elevated"?C.o1:C.g1;
+        const row=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 2fr 1.5fr 1fr 1fr",
+          padding:"10px 14px",gap:"10px",borderTop:`1px solid ${C.bd}`,alignItems:"center"}});
+        row.appendChild(h("span",{style:{fontSize:"12px",color:C.mu}},inv.date));
+        row.appendChild(h("span",{style:{fontSize:"13px",fontWeight:"700",color:C.dk}},inv.test));
+        row.appendChild(h("span",{style:{fontSize:"14px",fontWeight:"800",color:sc}},inv.result));
+        row.appendChild(h("span",{style:{fontSize:"12px",color:C.mu}},inv.ref));
+        row.appendChild(pill(inv.status.toUpperCase(),sc,sbg));
+        ic.appendChild(row);
+      });
+      main.appendChild(ic);
+      let t2="",r2="",ref2="";
+      main.appendChild(h("div",{style:{background:C.wh,borderRadius:"16px",padding:"20px",border:`1.5px solid ${C.bd}`}},
+        h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"➕ "+t.addInv),
+        field("Test Name",{placeholder:"e.g. HbA1c, Fasting Glucose",onChange:v=>t2=v}),
+        field("Result",{placeholder:"e.g. 8.5%",onChange:v=>r2=v}),
+        field("Reference Range",{placeholder:"e.g. <7%",onChange:v=>ref2=v}),
+        btn("Save Result →",()=>{if(t2&&r2){toast("Investigation saved!");t2="";r2="";ref2="";}},{full:true})
+      ));
+    }
+
+    else if(dtb==="imaging"){
+      const imgc=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"20px",marginBottom:"14px",border:`1.5px solid ${C.bd}`}});
+      imgc.appendChild(h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.dk,marginBottom:"14px"}},"🖼️ "+t.imaging));
+      if(p.imaging.length===0){
+        imgc.appendChild(h("div",{style:{textAlign:"center",padding:"28px",color:C.mu}},
+          h("div",{style:{fontSize:"36px",marginBottom:"8px"}},"🖼️"),
+          h("p",{style:{fontSize:"13px"}},"No imaging reports yet")
+        ));
+      }else{
+        p.imaging.forEach(img=>{
+          imgc.appendChild(h("div",{style:{background:C.bg,borderRadius:"12px",padding:"14px",marginBottom:"8px",border:`1px solid ${C.bd}`}},
+            h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"6px"}},
+              h("span",{style:{fontSize:"14px",fontWeight:"800",color:C.dk}},"🖼️ "+img.type),
+              h("span",{style:{fontSize:"12px",color:C.mu}},img.date)
+            ),
+            h("p",{style:{margin:"0 0 4px",fontSize:"13px",color:C.dk,lineHeight:"1.6"}},img.finding),
+            h("p",{style:{margin:"0",fontSize:"11px",color:C.mu}},"Reported by: "+img.rep)
+          ));
+        });
+      }
+      main.appendChild(imgc);
+      let imgType="",imgFind="";
+      main.appendChild(h("div",{style:{background:C.wh,borderRadius:"16px",padding:"20px",border:`1.5px solid ${C.bd}`}},
+        h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"➕ "+t.addImg),
+        field("Imaging Type",{placeholder:"e.g. Chest X-Ray, Fundoscopy",onChange:v=>imgType=v}),
+        field("Finding",{placeholder:"Enter radiologist report...",rows:3,onChange:v=>imgFind=v}),
+        h("div",{style:{border:`2px dashed ${C.bd}`,borderRadius:"10px",padding:"18px",textAlign:"center",background:C.bg,marginBottom:"12px"}},
+          h("p",{style:{color:C.mu,fontSize:"13px",marginBottom:"8px"}},"📎 Attach image file"),
+          h("button",{style:{padding:"7px 16px",background:C.p1,border:"none",color:C.p6,borderRadius:"8px",fontWeight:"700",fontSize:"12px"}},"Choose File")
+        ),
+        btn("Save Report →",()=>{if(imgType&&imgFind){toast("Imaging report saved!");}},{full:true})
+      ));
+    }
+
+    else if(dtb==="actions"){
+      const ag=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}});
+      [{l:"📅 Book Appointment",fn:()=>toast("Appointment booked!")},
+       {l:"📱 Send SMS",fn:()=>toast("SMS sent to "+p.name)},
+       {l:"💊 Update Medications",fn:()=>toast("Opening medication editor...")},
+       {l:"📊 Request Lab Work",fn:()=>toast("Lab request sent!")},
+       {l:"🖼️ Request Imaging",fn:()=>toast("Imaging request sent!")},
+       {l:"📤 Refer to Specialist",fn:()=>toast("Referral sent!")},
+       {l:"📞 Call Patient",fn:()=>toast("Opening phone...")},
+       {l:"🚨 Flag Emergency",fn:()=>toast("Patient flagged!","warn"),danger:true}
+      ].forEach(a=>{
+        ag.appendChild(h("button",{onClick:a.fn,
+          style:{padding:"14px",background:a.danger?C.r1:C.wh,border:`1.5px solid ${a.danger?C.r5:C.bd}`,
+            borderRadius:"12px",color:a.danger?C.r5:C.dk,fontWeight:"700",fontSize:"13px",
+            cursor:"pointer",textAlign:"left",transition:"all .15s"}},a.l));
+      });
+      main.appendChild(ag);
+    }
+  }
+
+  renderMain();
+  return wrap;
 }
 
-function renderClinicOverview() {
-  const pw = PATIENTS.map(p=>({...p,...calcRisk(p)}));
-  const high = pw.filter(p=>p.risk==='high').length;
-  const rev = PATIENTS.reduce((s,p)=>s+(p.sub==='premium'?12:p.sub==='standard'?7:3),0);
-  const overdue = PATIENTS.filter(p=>new Date(p.nextVisit)<new Date()).length;
-  return `
-    <div class="fade" style="margin-bottom:20px">
-      <h1 style="font-size:26px;font-weight:900;color:#0d1f35;margin:0">Good morning, Dr. Ayenachew 👋</h1>
-      <p style="color:#7a9bb5;font-size:13px;margin:3px 0 0">${new Date().toDateString()} · Gondar · ${PATIENTS.length} patients</p>
-    </div>
-    <div class="kpi-grid fade">
-      ${[{l:t().totalPatients,v:PATIENTS.length,i:'👥',c:'#1278d4',bg:'#eaf4ff',sub:'+2 this month'},{l:t().activeSubscriptions,v:PATIENTS.length,i:'⭐',c:'#108242',bg:'#e8faf0',sub:'All enrolled'},{l:t().highRisk,v:high,i:'🚨',c:'#e8344a',bg:'#fde8eb',sub:'Needs attention'},{l:'Monthly Revenue',v:'$'+rev,i:'💰',c:'#f0831a',bg:'#fef0e0',sub:'Subscriptions'}].map(k=>`
-      <div class="kpi">
-        <div style="width:38px;height:38px;border-radius:10px;background:${k.bg};display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px">${k.i}</div>
-        <div style="font-size:28px;font-weight:900;color:${k.c};letter-spacing:-1px;line-height:1">${k.v}</div>
-        <div style="font-size:12px;font-weight:700;color:#0d1f35;margin:4px 0 2px">${k.l}</div>
-        <div style="font-size:11px;color:#7a9bb5">${k.sub}</div>
-      </div>`).join('')}
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div class="card fade">
-        <h3 style="font-size:14px;font-weight:800;color:#0d1f35;margin:0 0 12px">🚨 ${t().highRisk}</h3>
-        ${pw.filter(p=>p.risk==='high').map((p,i,a)=>`
-        <div onclick="setState({selectedPatient:${p.id},patientTab:'overview'})" style="padding:10px 0;${i<a.length-1?'border-bottom:1px solid #eaf4ff':''}cursor:pointer">
-          <div style="display:flex;justify-content:space-between;margin-bottom:2px">
-            <span style="font-size:13px;font-weight:700;color:#0d1f35">${p.name}</span>
-            <span class="pill" style="background:#fde8eb;color:#e8344a">Score: ${p.score}</span>
-          </div>
-          <p style="margin:0;font-size:11px;color:#7a9bb5">Glucose: ${p.glucose} · HbA1c: ${p.hba1c}%</p>
-        </div>`).join('')}
-      </div>
-      <div class="card fade">
-        <h3 style="font-size:14px;font-weight:800;color:#0d1f35;margin:0 0 12px">⏰ Overdue (${overdue})</h3>
-        ${pw.filter(p=>new Date(p.nextVisit)<new Date()).map((p,i,a)=>`
-        <div style="padding:10px 0;${i<a.length-1?'border-bottom:1px solid #eaf4ff':''}">
-          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-            <span style="font-size:13px;font-weight:700;color:#0d1f35">${p.name}</span>
-            <span class="pill" style="background:#fef0e0;color:#f0831a">OVERDUE</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:11px;color:#7a9bb5">Due: ${p.nextVisit}</span>
-            <button onclick="notify('SMS sent to ${p.name}')" style="background:#eaf4ff;border:none;color:#1278d4;border-radius:7px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif">SMS</button>
-          </div>
-        </div>`).join('')}
-      </div>
-    </div>
-    <div style="background:linear-gradient(135deg,#0a3d6b,#0a3d22);border-radius:16px;padding:20px;color:#fff" class="fade">
-      <p style="font-size:11px;font-weight:700;opacity:0.6;letter-spacing:1.5px;margin-bottom:6px">🤖 AI DAILY SUMMARY</p>
-      <h3 style="font-size:16px;font-weight:800;margin:0 0 12px">3 patients require immediate attention today</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-        ${[{i:'🚨',n:'Yohannes Assefa',d:'Score 100 · Glucose 341'},{i:'⚠️',n:'Almaz Tadesse',d:'Score 75 · Glucose 312'},{i:'⚠️',n:'Bekele Haile',d:'Score 65 · Glucose 287'}].map(a=>`
-        <div style="background:rgba(255,255,255,0.1);border-radius:10px;padding:10px">
-          <div style="font-size:18px;margin-bottom:4px">${a.i}</div>
-          <p style="margin:0;font-size:12px;font-weight:700">${a.n}</p>
-          <p style="margin:3px 0 0;font-size:11px;opacity:0.7">${a.d}</p>
-        </div>`).join('')}
-      </div>
-    </div>`;
+// ── MAIN RENDER ──────────────────────────────────────────────────────────
+function render(){
+  const app=document.getElementById("app");
+  app.innerHTML="";
+  if(STATE.screen==="auth") app.appendChild(renderAuth());
+  else if(STATE.role==="patient") app.appendChild(renderPatient());
+  else app.appendChild(renderClinic());
 }
 
-function renderPatientList() {
-  const pw = PATIENTS.map(p=>({...p,...calcRisk(p)}));
-  const filtered = state.filter==='all'?pw:pw.filter(p=>p.risk===state.filter);
-  return `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px" class="fade">
-      <div><h1 style="font-size:24px;font-weight:900;color:#0d1f35;margin:0">Patient Registry</h1><p style="color:#7a9bb5;font-size:13px;margin:3px 0 0">${filtered.length} patients</p></div>
-      <button class="btn btn-primary btn-sm" onclick="notify('Enrollment form coming soon')">${t().enrollPatient}</button>
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap" class="fade">
-      ${['all','high','medium','low'].map(f=>`<button onclick="setState({filter:'${f}'})" style="padding:7px 14px;border-radius:16px;border:${state.filter===f?'none':'1.5px solid #cde2f5'};background:${state.filter===f?'linear-gradient(135deg,#1278d4,#0a3d6b)':'#fff'};color:${state.filter===f?'#fff':'#7a9bb5'};font-weight:700;font-size:12px;cursor:pointer;font-family:Outfit,sans-serif">${f==='all'?'All Patients':f==='high'?t().highRisk:f==='medium'?t().medRisk:t().lowRisk}</button>`).join('')}
-    </div>
-    <div style="background:#fff;border-radius:16px;border:1.5px solid #cde2f5;overflow:auto" class="fade">
-      <table>
-        <thead><tr>${['Patient','Type','Risk','Glucose','HbA1c','Adherence','Plan',''].map(h=>`<th>${h}</th>`).join('')}</tr></thead>
-        <tbody>
-          ${filtered.map(p=>`
-          <tr class="patient-row" onclick="setState({selectedPatient:${p.id},patientTab:'overview'})">
-            <td><div style="font-weight:700;font-size:13px;color:#0d1f35">${p.name}</div><div style="font-size:11px;color:#7a9bb5">Age ${p.age} · ${p.gender} · ${p.city}</div></td>
-            <td style="font-size:12px;color:#3a5570;font-weight:600">${p.type}</td>
-            <td><div style="display:flex;align-items:center;gap:6px"><div class="risk-badge" style="background:${riskBg(p.risk)};color:${riskC(p.risk)}">${p.score}</div><span class="pill" style="background:${riskBg(p.risk)};color:${riskC(p.risk)}">${p.risk.toUpperCase()}</span></div></td>
-            <td style="font-size:15px;font-weight:800;color:${gStatus(p.glucose).c}">${p.glucose}</td>
-            <td style="font-size:13px;font-weight:700;color:${p.hba1c>8?'#e8344a':p.hba1c>7?'#f0831a':'#14a854'}">${p.hba1c}%</td>
-            <td><div class="progress-bar" style="width:60px;display:inline-block;margin-right:4px"><div class="progress-fill" style="width:${p.adherence}%;background:${p.adherence>70?'#14a854':p.adherence>50?'#f0831a':'#e8344a'}"></div></div><span style="font-size:12px;font-weight:700;color:${p.adherence>70?'#108242':p.adherence>50?'#f0831a':'#e8344a'}">${p.adherence}%</span></td>
-            <td><span class="pill" style="background:${p.sub==='premium'?'#e8faf0':p.sub==='standard'?'#eaf4ff':'#f0f6ff'};color:${p.sub==='premium'?'#108242':p.sub==='standard'?'#1278d4':'#7a9bb5'}">${p.sub}</span></td>
-            <td><button onclick="event.stopPropagation();setState({selectedPatient:${p.id},patientTab:'overview'})" style="background:#eaf4ff;border:none;color:#1278d4;border-radius:8px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif">View →</button></td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>`;
-}
+// Online/offline detection
+window.addEventListener("online",()=>{STATE.online=true;render();});
+window.addEventListener("offline",()=>{STATE.online=false;render();});
 
-function renderPatientDetail() {
-  const p = PATIENTS.find(pt=>pt.id===state.selectedPatient);
-  if(!p) return '';
-  const {score,risk} = calcRisk(p);
-  const tabs = [['overview','📊 Overview'],['history','📋 History'],['investigations','🔬 Labs'],['imaging','🖼️ Imaging'],['actions','⚡ Actions']];
-  return `
-    <button onclick="setState({selectedPatient:null})" style="background:none;border:none;color:#1278d4;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:16px;font-family:Outfit,sans-serif;display:flex;align-items:center;gap:6px">← Back</button>
-    <div style="background:linear-gradient(135deg,#0a3d6b,#0a3d22);border-radius:18px;padding:20px;margin-bottom:16px;color:#fff;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px" class="fade">
-      <div style="display:flex;gap:14px;align-items:center">
-        <div style="width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:22px">👤</div>
-        <div>
-          <h2 style="font-size:18px;font-weight:800;margin:0">${p.name}</h2>
-          <p style="margin:3px 0;font-size:13px;opacity:0.7">${p.type} · Age ${p.age} · ${p.city}</p>
-          <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
-            <span class="pill" style="background:rgba(255,255,255,0.15);color:#fff">${risk.toUpperCase()} RISK</span>
-            <span class="pill" style="background:rgba(255,255,255,0.15);color:#fff">Score: ${score}/100</span>
-          </div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button onclick="notify('SMS sent to ${p.name}')" style="padding:8px 14px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;font-family:Outfit,sans-serif">📱 SMS</button>
-        <button onclick="notify('Appointment booked!')" style="padding:8px 14px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;font-family:Outfit,sans-serif">📅 Book</button>
-      </div>
-    </div>
-    <div style="display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px" class="fade">
-      ${tabs.map(([id,label])=>`<button onclick="setState({patientTab:'${id}'})" style="padding:8px 14px;border-radius:11px;border:${state.patientTab===id?'none':'1.5px solid #cde2f5'};background:${state.patientTab===id?'linear-gradient(135deg,#1278d4,#0a3d6b)':'#fff'};color:${state.patientTab===id?'#fff':'#7a9bb5'};font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;font-family:Outfit,sans-serif">${label}</button>`).join('')}
-    </div>
-    ${renderPatientTab(p,score,risk)}`;
-}
+// Load saved data
+STATE.readings=load("readings",[]);
+STATE.vitals=load("vitals",[]);
+STATE.missed=load("missed",[]);
 
-function renderPatientTab(p,score,risk) {
-  if(state.patientTab==='overview') return `
-    <div style="display:grid;grid-template-columns:260px 1fr;gap:16px">
-      <div>
-        <div class="card fade">
-          <h4 style="font-size:12px;font-weight:800;color:#0d1f35;margin:0 0 12px;letter-spacing:0.5px">VITALS</h4>
-          ${[{l:'Glucose',v:p.glucose+' mg/dL',c:gStatus(p.glucose).c},{l:'HbA1c',v:p.hba1c+'%',c:p.hba1c>8?'#e8344a':p.hba1c>7?'#f0831a':'#14a854'},{l:'Blood Pressure',v:p.sbp+'/'+p.dbp+' mmHg',c:p.sbp>140?'#e8344a':'#14a854'},{l:'BMI',v:p.bmi+' kg/m²',c:p.bmi>30?'#e8344a':p.bmi>27?'#f0831a':'#14a854'},{l:'Weight',v:p.weight+' kg',c:'#1278d4'},{l:'Adherence',v:p.adherence+'%',c:p.adherence>70?'#14a854':p.adherence>50?'#f0831a':'#e8344a'}].map((s,i)=>`
-          <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #eaf4ff">
-            <span style="font-size:12px;color:#7a9bb5;font-weight:600">${s.l}</span>
-            <span style="font-size:13px;font-weight:800;color:${s.c}">${s.v}</span>
-          </div>`).join('')}
-        </div>
-        <div style="background:${riskBg(risk)};border-radius:16px;padding:16px;border:1.5px solid ${riskC(risk)}30;margin-bottom:12px" class="fade">
-          <p style="font-size:11px;font-weight:700;color:#7a9bb5;margin-bottom:8px">🤖 ${t().aiRec}</p>
-          <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">
-            <div style="width:48px;height:48px;border-radius:50%;background:${riskBg(risk)};border:2px solid ${riskC(risk)};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
-              <span style="font-size:14px;font-weight:900;color:${riskC(risk)}">${score}</span>
-              <span style="font-size:8px;color:${riskC(risk)};font-weight:700">/100</span>
-            </div>
-            <div>
-              <span class="pill" style="background:${riskBg(risk)};color:${riskC(risk)};margin-bottom:4px;display:inline-block">${risk.toUpperCase()} RISK</span>
-              <p style="margin:0;font-size:12px;color:#0d1f35;line-height:1.5">${risk==='high'?'Urgent consultation. Consider insulin or emergency referral.':p.adherence<50?'Poor adherence. Schedule counseling session.':'Patient on track. Continue current care plan.'}</p>
-            </div>
-          </div>
-        </div>
-        ${p.alerts.length>0?`<div style="background:#fff5f6;border-radius:14px;padding:14px;border:1.5px solid #fde8eb" class="fade">
-          <h4 style="color:#e8344a;font-size:12px;font-weight:800;margin:0 0 8px">🚨 Active Alerts</h4>
-          ${p.alerts.map(a=>`<p style="margin:3px 0;font-size:12px;color:#0d1f35">• ${a}</p>`).join('')}
-        </div>`:''}
-      </div>
-      <div>
-        <div class="card fade">
-          <h3 style="font-size:14px;font-weight:800;color:#0d1f35;margin:0 0 8px">7-Day Glucose Trend</h3>
-          ${miniChart()}
-        </div>
-        <div class="card fade" style="display:flex;align-items:center;gap:14px">
-          <div style="width:64px;height:64px;border-radius:50%;background:${riskBg(risk)};border:3px solid ${p.adherence>70?'#14a854':p.adherence>50?'#f0831a':'#e8344a'};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
-            <span style="font-size:16px;font-weight:900;color:${p.adherence>70?'#14a854':p.adherence>50?'#f0831a':'#e8344a'}">${p.adherence}%</span>
-          </div>
-          <div>
-            <p style="margin:0;font-size:14px;font-weight:700;color:#0d1f35">Medication Adherence</p>
-            <p style="margin:4px 0 0;font-size:12px;color:#7a9bb5">${p.adherence>70?'Good — continue plan':p.adherence>50?'Moderate — counseling needed':'Poor — urgent intervention'}</p>
-            <p style="margin:4px 0 0;font-size:11px;color:#7a9bb5">📞 ${p.phone}</p>
-          </div>
-        </div>
-      </div>
-    </div>`;
-
-  if(state.patientTab==='history') return `
-    <div class="card fade">
-      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin:0 0 16px">📋 ${t().history}</h3>
-      ${p.history.map((h,i,a)=>`
-      <div style="padding:13px 0;${i<a.length-1?'border-bottom:1px solid #eaf4ff':''}">
-        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-          <span style="font-size:13px;font-weight:800;color:#1278d4">${h.date}</span>
-          <span style="font-size:12px;color:#7a9bb5">👨‍⚕️ ${h.doctor}</span>
-        </div>
-        <p style="margin:0;font-size:14px;color:#0d1f35;line-height:1.7">${h.note}</p>
-      </div>`).join('')}
-    </div>
-    <div class="card fade">
-      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin:0 0 12px">➕ Add Clinical Note</h3>
-      <div class="field"><label>Note</label><textarea id="new-note" rows="4" placeholder="Clinical observations, plan, medications..."></textarea></div>
-      <button class="btn btn-primary btn-full" onclick="if($('new-note')&&$('new-note').value.trim()){notify('Note saved.');$('new-note').value=''}">Save Note →</button>
-    </div>`;
-
-  if(state.patientTab==='investigations') return `
-    <div class="card fade">
-      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin:0 0 14px">🔬 ${t().investigations}</h3>
-      <table>
-        <thead><tr>${['Date','Test','Result','Reference','Status'].map(h=>`<th>${h}</th>`).join('')}</tr></thead>
-        <tbody>${p.investigations.map(inv=>`
-          <tr>
-            <td style="color:#7a9bb5;font-size:11px">${inv.date}</td>
-            <td style="font-weight:700">${inv.test}</td>
-            <td style="font-weight:800;color:${inv.status==='high'?'#e8344a':inv.status==='elevated'?'#f0831a':'#14a854'}">${inv.result}</td>
-            <td style="color:#7a9bb5;font-size:12px">${inv.ref}</td>
-            <td><span class="pill" style="background:${inv.status==='high'?'#fde8eb':inv.status==='elevated'?'#fef0e0':'#e8faf0'};color:${inv.status==='high'?'#e8344a':inv.status==='elevated'?'#f0831a':'#14a854'}">${inv.status.toUpperCase()}</span></td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>
-    <div class="card fade">
-      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin:0 0 12px">➕ Add Result</h3>
-      <div class="field"><label>Test Name</label><input type="text" id="inv-test" placeholder="e.g. HbA1c"/></div>
-      <div class="field"><label>Result</label><input type="text" id="inv-result" placeholder="e.g. 8.5%"/></div>
-      <div class="field"><label>Reference Range</label><input type="text" id="inv-ref" placeholder="e.g. <7%"/></div>
-      <button class="btn btn-primary btn-full" onclick="if($('inv-test')&&$('inv-test').value){notify('Investigation result saved!');['inv-test','inv-result','inv-ref'].forEach(id=>{if($(id))$(id).value=''})}">Save Result →</button>
-    </div>`;
-
-  if(state.patientTab==='imaging') return `
-    <div class="card fade">
-      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin:0 0 14px">🖼️ ${t().imaging}</h3>
-      ${p.imaging.length===0?`<div style="text-align:center;padding:28px;color:#7a9bb5"><div style="font-size:36px;margin-bottom:8px">🖼️</div><p>No imaging reports yet</p></div>`
-      :p.imaging.map(img=>`
-      <div style="background:#f0f6ff;border-radius:12px;padding:14px;margin-bottom:10px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-          <span style="font-size:14px;font-weight:800;color:#0d1f35">🖼️ ${img.type}</span>
-          <span style="font-size:12px;color:#7a9bb5">${img.date}</span>
-        </div>
-        <p style="margin:0 0 4px;font-size:13px;color:#0d1f35;line-height:1.6">${img.finding}</p>
-        <p style="margin:0;font-size:11px;color:#7a9bb5">Reported by: ${img.reported}</p>
-      </div>`).join('')}
-    </div>
-    <div class="card fade">
-      <h3 style="font-size:15px;font-weight:800;color:#0d1f35;margin:0 0 12px">➕ Add Imaging Report</h3>
-      <div class="field"><label>Imaging Type</label><input type="text" id="img-type" placeholder="e.g. Chest X-Ray, Fundoscopy"/></div>
-      <div class="field"><label>Finding</label><textarea id="img-finding" rows="3" placeholder="Radiologist report finding..."></textarea></div>
-      <div style="border:2px dashed #cde2f5;border-radius:11px;padding:18px;text-align:center;background:#f0f6ff;margin-bottom:12px">
-        <div style="font-size:26px;margin-bottom:6px">📎</div>
-        <p style="color:#7a9bb5;font-size:13px;margin:0 0 8px">Attach image file</p>
-        <button class="btn btn-ghost btn-sm" onclick="notify('File upload coming in v1.0')">Choose File</button>
-      </div>
-      <button class="btn btn-primary btn-full" onclick="if($('img-type')&&$('img-type').value){notify('Imaging report saved!');['img-type','img-finding'].forEach(id=>{if($(id))$(id).value=''})}">Save Report →</button>
-    </div>`;
-
-  if(state.patientTab==='actions') return `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" class="fade">
-      ${[['📅 Book Appointment',()=>notify('Appointment booked!'),'#eaf4ff','#0d1f35'],['📱 Send SMS',()=>notify('SMS sent to '+p.name),'#eaf4ff','#0d1f35'],['💊 Update Medications',()=>notify('Opening medication editor...'),'#eaf4ff','#0d1f35'],['📊 Request Lab Work',()=>notify('Lab request sent.'),'#eaf4ff','#0d1f35'],['🖼️ Request Imaging',()=>notify('Imaging request sent.'),'#eaf4ff','#0d1f35'],['📤 Refer to Specialist',()=>notify('Referral sent.'),'#eaf4ff','#0d1f35'],['📞 Call Patient',()=>notify('Opening phone...'),'#eaf4ff','#0d1f35'],['🚨 Flag Emergency',()=>notify('Patient flagged!','warn'),'#fff5f6','#e8344a']].map((a,i)=>`
-      <button onclick="(${a[1]})()" style="padding:16px;background:${a[2]};border:1.5px solid ${a[3]==='#e8344a'?'#fde8eb':'#cde2f5'};border-radius:13px;color:${a[3]};font-weight:700;font-size:13px;cursor:pointer;font-family:Outfit,sans-serif;text-align:left;transition:all 0.15s" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">${a[0]}</button>`).join('')}
-    </div>`;
-
-  return '';
-}
-
-function renderAnalytics() {
-  const pw = PATIENTS.map(p=>({...p,...calcRisk(p)}));
-  const rev = PATIENTS.reduce((s,p)=>s+(p.sub==='premium'?12:p.sub==='standard'?7:3),0);
-  return `
-    <div class="fade" style="margin-bottom:20px">
-      <h1 style="font-size:24px;font-weight:900;color:#0d1f35;margin:0">Analytics</h1>
-      <p style="color:#7a9bb5;font-size:13px;margin:3px 0 0">Clinic performance & patient insights</p>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      <div class="card fade">
-        <h3 style="font-size:14px;font-weight:800;color:#0d1f35;margin:0 0 16px">Risk Distribution</h3>
-        ${[{l:t().highRisk,n:pw.filter(p=>p.risk==='high').length,pct:50,c:'#e8344a'},{l:t().medRisk,n:pw.filter(p=>p.risk==='medium').length,pct:33,c:'#f0831a'},{l:t().lowRisk,n:pw.filter(p=>p.risk==='low').length,pct:17,c:'#14a854'}].map(r=>`
-        <div style="margin-bottom:12px">
-          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-            <span style="font-size:13px;font-weight:700;color:#0d1f35">${r.l}</span>
-            <span style="font-size:12px;font-weight:700;color:${r.c}">${r.n} (${r.pct}%)</span>
-          </div>
-          <div class="progress-bar"><div class="progress-fill" style="width:${r.pct}%;background:${r.c}"></div></div>
-        </div>`).join('')}
-      </div>
-      <div class="card fade">
-        <h3 style="font-size:14px;font-weight:800;color:#0d1f35;margin:0 0 16px">Revenue</h3>
-        ${[{p:'Premium ($12)',n:2,rev:24,c:'#108242'},{p:'Standard ($7)',n:2,rev:14,c:'#1278d4'},{p:'Basic ($3)',n:2,rev:6,c:'#7a9bb5'}].map((s,i,a)=>`
-        <div style="display:flex;justify-content:space-between;padding:10px 0;${i<a.length-1?'border-bottom:1px solid #eaf4ff':''}">
-          <div style="display:flex;align-items:center;gap:8px"><div style="width:10px;height:10px;border-radius:50%;background:${s.c}"></div><span style="font-size:13px;color:#0d1f35">${s.p}</span></div>
-          <span style="font-size:14px;font-weight:800;color:${s.c}">$${s.rev}/mo</span>
-        </div>`).join('')}
-        <div style="margin-top:12px;background:linear-gradient(135deg,#e8faf0,#eaf4ff);border-radius:10px;padding:12px;text-align:center">
-          <p style="margin:0;font-size:12px;color:#7a9bb5">Total Monthly</p>
-          <p style="margin:2px 0 0;font-size:26px;font-weight:900;color:#108242">$${rev}<span style="font-size:13px;color:#7a9bb5;font-weight:500">/mo</span></p>
-        </div>
-      </div>
-    </div>
-    <div class="card fade">
-      <h3 style="font-size:14px;font-weight:800;color:#0d1f35;margin:0 0 14px">Patient Growth 2025</h3>
-      <div class="chart-bar">
-        ${[{m:'Jan',n:1},{m:'Feb',n:2},{m:'Mar',n:3},{m:'Apr',n:4},{m:'May',n:6}].map((d,i,a)=>`
-        <div class="bar-wrap">
-          <span style="font-size:13px;font-weight:800;color:${i===a.length-1?'#1278d4':'#7a9bb5'}">${d.n}</span>
-          <div class="bar" style="height:${(d.n/6)*100}px;background:${i===a.length-1?'linear-gradient(180deg,#1278d4,#0a3d6b)':'linear-gradient(180deg,#d4ebfe,#a8d5fc)'}"></div>
-          <span class="bar-label">${d.m}</span>
-        </div>`).join('')}
-      </div>
-    </div>`;
-}
-
-function renderFollowup() {
-  const pw = PATIENTS.map(p=>({...p,...calcRisk(p)}));
-  return `
-    <div class="fade" style="margin-bottom:20px">
-      <h1 style="font-size:24px;font-weight:900;color:#0d1f35;margin:0">Follow-up Monitor</h1>
-      <p style="color:#7a9bb5;font-size:13px;margin:3px 0 0">AI-powered patient follow-up management</p>
-    </div>
-    ${pw.map((p,i)=>{
-      const isOD = new Date(p.nextVisit)<new Date();
-      const rec = p.risk==='high'?'Urgent consultation. Consider insulin or emergency referral.':p.adherence<50?'Poor adherence. Schedule counseling.':'Patient on track. Continue plan.';
-      return `
-      <div class="fade" style="background:#fff;border-radius:16px;padding:18px;margin-bottom:12px;border:1.5px solid ${p.risk==='high'?'#e8344a':p.risk==='medium'?'#f0831a':'#cde2f5'};border-left:5px solid ${riskC(p.risk)}">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
-          <div style="flex:1">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
-              <span style="font-size:15px;font-weight:800;color:#0d1f35">${p.name}</span>
-              <span class="pill" style="background:${riskBg(p.risk)};color:${riskC(p.risk)}">${p.risk.toUpperCase()}</span>
-              <span class="pill" style="background:${riskBg(p.risk)};color:${riskC(p.risk)}">Score: ${p.score}</span>
-              ${isOD?'<span class="pill" style="background:#fde8eb;color:#e8344a">OVERDUE</span>':''}
-            </div>
-            <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px">
-              <span style="font-size:12px;color:#7a9bb5">Glucose: <strong style="color:${gStatus(p.glucose).c}">${p.glucose}</strong></span>
-              <span style="font-size:12px;color:#7a9bb5">HbA1c: <strong style="color:${p.hba1c>8?'#e8344a':'#14a854'}">${p.hba1c}%</strong></span>
-              <span style="font-size:12px;color:#7a9bb5">BP: <strong style="color:${p.sbp>140?'#e8344a':'#14a854'}">${p.sbp}/${p.dbp}</strong></span>
-              <span style="font-size:12px;color:#7a9bb5">Adh: <strong style="color:${p.adherence>70?'#14a854':'#e8344a'}">${p.adherence}%</strong></span>
-            </div>
-            <div style="background:${p.risk==='high'?'#fff5f6':p.risk==='medium'?'#fffaf4':'#f4fdf7'};border-radius:9px;padding:8px 11px;display:inline-flex;gap:7px;align-items:flex-start">
-              <span style="font-size:13px">🤖</span>
-              <p style="margin:0;font-size:12px;color:#0d1f35;font-weight:600;line-height:1.5">${rec}</p>
-            </div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:6px">
-            <button onclick="notify('SMS sent to ${p.name}')" class="btn btn-primary btn-sm">📱 SMS</button>
-            <button onclick="setState({selectedPatient:${p.id},patientTab:'overview'})" class="btn btn-ghost btn-sm">View</button>
-            <button onclick="notify('Appointment booked!')" style="padding:7px 13px;background:#f0f6ff;border:1.5px solid #cde2f5;color:#7a9bb5;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif">📅 Book</button>
-          </div>
-        </div>
-      </div>`;}).join('')}`;
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// MAIN RENDER
-// ══════════════════════════════════════════════════════════════════════════════
-function render() {
-  let html = '';
-  if(state.screen==='auth') html = renderAuth();
-  else if(state.role==='patient') html = renderPatientApp();
-  else html = renderClinic();
-  document.getElementById('app').innerHTML = html + renderToast();
-  // scroll chat to bottom
-  const cm = document.getElementById('chat-msgs');
-  if(cm) cm.scrollTop = cm.scrollHeight;
-}
-
-// initial render
 render();
 </script>
 </body>
