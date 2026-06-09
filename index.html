@@ -20,36 +20,45 @@
     input:focus,textarea:focus{outline:2px solid #1278d4;outline-offset:1px;}
     ::-webkit-scrollbar{width:5px;}
     ::-webkit-scrollbar-thumb{background:#b8d4ee;border-radius:3px;}
+    #loadingScreen{position:fixed;inset:0;background:#f0f6ff;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;z-index:9999;gap:16px;}
+    .spinner{width:48px;height:48px;border:4px solid #d4ebfe;border-top-color:#1278d4;
+      border-radius:50%;animation:spin 1s linear infinite;}
   </style>
 </head>
 <body>
-<div id="app"></div>
 
+<!-- Loading screen -->
+<div id="loadingScreen">
+  <div class="spinner"></div>
+  <p style="color:#1278d4;font-weight:700;font-size:16px;font-family:'Outfit',sans-serif;">Loading Mizan...</p>
+</div>
+
+<div id="app" style="display:none"></div>
+
+<!-- Firebase SDKs -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, addDoc, collection, query, where, getDocs, orderBy, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyAAWi24LMEen73-Ae2C7Azfvlqz0RdeLbU",
-    authDomain: "mizan-diabetes-care-70136.firebaseapp.com",
-    projectId: "mizan-diabetes-care-70136",
-    storageBucket: "mizan-diabetes-care-70136.firebasestorage.app",
-    messagingSenderId: "355457671885",
-    appId: "1:355457671885:web:9a98368119b5865e133f84"
-  };
+// ── FIREBASE CONFIG ──────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyAAWi24LMEen73-Ae2C7AzfvlqzORdeLbU",
+  authDomain: "mizan-diabetes-care-70136.firebaseapp.com",
+  projectId: "mizan-diabetes-care-70136",
+  storageBucket: "mizan-diabetes-care-70136.firebasestorage.app",
+  messagingSenderId: "355457671885",
+  appId: "1:355457671885:web:9a98368119b5865e133f84"
+};
 
-  // Initialize Core Services
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+const db = getFirestore(firebaseApp);
 
-  // Expose services safely to the global script window context
-  window.auth = auth;
-  window.authModules = { signInWithEmailAndPassword, signOut };
-</script>
-
-<script>
-// ── COLORS ──────────────────────────────────────────────────────────────
+// ── COLORS ───────────────────────────────────────────────────────────
 const C={
   p9:"#0a3d6b",p6:"#1278d4",p3:"#a8d5fc",p2:"#d4ebfe",p1:"#eaf4ff",
   g9:"#0a3d22",g7:"#108242",g6:"#14a854",g2:"#c8f5d8",g1:"#e8faf0",
@@ -58,95 +67,62 @@ const C={
   bg:"#f0f6ff",wh:"#ffffff"
 };
 
-// ── TRANSLATIONS ─────────────────────────────────────────────────────────
+// ── TRANSLATIONS ─────────────────────────────────────────────────────
 const T={
   en:{appName:"Mizan Diabetes Care",tagline:"Care Closer",
     login:"Sign In",register:"Create Account",email:"Email",password:"Password",name:"Full Name",
     asPatient:"Patient",asDoctor:"Clinic Doctor",
-    home:"Home",glucose:"Glucose",vitals:"Vitals",meds:"Meds",visits:"Visits",chat:"Chat",learn:"Learn",plans:"Plans",
-    logGlucose:"Log Reading",save:"Save",send:"Send",cancel:"Cancel",
+    home:"Home",glucose:"Glucose",vitals:"Vitals",meds:"Meds",visits:"Visits",
+    chat:"Chat",learn:"Learn",plans:"Plans",
+    logGlucose:"Log Reading",save:"Save",send:"Send",
     fasting:"Fasting (mg/dL)",random:"Random (mg/dL)",
     weight:"Weight (kg)",systolic:"Systolic (mmHg)",diastolic:"Diastolic (mmHg)",exercise:"Exercise (min)",
     medications:"Medications",missedDose:"Missed Dose",refill:"Request Refill",
-    nextAppt:"Next Appointment",pastVisits:"Past Visits",requestAppt:"Request Appointment",
+    nextAppt:"Next Appointment",pastVisits:"Past Visits",
     consultChat:"Consultation Chat",typeMsg:"Type a message...",sendPhoto:"Send Photo",
     healthTip:"Health Tip of the Day",
     overview:"Overview",patients:"Patients",analytics:"Analytics",followup:"Follow-up",
-    enrollPt:"+ Enroll Patient",allPts:"All Patients",
     highRisk:"High Risk",medRisk:"Medium Risk",lowRisk:"Low Risk",
-    aiRec:"AI Recommendation",history:"History",investigations:"Investigations",imaging:"Imaging",actions:"Actions",
-    vitalsSnap:"Vitals Snapshot",addNote:"Add Clinical Note",addInv:"Add Investigation",addImg:"Add Imaging Report",
-    plans_title:"Care Plans",monthly:"Monthly subscription",
+    aiRec:"AI Recommendation",history:"History",investigations:"Investigations",
+    imaging:"Imaging",actions:"Actions",
+    plans_title:"Care Plans",
     offline:"Offline — saved locally",syncing:"Syncing...",
     basic:"Basic",standard:"Standard",premium:"Premium",
-    goodMorning:"Good morning",goodAfternoon:"Good afternoon",goodEvening:"Good evening"},
+    goodMorning:"Good morning",goodAfternoon:"Good afternoon",goodEvening:"Good evening",
+    saving:"Saving...",saved:"Saved!",errSave:"Save failed"},
   am:{appName:"ሚዛን የስኳር ህክምና",tagline:"ቅርብ ህክምና",
     login:"ግባ",register:"መለያ ፍጠር",email:"ኢሜይል",password:"የይለፍ ቃል",name:"ሙሉ ስም",
     asPatient:"ታካሚ",asDoctor:"ዶክተር",
-    home:"ዋና",glucose:"ስኳር",vitals:"ምልክቶች",meds:"መድሃኒት",visits:"ቀጠሮ",chat:"ውይይት",learn:"ይማሩ",plans:"ዕቅዶች",
-    logGlucose:"ንባብ ያስገቡ",save:"አስቀምጥ",send:"ላክ",cancel:"ሰርዝ",
+    home:"ዋና",glucose:"ስኳር",vitals:"ምልክቶች",meds:"መድሃኒት",visits:"ቀጠሮ",
+    chat:"ውይይት",learn:"ይማሩ",plans:"ዕቅዶች",
+    logGlucose:"ንባብ ያስገቡ",save:"አስቀምጥ",send:"ላክ",
     fasting:"ጾም (mg/dL)",random:"ማንኛውም ሰዓት (mg/dL)",
     weight:"ክብደት (ኪ.ግ)",systolic:"ሲስቶሊክ",diastolic:"ዳያስቶሊክ",exercise:"ልምምድ (ደቂቃ)",
     medications:"መድሃኒቶች",missedDose:"ያለፈ መድሃኒት",refill:"መሙሌ ጠይቅ",
-    nextAppt:"ቀጣይ ቀጠሮ",pastVisits:"ያለፉ ጉብኝቶች",requestAppt:"ቀጠሮ ጠይቅ",
+    nextAppt:"ቀጣይ ቀጠሮ",pastVisits:"ያለፉ ጉብኝቶች",
     consultChat:"የምክክር ውይይት",typeMsg:"መልእክት ይፃፉ...",sendPhoto:"ፎቶ ላክ",
     healthTip:"የዛሬ የጤና ምክር",
     overview:"አጠቃላይ",patients:"ታካሚዎች",analytics:"ትንታኔ",followup:"ክትትል",
-    enrollPt:"+ ታካሚ ምዝገባ",allPts:"ሁሉም ታካሚዎች",
     highRisk:"ከፍተኛ አደጋ",medRisk:"መካከለኛ አደጋ",lowRisk:"ዝቅተኛ አደጋ",
-    aiRec:"የAI ምክር",history:"ታሪክ",investigations:"ምርምሮች",imaging:"ምስሎች",actions:"እרምጃዎች",
-    vitalsSnap:"አስፈላጊ ምልክቶች",addNote:"ማስታወሻ ጨምር",addInv:"ምርምር ጨምር",addImg:"ምስል ጨምር",
-    plans_title:"የህክምና ዕቅዶች",monthly:"ወርሃዊ ምዝገባ",
+    aiRec:"የAI ምክር",history:"ታሪክ",investigations:"ምርምሮች",imaging:"ምስሎች",actions:"እርምጃዎች",
+    plans_title:"የህክምና ዕቅዶች",
     offline:"ያለ ኢንተርኔት ተቀምጧል",syncing:"እየተመሳሰለ...",
     basic:"መሰረታዊ",standard:"መደበኛ",premium:"ፕሪሚየም",
-    goodMorning:"እንደምን አደሩ",goodAfternoon:"እንደምን ዋሉ",goodEvening:"እንደምን አመሹ"}
+    goodMorning:"እንደምን አደሩ",goodAfternoon:"እንደምን ዋሉ",goodEvening:"እንደምን አመሹ",
+    saving:"እየቀመጠ...",saved:"ተቀምጧል!",errSave:"አልተቀመጠም"}
 };
 
-// ── STATE ────────────────────────────────────────────────────────────────
+// ── STATE ────────────────────────────────────────────────────────────
 let STATE={
-  screen:"auth",role:null,lang:"en",
+  screen:"auth",role:null,lang:"en",user:null,userDoc:null,
   patTab:"home",clinicView:"overview",selectedPt:null,ptDetailTab:"overview",
-  toast:null,online:navigator.onLine,
-  readings:[],vitals:[],missed:[],chat:[{from:"doctor",text:"Hello! I am Dr. Ayenachew. How are you feeling today?",time:"09:00"}],
-  chatInput:"",
-  clinicFilter:"all",newNote:"",newInv:{test:"",result:"",ref:""},newImg:{type:"",finding:""},
+  online:navigator.onLine,
+  readings:[],vitals:[],missed:[],
+  chat:[{from:"doctor",text:"Hello! I am Dr. Ayenachew. How are you feeling today?",time:"09:00"}],
+  chatInput:"",clinicFilter:"all",
 };
 
-// ── PATIENTS DATA ────────────────────────────────────────────────────────
-const PTS=[
-  {id:1,name:"Almaz Tadesse",age:54,gender:"F",type:"Type 2",glucose:312,hba1c:9.2,sbp:158,dbp:96,bmi:28.4,adherence:42,phone:"+251-911-234567",sub:"standard",weight:72,city:"Gondar",
-   alerts:["Glucose >300","Missed 2 visits"],
-   history:[{date:"2025-04-10",note:"Glucose uncontrolled. Metformin dose increased to 1g BD.",doc:"Dr. Ayenachew"},{date:"2025-03-01",note:"Initial enrollment. Started on Metformin 500mg.",doc:"Dr. Samuel"}],
-   investigations:[{date:"2025-04-10",test:"HbA1c",result:"9.2%",ref:"<7%",status:"high"},{date:"2025-04-10",test:"Fasting Glucose",result:"312 mg/dL",ref:"70-130",status:"high"},{date:"2025-03-01",test:"Urine Microalbumin",result:"45 mg/L",ref:"<30",status:"high"}],
-   imaging:[{date:"2025-03-15",type:"Chest X-Ray",finding:"Normal cardiac silhouette. No active pulmonary lesion.",rep:"Dr. Radiology"}]},
-  {id:2,name:"Bekele Haile",age:62,gender:"M",type:"Type 2",glucose:287,hba1c:8.8,sbp:145,dbp:88,bmi:26.1,adherence:58,phone:"+251-921-345678",sub:"basic",weight:80,city:"Gondar",
-   alerts:["Glucose >250"],
-   history:[{date:"2025-04-22",note:"Follow-up. BP slightly improved. Still on Metformin + Glibenclamide.",doc:"Dr. Ayenachew"}],
-   investigations:[{date:"2025-04-22",test:"HbA1c",result:"8.8%",ref:"<7%",status:"high"},{date:"2025-04-22",test:"Fasting Glucose",result:"287 mg/dL",ref:"70-130",status:"high"}],
-   imaging:[]},
-  {id:3,name:"Tigist Worku",age:41,gender:"F",type:"Type 1",glucose:168,hba1c:7.4,sbp:118,dbp:76,bmi:22.3,adherence:78,phone:"+251-931-456789",sub:"premium",weight:58,city:"Debark",
-   alerts:[],
-   history:[{date:"2025-05-01",note:"Good glucose control. Insulin dose maintained.",doc:"Dr. Amare"}],
-   investigations:[{date:"2025-05-01",test:"HbA1c",result:"7.4%",ref:"<7.5%",status:"normal"}],
-   imaging:[{date:"2025-04-01",type:"Fundoscopy",finding:"No diabetic retinopathy detected.",rep:"Dr. Eye"}]},
-  {id:4,name:"Dawit Mengiste",age:48,gender:"M",type:"Type 2",glucose:126,hba1c:6.8,sbp:122,dbp:78,bmi:24.8,adherence:91,phone:"+251-941-567890",sub:"premium",weight:75,city:"Gondar",
-   alerts:[],
-   history:[{date:"2025-05-10",note:"Excellent adherence. Glucose well controlled.",doc:"Dr. Ayenachew"}],
-   investigations:[{date:"2025-05-10",test:"HbA1c",result:"6.8%",ref:"<7%",status:"normal"}],
-   imaging:[]},
-  {id:5,name:"Selamawit Girma",age:37,gender:"F",type:"Type 2",glucose:194,hba1c:7.9,sbp:132,dbp:84,bmi:27.6,adherence:65,phone:"+251-951-678901",sub:"standard",weight:64,city:"Maksegnit",
-   alerts:["Adherence <70%"],
-   history:[{date:"2025-04-15",note:"Struggles with adherence. Counseling session done.",doc:"Dr. Samuel"}],
-   investigations:[{date:"2025-04-15",test:"HbA1c",result:"7.9%",ref:"<7%",status:"high"}],
-   imaging:[]},
-  {id:6,name:"Yohannes Assefa",age:71,gender:"M",type:"Type 2",glucose:341,hba1c:10.1,sbp:168,dbp:102,bmi:29.2,adherence:31,phone:"+251-911-789012",sub:"basic",weight:68,city:"Gondar",
-   alerts:["Glucose >300","HbA1c >10","Missed 3 visits","Adherence <40%"],
-   history:[{date:"2025-03-20",note:"Very poor control. Insulin initiation discussed. Referred to specialist.",doc:"Dr. Ayenachew"}],
-   investigations:[{date:"2025-03-20",test:"HbA1c",result:"10.1%",ref:"<7%",status:"high"},{date:"2025-03-20",test:"Fasting Glucose",result:"341 mg/dL",ref:"70-130",status:"high"},{date:"2025-03-20",test:"Creatinine",result:"1.4 mg/dL",ref:"0.6-1.2",status:"high"}],
-   imaging:[{date:"2025-02-20",type:"Chest X-Ray",finding:"Cardiomegaly noted. Recommend cardiology review.",rep:"Dr. Radiology"}]},
-];
-
-// ── HELPERS ──────────────────────────────────────────────────────────────
+// ── HELPERS ───────────────────────────────────────────────────────────
 function risk(p){
   let s=0;
   if(p.glucose>300)s+=30;else if(p.glucose>200)s+=20;else if(p.glucose>140)s+=10;
@@ -164,13 +140,7 @@ function gSt(v){
 }
 function rC(r){return r==="high"?C.r5:r==="medium"?C.o5:C.g6;}
 function rBg(r){return r==="high"?C.r1:r==="medium"?C.o1:C.g1;}
-function aiMsg(p){
-  const {level}=risk(p);
-  if(level==="high")return"Urgent: Consider insulin initiation or emergency referral.";
-  if(p.adherence<50)return"Poor adherence. Schedule counseling session.";
-  if(new Date(p.nextVisit)<new Date())return"Overdue follow-up. Call to reschedule.";
-  return"Patient on track. Continue current care plan.";
-}
+
 function h(tag,attrs,...children){
   const el=document.createElement(tag);
   if(attrs)Object.entries(attrs).forEach(([k,v])=>{
@@ -185,28 +155,25 @@ function h(tag,attrs,...children){
   });
   return el;
 }
+
 function toast(msg,type="ok"){
-  STATE.toast&&STATE.toast.remove();
+  document.querySelectorAll(".mz-toast").forEach(t=>t.remove());
   const colors={ok:C.g7,warn:C.o5,error:C.r5};
   const icons={ok:"✅",warn:"⚠️",error:"❌"};
-  const t=h("div",{style:{position:"fixed",top:"20px",right:"20px",zIndex:"9999",
-    background:colors[type],color:"#fff",padding:"14px 18px",borderRadius:"14px",
+  const t=h("div",{className:"mz-toast",style:{position:"fixed",top:"20px",right:"20px",zIndex:"9999",
+    background:colors[type],color:"#fff",padding:"13px 16px",borderRadius:"12px",
     fontWeight:"700",fontSize:"14px",boxShadow:"0 8px 24px rgba(0,0,0,.2)",
-    display:"flex",gap:"10px",alignItems:"center",maxWidth:"300px",animation:"fadeUp .3s ease"}},
+    display:"flex",gap:"10px",alignItems:"center",maxWidth:"280px",animation:"fadeUp .3s ease"}},
     icons[type]," ",msg,
     h("button",{onClick:()=>t.remove(),style:{background:"none",border:"none",color:"rgba(255,255,255,.8)",fontSize:"18px",marginLeft:"4px"}},"×")
   );
   document.body.appendChild(t);
-  STATE.toast=t;
-  setTimeout(()=>t.remove(),3000);
+  setTimeout(()=>t.remove&&t.remove(),3500);
 }
-function save(k,v){try{localStorage.setItem("mz_"+k,JSON.stringify(v));}catch(e){}}
-function load(k,d){try{const v=localStorage.getItem("mz_"+k);return v?JSON.parse(v):d;}catch(e){return d;}}
 
-// ── LOGO SVG ─────────────────────────────────────────────────────────────
 function logoSVG(size=36,dark=false){
   const b=dark?"#60b3f8":"#1278d4",g=dark?"#52db8c":"#108242";
-  const id="lg"+size;
+  const id="lg"+size+dark;
   return `<svg width="${size}" height="${size}" viewBox="0 0 80 80" fill="none">
     <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="${b}"/><stop offset="100%" stop-color="${g}"/>
@@ -214,213 +181,960 @@ function logoSVG(size=36,dark=false){
     <rect x="14" y="32" width="52" height="3.5" rx="1.75" fill="url(#${id})"/>
     <rect x="38" y="16" width="4" height="42" rx="2" fill="url(#${id})"/>
     <rect x="28" y="58" width="24" height="3.5" rx="1.75" fill="url(#${id})"/>
-    <path d="M40 18 C45 21,45 24,40 27 C35 30,35 33,40 36 C45 39,45 42,40 45 C35 48,35 51,40 54" stroke="${g}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+    <path d="M40 18 C45 21,45 24,40 27 C35 30,35 33,40 36 C45 39,45 42,40 45 C35 48,35 51,40 54"
+      stroke="${g}" stroke-width="2.8" fill="none" stroke-linecap="round"/>
     <ellipse cx="40.5" cy="17" rx="3.2" ry="2.2" fill="${g}" transform="rotate(-8 40.5 17)"/>
     <line x1="18" y1="35.5" x2="18" y2="43" stroke="${b}" stroke-width="1.8"/>
     <ellipse cx="18" cy="47" rx="7" ry="5" fill="${b}" fill-opacity="0.15" stroke="${b}" stroke-width="1.5"/>
-    <path d="M18 41.5 C18 41.5 14 45 14 47.2 C14 49.4 15.8 50.8 18 50.8 C20.2 50.8 22 49.4 22 47.2 C22 45 18 41.5 18 41.5Z" fill="${b}" fill-opacity="0.55"/>
+    <path d="M18 41.5 C18 41.5 14 45 14 47.2 C14 49.4 15.8 50.8 18 50.8 C20.2 50.8 22 49.4 22 47.2 C22 45 18 41.5 18 41.5Z"
+      fill="${b}" fill-opacity="0.55"/>
     <text x="18" y="49" font-size="5.5" fill="white" text-anchor="middle" font-weight="bold">G</text>
-    <line x1="62" y1="35.5" x2="62" y2="43" stroke="${g}" stroke-width="1.8"/> <ellipse cx="62" cy="47" rx="7" ry="5" fill="${g}" fill-opacity="0.15" stroke="${g}" stroke-width="1.5"/> <path d="M62 51.5 C62 51.5 57 47.5 57 45.2 C57 43.2 58.5 42 60.2 42 C61.2 42 62 42.7 62 42.7 C62 42.7 62.8 42 63.8 42 C65.5 42 67 43.2 67 45.2 C67 47.5 62 51.5 62 51.5Z" fill="${g}" fill-opacity="0.7"/> </svg>`; } // ── UI COMPONENTS ───────────────────────────────────────────────────────── function btn(label,onClick,opts={}){ const {v="primary",full=false,sm=false,disabled=false}=opts; const styles={ primary:{background:`linear-gradient(135deg,${C.p6},${C.p9})`,color:"#fff",border:"none"}, green:{background:`linear-gradient(135deg,${C.g6},${C.g9})`,color:"#fff",border:"none"}, outline:{background:"transparent",color:C.p6,border:`2px solid ${C.p6}`}, ghost:{background:C.p1,color:C.p6,border:"none"}, danger:{background:C.r1,color:C.r5,border:"none"}, muted:{background:C.bg,color:C.mu,border:`1.5px solid ${C.bd}`}, }; const b=h("button",{onClick,style:{...styles[v],padding:sm?"8px 14px":"12px 22px", borderRadius:"12px",fontWeight:"700",fontSize:sm?"13px":"15px", width:full?"100%":"auto",opacity:disabled?0.6:1, cursor:disabled?"not-allowed":"pointer",transition:"all .2s",letterSpacing:".2px"}},label); if(disabled)b.disabled=true; return b; } function field(label,opts={}){ const {type="text",value="",onChange,placeholder="",hint="",rows=0}=opts; const wrap=h("div",{style:{marginBottom:"16px"}}); if(label)wrap.appendChild(h("label",{style:{display:"block",marginBottom:"6px",fontSize:"13px",fontWeight:"700",color:C.dk}},label)); const inputStyle={width:"100%",padding:"12px 14px",borderRadius:"12px", border:`1.5px solid ${C.bd}`,fontSize:"15px",color:C.dk,background:C.bg,resize:"vertical"}; let inp; if(rows>0){inp=h("textarea",{style:inputStyle,placeholder,rows:""+rows},value||"");} else{inp=h("input",{type,style:inputStyle,placeholder,value:value||""});} if(onChange){inp.addEventListener("input",e=>onChange(e.target.value));} inp.addEventListener("focus",()=>inp.style.border=`1.5px solid ${C.p6}`); inp.addEventListener("blur",()=>inp.style.border=`1.5px solid ${C.bd}`); wrap.appendChild(inp); if(hint)wrap.appendChild(h("p",{style:{fontSize:"12px",color:C.mu,marginTop:"4px"}},hint)); return wrap; } function pill(label,c,bg,size=12){ return h("span",{style:{background:bg,color:c,borderRadius:"20px",padding:size===12?"3px 9px":"4px 12px", fontSize:size+"px",fontWeight:"700",whiteSpace:"nowrap"}},label); } function card(children,opts={}){ const {mb=14,p=20}=opts; const el=h("div",{style:{background:C.wh,borderRadius:"20px",padding:p+"px", marginBottom:mb+"px",border:`1.5px solid ${C.bd}`,boxShadow:"0 2px 10px rgba(10,80,160,.05)"}}); children.forEach(c=>c&&el.appendChild(c)); return el; } function langToggle(){ const wrap=h("div",{style:{display:"flex",gap:"5px"}}); ["en","am"].forEach(l=>{ const active=STATE.lang===l; const b=h("button",{onClick:()=>{STATE.lang=l;render();}, style:{padding:"5px 12px",borderRadius:"20px",fontWeight:"700",fontSize:"12px", border:`2px solid ${active?"rgba(255,255,255,.6)":"rgba(255,255,255,.2)"}`, background:active?"rgba(255,255,255,.18)":"transparent", color:active?"#fff":"rgba(255,255,255,.5)"}},l==="en"?"EN":"አማ"); wrap.appendChild(b); }); return wrap; } function offlineBanner(){ if(STATE.online)return null; const t=T[STATE.lang]; return h("div",{style:{background:C.o5,color:"#fff",padding:"8px 16px", fontSize:"12px",fontWeight:"700",textAlign:"center",position:"sticky",top:"0",zIndex:"80"}}, "📵 ",t.offline); } // ══════════════════════════════════════════════════════════════════════ // AUTH SCREEN // ══════════════════════════════════════════════════════════════════════ function renderAuth(){ const t=T[STATE.lang]; let mode="login",role="patient",email="",pass="",name=""; function rebuild(){ const old=document.getElementById("authWrap"); if(old)old.replaceWith(build()); } function build(){ const wrap=h("div",{id:"authWrap",style:{minHeight:"100vh",display:"flex",fontFamily:"'Outfit',sans-serif"}}); // Left panel const left=h("div",{style:{flex:"1",background:`linear-gradient(160deg,${C.p9} 0%,#071a2e 50%,${C.g9} 100%)`, display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center", padding:"48px",gap:"24px"}}); const logoWrap=h("div",{style:{textAlign:"center"}}); logoWrap.innerHTML=logoSVG(80,true); left.appendChild(logoWrap); left.appendChild(h("div",{style:{textAlign:"center"}}, h("h1",{style:{color:"#fff",fontSize:"40px",fontWeight:"900",margin:"12px 0 4px",letterSpacing:"-1px"}},"Mizan"), h("p",{style:{color:"rgba(255,255,255,.45)",fontSize:"13px",letterSpacing:"3px",textTransform:"uppercase"}},t.appName) )); [["📊",t.lang==="am"?"የስኳር ደረጃ ክትትል":"Real-time glucose tracking"], ["🤖","AI-powered risk stratification"], ["📵","Works offline, syncs automatically"], ["🌐","Amharic & English support"] ].forEach(([icon,text])=>{ left.appendChild(h("div",{style:{display:"flex",gap:"12px",alignItems:"center", background:"rgba(255,255,255,.07)",borderRadius:"12px",padding:"11px 16px",width:"100%",maxWidth:"280px"}}, h("span",{style:{fontSize:"20px"}},icon), h("span",{style:{color:"rgba(255,255,255,.75)",fontSize:"13px"}},text) )); }); wrap.appendChild(left); // Right panel const right=h("div",{style:{width:"420px",background:C.bg,display:"flex",flexDirection:"column", alignItems:"center",justifyContent:"center",padding:"40px",overflowY:"auto"}}); // Lang toggle const lt=h("div",{style:{position:"absolute",top:"16px",right:"16px",display:"flex",gap:"6px"}}); ["en","am"].forEach(l=>{ const active=STATE.lang===l; lt.appendChild(h("button",{onClick:()=>{STATE.lang=l;render();}, style:{padding:"6px 14px",borderRadius:"20px",fontWeight:"700",fontSize:"12px", border:`2px solid ${active?C.p6:C.bd}`, background:active?C.p6:C.wh,color:active?"#fff":C.md}},l==="en"?"EN":"አማ")); }); right.appendChild(lt); const inner=h("div",{style:{width:"100%",maxWidth:"340px"}}); inner.appendChild(h("div",{style:{marginBottom:"24px"}}, h("h2",{style:{fontSize:"26px",fontWeight:"900",color:C.dk,marginBottom:"4px"}}, mode==="login"?t.login:mode==="register"?t.register:"Reset Password"), h("p",{style:{color:C.mu,fontSize:"13px"}},t.appName+" · "+t.tagline) )); // Role selector if(mode!=="forgot"){ const rs=h("div",{style:{display:"flex",gap:"8px",marginBottom:"20px", background:C.wh,borderRadius:"12px",padding:"5px",border:`1.5px solid ${C.bd}`}}); [["patient","👤 "+t.asPatient],["doctor","👨‍⚕️ "+t.asDoctor]].forEach(([r,label])=>{ rs.appendChild(h("button",{onClick:()=>{role=r;rebuild();}, style:{flex:"1",padding:"10px",borderRadius:"9px",border:"none", background:role===r?`linear-gradient(135deg,${C.p6},${C.p9})`:"transparent", color:role===r?"#fff":C.mu,fontWeight:"700",fontSize:"14px"}},label)); }); inner.appendChild(rs); } if(mode==="register")inner.appendChild(field(t.name,{placeholder:"Almaz Tadesse",onChange:v=>name=v})); inner.appendChild(field(t.email,{type:"email",placeholder:"you@example.com",onChange:v=>email=v})); if(mode!=="forgot")inner.appendChild(field(t.password,{type:"password",placeholder:"••••••••",onChange:v=>pass=v})); inner.appendChild(btn(mode==="login"?t.login:mode==="register"?t.register:"Send Reset",()=>{ if(window.loginWithFirebase) { window.loginWithFirebase(email, pass); }else { STATE.role=role;STATE.screen="app";render(); } },{full:true})); inner.appendChild(h("div",{style:{textAlign:"center",marginTop:"14px",fontSize:"13px",color:C.mu}}, mode==="login"?h("span",{onClick:()=>{mode="register";rebuild();}, style:{color:C.p6,fontWeight:"700",cursor:"pointer"}},t.register) :h("span",{onClick:()=>{mode="login";rebuild();}, style:{color:C.p6,fontWeight:"700",cursor:"pointer"}},"← "+t.login) )); right.appendChild(inner); wrap.appendChild(right); return wrap; } return build(); } // ── PATIENT APP ─────────────────────────────────────────────────────── function renderPatient(){ const t=T[STATE.lang]; const tabs=[ {id:"home",icon:"🏠",label:t.home}, {id:"glucose",icon:"📊",label:t.glucose}, {id:"vitals",icon:"❤️",label:t.vitals}, {id:"meds",icon:"💊",label:t.meds}, {id:"visits",icon:"📅",label:t.visits}, {id:"chat",icon:"💬",label:t.chat}, {id:"learn",icon:"📚",label:t.learn}, {id:"plans",icon:"⭐",label:t.plans}, ]; // Header function buildHeader(){ const hdr=h("div",{style:{background:`linear-gradient(135deg,${C.p9},${C.g9})`, padding:"14px 16px",display:"flex",justifyContent:"space-between",alignItems:"center", position:"sticky",top:"0",zIndex:"50"}}); const left=h("div",{style:{display:"flex",alignItems:"center",gap:"10px"}}); const logo=h("div"); logo.innerHTML=logoSVG(30,true); left.appendChild(logo); left.appendChild(h("div",{}, h("div",{style:{color:"#fff",fontWeight:"800",fontSize:"13px"}},"Mizan"), h("div",{style:{color:"rgba(255,255,255,.4)",fontSize:"10px",letterSpacing:"1px"}},"DIABETES CARE") )); hdr.appendChild(left); const right=h("div",{style:{display:"flex",gap:"8px",alignItems:"center"}}); right.appendChild(langToggle()); right.appendChild(h("button",{onClick:()=>{ if(window.authModules && window.auth) { window.authModules.signOut(window.auth); } else { STATE.screen="auth";render(); } }, style:{background:"rgba(255,255,255,.12)",border:"none",color:"rgba(255,255,255,.7)", padding:"6px 10px",borderRadius:"8px",fontSize:"12px"}},"⏻")); hdr.appendChild(right); return hdr; } // Bottom nav function buildNav(){ const nav=h("div",{style:{position:"fixed",bottom:"0",left:"50%",transform:"translateX(-50%)", width:"100%",maxWidth:"500px",background:C.wh,borderTop:`1px solid ${C.bd}`, display:"flex",zIndex:"50",overflowX:"auto"}}); tabs.forEach(tb=>{ const active=STATE.patTab===tb.id; const b=h("button",{onClick:()=>{STATE.patTab=tb.id;renderPatientContent();}, style:{flex:"0 0 auto",minWidth:"54px",padding:"8px 4px 5px",border:"none", background:"transparent",display:"flex",flexDirection:"column",alignItems:"center",gap:"2px"}}, h("span",{style:{fontSize:"18px"}},tb.icon), h("span",{style:{fontSize:"8px",fontWeight:active?"800":"500", color:active?C.p6:C.mu,whiteSpace:"nowrap"}},tb.label) ); if(active){const bar=h("div",{style:{width:"16px",height:"2px",background:C.p6,borderRadius:"2px"}});b.appendChild(bar);} nav.appendChild(b); }); return nav; } const wrap=h("div",{style:{minHeight:"100vh",background:C.bg,maxWidth:"500px",margin:"0 auto",paddingBottom:"80px"}}); const ob=offlineBanner(); if(ob)wrap.appendChild(ob); wrap.appendChild(buildHeader()); const content=h("div",{id:"ptContent",style:{padding:"20px 16px"}}); wrap.appendChild(content); wrap.appendChild(buildNav()); function renderPatientContent(){ content.innerHTML=""; const tb=STATE.patTab; const hr=new Date().getHours(); const greeting=hr<12?t.goodMorning:hr<17?t.goodAfternoon:t.goodEvening; if(tb==="home"){ content.appendChild(h("div",{className:"fu"}, h("h2",{style:{fontSize:"22px",fontWeight:"900",color:C.dk}},"Hi, Almaz! 👋"), h("p",{style:{color:C.mu,fontSize:"13px",marginTop:"4px"}},new Date().toDateString()) )); // Glucose card const gc=h("div",{className:"fu1",style:{background:`linear-gradient(135deg,${C.p9},${C.g9})`, borderRadius:"20px",padding:"20px",marginTop:"16px",marginBottom:"14px",color:"#fff"}}); gc.innerHTML=`<p style="font-size:11px;opacity:.6;letter-spacing:1px;margin-bottom:4px">LAST READING</p> <div style="display:flex;justify-content:space-between;align-items:center"> <div><span style="font-size:42px;font-weight:900;letter-spacing:-1px">142</span><span style="font-size:13px;opacity:.7"> mg/dL</span> <p style="margin-top:4px;font-size:12px;opacity:.8">🟡 Elevated · Today 7:30 AM</p></div> <div style="text-align:right"><div style="font-size:12px;opacity:.7">HbA1c</div><div style="font-size:26px;font-weight:800">9.2%</div></div> </div>`; content.appendChild(gc); // Quick stats const grid=h("div",{className:"fu2",style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginBottom:"14px"}}); [{i:"⚖️",l:"BMI",v:"26.4",s:"kg/m²",c:C.o5},{i:"❤️",l:"BP",v:"132/84",s:"mmHg",c:C.r5}, {i:"⚖️",l:"Weight",v:"72",s:"kg",c:C.p6},{i:"🏃",l:"Exercise",v:"20",s:"min",c:C.g7}].forEach(s=>{ const card=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"14px",border:`1.5px solid ${C.bd}`}}, h("div",{style:{fontSize:"20px",marginBottom:"4px"}},s.i), h("div",{style:{fontSize:"11px",color:C.mu,fontWeight:"700"}},s.l), h("div",{style:{fontSize:"20px",fontWeight:"900",color:s.c}},s.v, h("span",{style:{fontSize:"10px",color:C.mu,fontWeight:"500"}}," "+s.s)) ); grid.appendChild(card); }); content.appendChild(grid); // Tip content.appendChild(h("div",{className:"fu3",style:{background:`linear-gradient(135deg,${C.g1},${C.p1})`, border:`1.5px solid ${C.g2}`,borderRadius:"18px",padding:"16px"}}, h("p",{style:{fontSize:"11px",fontWeight:"700",color:C.g7,letterSpacing:"1px",marginBottom:"6px"}},"💡 "+t.healthTip), h("p",{style:{fontSize:"14px",color:C.dk,lineHeight:"1.7"}},"Walking 30 minutes after meals can reduce blood sugar by up to 22%.") )); } else if(tb==="glucose"){ content.appendChild(h("h2",{className:"fu",style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"16px"}},"📊 "+t.glucose)); let f="",r=""; const fc=card([ h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.dk,marginBottom:"14px"}},"📝 "+t.logGlucose), field(t.fasting,{type:"number",placeholder:"e.g. 126",onChange:v=>f=v}), field(t.random,{type:"number",placeholder:"e.g. 180",onChange:v=>r=v}), btn(t.save,()=>{ if(!f&&!r){toast("Enter at least one reading","error");return;} const entry={date:new Date().toLocaleDateString(),time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),fasting:f||null,random:r||null}; STATE.readings.unshift(entry);save("readings",STATE.readings); toast("Reading saved!"+(STATE.online?"":" (offline)")); renderPatientContent(); },{full:true,v:"green"}) ]); content.appendChild(fc); if(STATE.readings.length>0){ const rc=card([h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"Recent Readings")]); STATE.readings.slice(0,5).forEach((rd,i,arr)=>{ const val=rd.fasting||rd.random; const s=gSt(Number(val)); const row=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center", padding:"10px 0",borderBottom:i<arr.length-1?`1px solid ${C.bd}`:"none"}}, h("div",{}, h("p",{style:{margin:"0",fontSize:"13px",fontWeight:"700",color:C.dk}},(rd.fasting?"Fasting":"Random")+" · "+rd.date), h("p",{style:{margin:"2px 0 0",fontSize:"11px",color:C.mu}},rd.time) ), h("div",{style:{textAlign:"right"}}, h("span",{style:{fontSize:"18px",fontWeight:"800",color:s.c}},val), h("span",{style:{fontSize:"11px",color:C.mu}}," mg/dL"), h("div",{style:{marginTop:"3px"}},pill(s.label,s.c,s.bg)) ) ); rc.appendChild(row); }); content.appendChild(rc); } } else if(tb==="vitals"){ content.appendChild(h("h2",{className:"fu",style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"16px"}},"❤️ "+t.vitals)); let w="",s="",d="",ex=""; const vc=card([ h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.dk,marginBottom:"14px"}},"Log Today's Vitals"), field(t.weight,{type:"number",placeholder:"e.g. 72",onChange:v=>w=v}), field(t.systolic,{type:"number",placeholder:"e.g. 130",onChange:v=>s=v}), field(t.diastolic,{type:"number",placeholder:"e.g. 80",onChange:v=>d=v}), field(t.exercise,{type:"number",placeholder:"e.g. 30",onChange:v=>ex=v}), btn(t.save,()=>{ const entry={date:new Date().toLocaleDateString(),weight:w||null,sbp:s||null,dbp:d||null, exerciseMin:ex||null,bmi:w?(w/(1.65*1.65)).toFixed(1):null}; STATE.vitals.unshift(entry);save("vitals",STATE.vitals); toast("Vitals saved!");renderPatientContent(); },{full:true}) ]); content.appendChild(vc); if(STATE.vitals.length>0){ const vr=card([h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.dk,marginBottom:"12px"}})]) } } } renderPatientContent(); return wrap; }
+    <line x1="62" y1="35.5" x2="62" y2="43" stroke="${g}" stroke-width="1.8"/>
+    <ellipse cx="62" cy="47" rx="7" ry="5" fill="${g}" fill-opacity="0.15" stroke="${g}" stroke-width="1.5"/>
+    <path d="M62 51.5 C62 51.5 57 47.5 57 45.2 C57 43.2 58.5 42 60.2 42 C61.2 42 62 42.7 62 42.7
+      C62 42.7 62.8 42 63.8 42 C65.5 42 67 43.2 67 45.2 C67 47.5 62 51.5 62 51.5Z"
+      fill="${g}" fill-opacity="0.7"/>
+  </svg>`;
+}
 
-// ── CLINIC CLINICAL AREA OVERVIEW DRAW INTERFACE ──────────────────────────
-function renderClinic(){
-  const t=T[STATE.lang];
-  const wrap=h("div",{style:{minHeight:"100vh",background:C.bg,display:"flex",flexDirection:"column"}});
-  const ob=offlineBanner(); if(ob)wrap.appendChild(ob);
+function btn(label,onClick,opts={}){
+  const{v="primary",full=false,sm=false,disabled=false}=opts;
+  const styles={
+    primary:{background:`linear-gradient(135deg,${C.p6},${C.p9})`,color:"#fff",border:"none"},
+    green:{background:`linear-gradient(135deg,${C.g6},${C.g9})`,color:"#fff",border:"none"},
+    outline:{background:"transparent",color:C.p6,border:`2px solid ${C.p6}`},
+    ghost:{background:C.p1,color:C.p6,border:"none"},
+    danger:{background:C.r1,color:C.r5,border:"none"},
+    muted:{background:C.bg,color:C.mu,border:`1.5px solid ${C.bd}`},
+  };
+  const b=h("button",{onClick,style:{...styles[v],padding:sm?"8px 14px":"12px 22px",
+    borderRadius:"12px",fontWeight:"700",fontSize:sm?"13px":"15px",
+    width:full?"100%":"auto",opacity:disabled?0.6:1,
+    cursor:disabled?"not-allowed":"pointer",transition:"all .2s"}},label);
+  if(disabled)b.disabled=true;
+  return b;
+}
 
-  // Top Workspace Header Bar
-  const hdr=h("div",{style:{background:`linear-gradient(135deg,${C.p9},#0b2b4d)`,
-    padding:"14px 24px",display:"flex",justifyContent:"space-between",alignItems:"center",boxShadow:"0 2px 10px rgba(0,0,0,.1)"}});
-  const left=h("div",{style:{display:"flex",alignItems:"center",gap:"12px"}});
-  const logo=h("div"); logo.innerHTML=logoSVG(34,true); left.appendChild(logo);
-  left.appendChild(h("div",{},
-    h("h1",{style:{color:"#fff",fontSize:"18px",fontWeight:"900",letterSpacing:"-.5px"}},"Mizan Workspace"),
-    h("p",{style:{color:C.p3,fontSize:"11px",fontWeight:"700",letterSpacing:"1.5px"}},"CLINICAL INSIGHTS HUB")
-  ));
-  hdr.appendChild(left);
-
-  const right=h("div",{style:{display:"flex",gap:"14px",alignItems:"center"}});
-  right.appendChild(langToggle());
-  right.appendChild(h("div",{style:{textAlign:"right"}},
-    h("p",{style:{color:"#fff",fontSize:"13px",fontWeight:"700"}},"Dr. Ayenachew"),
-    h("p",{style:{color:C.p3,fontSize:"11px"}},"General Practitioner")
-  ));
-  right.appendChild(h("button",{onClick:()=>{
-    if(window.authModules && window.auth) {
-      window.authModules.signOut(window.auth);
-    } else {
-      STATE.screen="auth";render();
-    }
-  }, style:{background:"rgba(255,255,255,.12)",border:"none",color:"#fff",padding:"8px 12px",borderRadius:"10px",fontWeight:"700"}},"⏻"));
-  hdr.appendChild(right);
-  wrap.appendChild(hdr);
-
-  // Main Split Layout
-  const main=h("div",{style:{flex:"1",display:"flex",overflow:"hidden"}});
-  
-  // Left Sidebar
-  const sb=h("div",{style:{width:"240px",background:C.wh,borderRight:`1.5px solid ${C.bd}`,padding:"20px 14px",display:"flex",flexDirection:"column",gap:"6px"}});
-  [["overview","📊 Workspace Overview"],["patients","👥 Patient Registry"]].forEach(([v,l])=>{
-    const active=STATE.clinicView===v;
-    sb.appendChild(h("button",{onClick:()=>{STATE.clinicView=v;STATE.selectedPt=null;render();},
-      style:{width:"100%",padding:"12px 16px",borderRadius:"12px",border:"none",textAlign:"left",fontWeight:"700",fontSize:"14px",
-        background:active?C.p1:"transparent",color:active?C.p6:C.md,transition:"all .15s"}},l));
-  });
-  main.appendChild(sb);
-
-  // Dynamic Workspace View Content Panel Container
-  const ctx=h("div",{style:{flex:"1",padding:"24px",overflowY:"auto"}});
-  if(!STATE.selectedPt && STATE.clinicView==="overview"){
-    ctx.appendChild(h("h2",{style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"16px"}},"Clinical Overview"));
-    const grid=h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:"16px",marginBottom:"24px"}});
-    grid.appendChild(card([h("h4",{style:{fontSize:"12px",color:C.mu,fontWeight:"700"}},"TOTAL ENROLLED"),h("p",{style:{fontSize:"32px",fontWeight:"900",color:C.p6}},PTS.length)],{mb:0}));
-    grid.appendChild(card([h("h4",{style:{fontSize:"12px",color:C.mu,fontWeight:"700"}},"CRITICAL RISK ACTION REQ"),h("p",{style:{fontSize:"32px",fontWeight:"900",color:C.r5}},PTS.filter(p=>risk(p).level==="high").length)],{mb:0}));
-    grid.appendChild(card([h("h4",{style:{fontSize:"12px",color:C.mu,fontWeight:"700"}},"SYSTEM HEALTH STATUS"),h("p",{style:{fontSize:"18px",fontWeight:"800",color:C.g7,marginTop:"14px"}},"✨ All Backends Syncing")],{mb:0}));
-    ctx.appendChild(grid);
-  } else if(STATE.selectedPt) {
-    // Show detailed tracking sheet for the active patient
-    ctx.appendChild(renderPatientDetails(STATE.selectedPt));
-  } else {
-    ctx.appendChild(h("h2",{style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"16px"}},"Patient Registry"));
-    const ptList=h("div",{style:{display:"grid",gap:"12px"}});
-    PTS.forEach(p=>{
-      const r=risk(p);
-      const div=h("div",{onClick:()=>{STATE.selectedPt=p;render();},style:{background:C.wh,padding:"16px",borderRadius:"16px",border:`1.5px solid ${C.bd}`,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}},
-        h("div",{},h("h4",{style:{fontSize:"16px",fontWeight:"800",color:C.dk}},p.name),h("p",{style:{fontSize:"12px",color:C.mu}},`Age: ${p.age} · ${p.type}`)),
-        pill(r.level.toUpperCase(),rC(r.level),rBg(r.level))
-      );
-      ptList.appendChild(div);
-    });
-    ctx.appendChild(ptList);
-  }
-
-  main.appendChild(ctx);
-  wrap.appendChild(main);
+function field(label,opts={}){
+  const{type="text",value="",onChange,placeholder="",hint="",rows=0}=opts;
+  const wrap=h("div",{style:{marginBottom:"15px"}});
+  if(label)wrap.appendChild(h("label",{style:{display:"block",marginBottom:"5px",fontSize:"13px",fontWeight:"700",color:C.dk}},label));
+  const s={width:"100%",padding:"11px 13px",borderRadius:"11px",border:`1.5px solid ${C.bd}`,fontSize:"15px",color:C.dk,background:C.bg,resize:"vertical"};
+  let inp;
+  if(rows>0){inp=h("textarea",{style:s,placeholder,rows:""+rows},value||"");}
+  else{inp=h("input",{type,style:s,placeholder,value:value||""});}
+  if(onChange)inp.addEventListener("input",e=>onChange(e.target.value));
+  inp.addEventListener("focus",()=>inp.style.border=`1.5px solid ${C.p6}`);
+  inp.addEventListener("blur",()=>inp.style.border=`1.5px solid ${C.bd}`);
+  wrap.appendChild(inp);
+  if(hint)wrap.appendChild(h("p",{style:{fontSize:"12px",color:C.mu,marginTop:"3px"}},hint));
   return wrap;
 }
 
-// ── PATIENT TRACKING SHEET COMPONENT ──────────────────────────────────────
-function renderPatientDetails(p){
-  const r=risk(p);
-  const wrap=h("div",{className:"fu",style:{display:"flex",flexDirection:"column",gap:"20px"}});
+function pill(label,c,bg,size=12){
+  return h("span",{style:{background:bg,color:c,borderRadius:"20px",
+    padding:size===12?"3px 9px":"4px 12px",fontSize:size+"px",fontWeight:"700",whiteSpace:"nowrap"}},label);
+}
 
-  // Return row line item
-  const topRow=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:`1.5px solid ${C.bd}`,paddingBottom:"14px"}});
-  topRow.appendChild(h("div",{},
-    h("button",{onClick:()=>{STATE.selectedPt=null;render();},style:{background:"none",border:"none",color:C.p6,fontWeight:"700",fontSize:"14px",marginBottom:"6px",cursor:"pointer"}},"← Back to registry"),
-    h("h2",{style:{fontSize:"24px",fontWeight:"900",color:C.dk}},p.name),
-    h("p",{style:{fontSize:"13px",color:C.mu}},`Patient Profile ID: #000${p.id} · Type: ${p.type} · Location: ${p.city}`)
-  ));
-  topRow.appendChild(pill(r.level.toUpperCase() + " RISK",rC(r.level),rBg(r.level),14));
-  wrap.appendChild(topRow);
+function langToggle(dark=true){
+  const wrap=h("div",{style:{display:"flex",gap:"4px"}});
+  ["en","am"].forEach(l=>{
+    const active=STATE.lang===l;
+    const borderC=dark?(active?"rgba(255,255,255,.6)":"rgba(255,255,255,.2)"):(active?C.p6:C.bd);
+    const bgC=dark?(active?"rgba(255,255,255,.18)":"transparent"):(active?C.p6:C.wh);
+    const textC=dark?(active?"#fff":"rgba(255,255,255,.5)"):(active?"#fff":C.md);
+    wrap.appendChild(h("button",{onClick:()=>{STATE.lang=l;render();},
+      style:{padding:"4px 10px",borderRadius:"16px",fontWeight:"700",fontSize:"11px",
+        border:`1.5px solid ${borderC}`,background:bgC,color:textC}},
+      l==="en"?"EN":"አማ"));
+  });
+  return wrap;
+}
 
-  // Structured Core Summary Columns
-  const layout=h("div",{style:{display:"flex",gap:"20px"}});
-  
-  // Left column metrics
-  const colLeft=h("div",{style:{flex:"1",display:"flex",flexDirection:"column",gap:"16px"}});
-  colLeft.appendChild(card([
-    h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"Clinical Metrics Snapshot"),
-    h("p",{style:{fontSize:"14px",margin:"6px 0"}},`Glucose: ${p.glucose} mg/dL`),
-    h("p",{style:{fontSize:"14px",margin:"6px 0"}},`HbA1c: ${p.hba1c}%`),
-    h("p",{style:{fontSize:"14px",margin:"6px 0"}},`Blood Pressure: ${p.sbp}/${p.dbp} mmHg`),
-    h("p",{style:{fontSize:"14px",margin:"6px 0"}},`Treatment Adherence Rate: ${p.adherence}%`)
-  ]));
-  
-  // AI recommendations
-  colLeft.appendChild(card([
-    h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.g7,marginBottom:"8px"}},"🤖 Mizan AI Clinical Guide"),
-    h("p",{style:{fontSize:"14px",color:C.dk,lineHeight:"1.6"}},aiMsg(p))
-  ],{p:16}));
+function offlineBanner(){
+  if(STATE.online)return null;
+  return h("div",{style:{background:C.o5,color:"#fff",padding:"7px 16px",
+    fontSize:"12px",fontWeight:"700",textAlign:"center",position:"sticky",top:"0",zIndex:"80"}},
+    "📵 "+T[STATE.lang].offline);
+}
 
-  layout.appendChild(colLeft);
+// ── FIRESTORE HELPERS ─────────────────────────────────────────────────
+async function saveReading(uid,data){
+  try{
+    await addDoc(collection(db,"users",uid,"readings"),{...data,createdAt:serverTimestamp()});
+    return true;
+  }catch(e){console.error(e);return false;}
+}
+async function saveVitals(uid,data){
+  try{
+    await addDoc(collection(db,"users",uid,"vitals"),{...data,createdAt:serverTimestamp()});
+    return true;
+  }catch(e){console.error(e);return false;}
+}
+async function loadReadings(uid){
+  try{
+    const q=query(collection(db,"users",uid,"readings"),orderBy("createdAt","desc"));
+    const snap=await getDocs(q);
+    return snap.docs.map(d=>({id:d.id,...d.data()}));
+  }catch(e){return[];}
+}
+async function loadVitals(uid){
+  try{
+    const q=query(collection(db,"users",uid,"vitals"),orderBy("createdAt","desc"));
+    const snap=await getDocs(q);
+    return snap.docs.map(d=>({id:d.id,...d.data()}));
+  }catch(e){return[];}
+}
+async function saveUserProfile(uid,data){
+  try{
+    await setDoc(doc(db,"users",uid),data,{merge:true});
+    return true;
+  }catch(e){return false;}
+}
+async function getUserProfile(uid){
+  try{
+    const snap=await getDoc(doc(db,"users",uid));
+    return snap.exists()?snap.data():null;
+  }catch(e){return null;}
+}
 
-  // Right column clinical workspace actions
-  const colRight=h("div",{style:{width:"320px"}});
-  const actionGroup=card([
-    h("h3",{style:{fontSize:"15px",fontWeight:"800",color:C.dk,marginBottom:"14px"}},"Clinical Desk Actions")
-  ]);
-  
-  const actionsList=[
-    {l:"📝 Update Treatment Plan",fn:()=>toast("Plan editor launched")},
-    {l:"💊 Refill Medications",fn:()=>toast("Prescription extended!")},
-    {l:"📊 Order Lab Investigations",fn:()=>toast("Laboratory orders dispatched")},
-    {l:"🚨 Trigger Urgent Alert",fn:()=>toast("Emergency notification sent!","error"),danger:true}
+// ══════════════════════════════════════════════════════════════════════
+// AUTH SCREEN
+// ══════════════════════════════════════════════════════════════════════
+function renderAuth(){
+  const t=T[STATE.lang];
+  let mode="login",role="patient",email="",pass="",name="";
+
+  function build(){
+    const wrap=h("div",{id:"authWrap",style:{minHeight:"100vh",display:"flex"}});
+
+    // Left panel
+    const left=h("div",{style:{flex:"1",background:`linear-gradient(160deg,${C.p9} 0%,#071a2e 50%,${C.g9} 100%)`,
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px",gap:"20px"}});
+    const lgo=h("div",{style:{textAlign:"center"}});
+    lgo.innerHTML=logoSVG(80,true);
+    left.appendChild(lgo);
+    left.appendChild(h("div",{style:{textAlign:"center"}},
+      h("h1",{style:{color:"#fff",fontSize:"38px",fontWeight:"900",margin:"10px 0 4px",letterSpacing:"-1px"}},"Mizan"),
+      h("p",{style:{color:"rgba(255,255,255,.45)",fontSize:"12px",letterSpacing:"3px",textTransform:"uppercase"}},"Diabetes Care")
+    ));
+    [["📊","Real-time glucose tracking"],["🤖","AI risk stratification"],
+     ["☁️","Firebase cloud sync"],["🌐","Amharic & English"]
+    ].forEach(([icon,text])=>{
+      left.appendChild(h("div",{style:{display:"flex",gap:"10px",alignItems:"center",
+        background:"rgba(255,255,255,.07)",borderRadius:"10px",padding:"10px 14px",width:"100%",maxWidth:"260px"}},
+        h("span",{style:{fontSize:"18px"}},icon),
+        h("span",{style:{color:"rgba(255,255,255,.75)",fontSize:"13px"}},text)
+      ));
+    });
+    wrap.appendChild(left);
+
+    // Right panel
+    const right=h("div",{style:{width:"400px",background:C.bg,display:"flex",flexDirection:"column",
+      alignItems:"center",justifyContent:"center",padding:"36px",overflowY:"auto",position:"relative"}});
+
+    // Lang toggle top right
+    const lt=h("div",{style:{position:"absolute",top:"16px",right:"16px"}});
+    ["en","am"].forEach(l=>{
+      const active=STATE.lang===l;
+      lt.appendChild(h("button",{onClick:()=>{STATE.lang=l;render();},
+        style:{padding:"5px 12px",borderRadius:"16px",fontWeight:"700",fontSize:"11px",marginLeft:"4px",
+          border:`1.5px solid ${active?C.p6:C.bd}`,background:active?C.p6:C.wh,color:active?"#fff":C.md}},
+        l==="en"?"EN":"አማ"));
+    });
+    right.appendChild(lt);
+
+    const inner=h("div",{style:{width:"100%",maxWidth:"320px"}});
+    inner.appendChild(h("div",{style:{marginBottom:"22px"}},
+      h("h2",{style:{fontSize:"24px",fontWeight:"900",color:C.dk,marginBottom:"3px"}},
+        mode==="login"?t.login:mode==="register"?t.register:"Reset Password"),
+      h("p",{style:{color:C.mu,fontSize:"13px"}},t.appName)
+    ));
+
+    // Role selector
+    if(mode!=="forgot"){
+      const rs=h("div",{style:{display:"flex",gap:"6px",marginBottom:"18px",
+        background:C.wh,borderRadius:"10px",padding:"4px",border:`1.5px solid ${C.bd}`}});
+      [["patient","👤 "+t.asPatient],["doctor","👨‍⚕️ "+t.asDoctor]].forEach(([r,label])=>{
+        rs.appendChild(h("button",{onClick:()=>{role=r;const old=document.getElementById("authWrap");if(old)old.replaceWith(build());},
+          style:{flex:"1",padding:"9px",borderRadius:"8px",border:"none",
+            background:role===r?`linear-gradient(135deg,${C.p6},${C.p9})`:"transparent",
+            color:role===r?"#fff":C.mu,fontWeight:"700",fontSize:"13px"}},label));
+      });
+      inner.appendChild(rs);
+    }
+
+    if(mode==="register")inner.appendChild(field(t.name,{placeholder:"Full name",onChange:v=>name=v}));
+    inner.appendChild(field(t.email,{type:"email",placeholder:"email@example.com",onChange:v=>email=v}));
+    if(mode!=="forgot")inner.appendChild(field(t.password,{type:"password",placeholder:"••••••••",onChange:v=>pass=v}));
+
+    // Submit button
+    const submitBtn=btn(mode==="login"?t.login:mode==="register"?t.register:"Send Reset",async()=>{
+      if(!email.trim()){toast("Please enter your email","error");return;}
+      submitBtn.textContent="Please wait...";submitBtn.disabled=true;
+      try{
+        if(mode==="forgot"){
+          toast("Reset link sent to "+email);
+          submitBtn.textContent="Send Reset";submitBtn.disabled=false;
+          return;
+        }
+        if(!pass.trim()){toast("Please enter password","error");submitBtn.textContent=mode==="login"?t.login:t.register;submitBtn.disabled=false;return;}
+        if(mode==="register"){
+          const cred=await createUserWithEmailAndPassword(auth,email,pass);
+          await saveUserProfile(cred.user.uid,{
+            name:name||email.split("@")[0],email,role,
+            createdAt:new Date().toISOString(),plan:"basic"
+          });
+          toast("Account created! Welcome to Mizan 🎉");
+        }else{
+          await signInWithEmailAndPassword(auth,email,pass);
+        }
+      }catch(err){
+        const msgs={"auth/user-not-found":"No account found. Please register first.",
+          "auth/wrong-password":"Incorrect password. Try again.",
+          "auth/email-already-in-use":"Email already registered. Please sign in.",
+          "auth/invalid-email":"Invalid email address.",
+          "auth/weak-password":"Password must be at least 6 characters.",
+          "auth/invalid-credential":"Incorrect email or password."};
+        toast(msgs[err.code]||"Error: "+err.message,"error");
+        submitBtn.textContent=mode==="login"?t.login:t.register;
+        submitBtn.disabled=false;
+      }
+    },{full:true});
+    inner.appendChild(submitBtn);
+
+    inner.appendChild(h("div",{style:{textAlign:"center",marginTop:"12px",fontSize:"13px",color:C.mu}},
+      mode==="login"?h("span",{onClick:()=>{mode="register";const old=document.getElementById("authWrap");if(old)old.replaceWith(build());},
+        style:{color:C.p6,fontWeight:"700",cursor:"pointer"}},t.register+" →")
+      :h("span",{onClick:()=>{mode="login";const old=document.getElementById("authWrap");if(old)old.replaceWith(build());},
+        style:{color:C.p6,fontWeight:"700",cursor:"pointer"}},"← "+t.login)
+    ));
+    right.appendChild(inner);
+    wrap.appendChild(right);
+    return wrap;
+  }
+  return build();
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// PATIENT APP
+// ══════════════════════════════════════════════════════════════════════
+function renderPatient(){
+  const t=T[STATE.lang];
+  const uid=STATE.user?.uid;
+  const userName=STATE.userDoc?.name||STATE.user?.email?.split("@")[0]||"Patient";
+
+  const tabs=[
+    {id:"home",icon:"🏠",label:t.home},{id:"glucose",icon:"📊",label:t.glucose},
+    {id:"vitals",icon:"❤️",label:t.vitals},{id:"meds",icon:"💊",label:t.meds},
+    {id:"visits",icon:"📅",label:t.visits},{id:"chat",icon:"💬",label:t.chat},
+    {id:"learn",icon:"📚",label:t.learn},{id:"plans",icon:"⭐",label:t.plans},
   ];
 
-  actionsList.forEach(act=>{
-    actionGroup.appendChild(h("button",{onClick:act.fn,
-      style:{width:"100%",padding:"12px",background:act.danger?C.r1:C.wh,border:`1.5px solid ${act.danger?C.r5:C.bd}`,
-        borderRadius:"12px",color:act.danger?C.r5:C.dk,fontWeight:"700",fontSize:"13px",
-        cursor:"pointer",textAlign:"left",marginBottom:"8px",transition:"all .15s"}},act.l));
-  });
-  colRight.appendChild(actionGroup);
-  layout.appendChild(colRight);
+  const wrap=h("div",{style:{minHeight:"100vh",background:C.bg,maxWidth:"500px",margin:"0 auto",paddingBottom:"76px"}});
+  const ob=offlineBanner();if(ob)wrap.appendChild(ob);
 
-  wrap.appendChild(layout);
+  // Header
+  const hdr=h("div",{style:{background:`linear-gradient(135deg,${C.p9},${C.g9})`,
+    padding:"13px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",
+    position:"sticky",top:"0",zIndex:"50"}});
+  const hl=h("div",{style:{display:"flex",alignItems:"center",gap:"9px"}});
+  const hlp=h("div");hlp.innerHTML=logoSVG(28,true);hl.appendChild(hlp);
+  hl.appendChild(h("div",{},
+    h("div",{style:{color:"#fff",fontWeight:"800",fontSize:"13px"}},"Mizan"),
+    h("div",{style:{color:"rgba(255,255,255,.4)",fontSize:"9px",letterSpacing:"1px"}},"DIABETES CARE")
+  ));
+  hdr.appendChild(hl);
+  const hr2=h("div",{style:{display:"flex",gap:"7px",alignItems:"center"}});
+  hr2.appendChild(langToggle(true));
+  hr2.appendChild(h("button",{onClick:async()=>{await signOut(auth);},
+    style:{background:"rgba(255,255,255,.12)",border:"none",color:"rgba(255,255,255,.7)",
+      padding:"5px 9px",borderRadius:"8px",fontSize:"12px"}},"⏻"));
+  hdr.appendChild(hr2);
+  wrap.appendChild(hdr);
+
+  const content=h("div",{id:"ptContent",style:{padding:"18px 14px"}});
+  wrap.appendChild(content);
+
+  // Bottom nav
+  const nav=h("div",{style:{position:"fixed",bottom:"0",left:"50%",transform:"translateX(-50%)",
+    width:"100%",maxWidth:"500px",background:C.wh,borderTop:`1px solid ${C.bd}`,
+    display:"flex",zIndex:"50",overflowX:"auto"}});
+  tabs.forEach(tb=>{
+    const active=STATE.patTab===tb.id;
+    const b=h("button",{onClick:()=>{STATE.patTab=tb.id;renderContent();},
+      style:{flex:"0 0 auto",minWidth:"52px",padding:"7px 4px 5px",border:"none",
+        background:"transparent",display:"flex",flexDirection:"column",alignItems:"center",gap:"2px"}},
+      h("span",{style:{fontSize:"17px"}},tb.icon),
+      h("span",{style:{fontSize:"8px",fontWeight:active?"800":"500",color:active?C.p6:C.mu,whiteSpace:"nowrap"}},tb.label)
+    );
+    if(active)b.appendChild(h("div",{style:{width:"14px",height:"2px",background:C.p6,borderRadius:"2px"}}));
+    nav.appendChild(b);
+  });
+  wrap.appendChild(nav);
+
+  async function renderContent(){
+    content.innerHTML="";
+    const tb=STATE.patTab;
+    const hr=new Date().getHours();
+    const greeting=hr<12?t.goodMorning:hr<17?t.goodAfternoon:t.goodEvening;
+
+    if(tb==="home"){
+      content.appendChild(h("div",{className:"fu"},
+        h("h2",{style:{fontSize:"21px",fontWeight:"900",color:C.dk}},"Hi, "+userName+"! 👋"),
+        h("p",{style:{color:C.mu,fontSize:"13px",marginTop:"3px"}},new Date().toDateString())
+      ));
+      // Load latest reading from Firebase
+      const readings=await loadReadings(uid);
+      STATE.readings=readings;
+      const latest=readings[0];
+      const gc=h("div",{className:"fu1",style:{background:`linear-gradient(135deg,${C.p9},${C.g9})`,
+        borderRadius:"18px",padding:"18px",marginTop:"14px",marginBottom:"13px",color:"#fff"}});
+      if(latest){
+        const val=latest.fasting||latest.random||0;
+        const s=gSt(Number(val));
+        gc.innerHTML=`<p style="font-size:11px;opacity:.6;letter-spacing:1px;margin-bottom:4px">LAST READING</p>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div><span style="font-size:40px;font-weight:900;letter-spacing:-1px">${val}</span>
+            <span style="font-size:13px;opacity:.7"> mg/dL</span>
+            <p style="margin-top:3px;font-size:12px;opacity:.8">${s.label} · ${latest.date||"Today"}</p></div>
+            <div style="text-align:right"><div style="font-size:12px;opacity:.7">Readings</div>
+            <div style="font-size:26px;font-weight:800">${readings.length}</div></div>
+          </div>`;
+      }else{
+        gc.innerHTML=`<p style="font-size:14px;opacity:.8;text-align:center;padding:8px 0">
+          No readings yet.<br><span style="font-size:12px;opacity:.6">Tap Glucose tab to log your first reading.</span></p>`;
+      }
+      content.appendChild(gc);
+      // Tip
+      content.appendChild(h("div",{className:"fu2",style:{background:`linear-gradient(135deg,${C.g1},${C.p1})`,
+        border:`1.5px solid ${C.g2}`,borderRadius:"16px",padding:"15px"}},
+        h("p",{style:{fontSize:"11px",fontWeight:"700",color:C.g7,letterSpacing:"1px",marginBottom:"5px"}},"💡 "+t.healthTip),
+        h("p",{style:{fontSize:"14px",color:C.dk,lineHeight:"1.7"}},"Walking 30 minutes after meals can reduce blood sugar by up to 22%.")
+      ));
+      // Cloud sync status
+      content.appendChild(h("div",{className:"fu3",style:{background:C.wh,borderRadius:"14px",padding:"13px 16px",
+        marginTop:"13px",border:`1.5px solid ${C.bd}`,display:"flex",alignItems:"center",gap:"10px"}},
+        h("span",{style:{fontSize:"20px"}},"☁️"),
+        h("div",{},
+          h("p",{style:{margin:"0",fontSize:"13px",fontWeight:"700",color:C.dk}},"Firebase Connected"),
+          h("p",{style:{margin:"0",fontSize:"11px",color:C.mu}},"Your data is securely saved in the cloud")
+        ),
+        h("span",{style:{marginLeft:"auto",fontSize:"11px",fontWeight:"700",color:C.g7,background:C.g1,
+          padding:"3px 9px",borderRadius:"10px"}},"✓ Live")
+      ));
+    }
+
+    else if(tb==="glucose"){
+      content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"14px"}},"📊 "+t.glucose));
+      let f="",r="";
+      const saveBtn=btn(t.save,async()=>{
+        if(!f&&!r){toast("Enter at least one reading","error");return;}
+        saveBtn.textContent=t.saving;saveBtn.disabled=true;
+        const entry={date:new Date().toLocaleDateString(),
+          time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),
+          fasting:f?Number(f):null,random:r?Number(r):null};
+        const ok=await saveReading(uid,entry);
+        if(ok){toast(t.saved);STATE.readings.unshift(entry);}
+        else toast(t.errSave,"error");
+        saveBtn.textContent=t.save;saveBtn.disabled=false;
+        renderContent();
+      },{full:true,v:"green"});
+
+      const fc=h("div",{style:{background:C.wh,borderRadius:"18px",padding:"18px",marginBottom:"13px",border:`1.5px solid ${C.bd}`}},
+        h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"13px"}},"📝 "+t.logGlucose),
+        field(t.fasting,{type:"number",placeholder:"e.g. 126",onChange:v=>f=v}),
+        field(t.random,{type:"number",placeholder:"e.g. 180",onChange:v=>r=v}),
+        saveBtn
+      );
+      content.appendChild(fc);
+
+      // Load from Firebase
+      const readings=await loadReadings(uid);
+      STATE.readings=readings;
+      if(readings.length>0){
+        const rc=h("div",{style:{background:C.wh,borderRadius:"18px",padding:"18px",border:`1.5px solid ${C.bd}`}},
+          h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"Recent Readings ☁️")
+        );
+        readings.slice(0,6).forEach((rd,i,arr)=>{
+          const val=rd.fasting||rd.random;
+          const s=gSt(Number(val));
+          rc.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",
+            padding:"9px 0",borderBottom:i<arr.length-1?`1px solid ${C.bd}`:"none"}},
+            h("div",{},
+              h("p",{style:{margin:"0",fontSize:"13px",fontWeight:"700",color:C.dk}},(rd.fasting?"Fasting":"Random")+" · "+rd.date),
+              h("p",{style:{margin:"2px 0 0",fontSize:"11px",color:C.mu}},rd.time)
+            ),
+            h("div",{style:{textAlign:"right"}},
+              h("span",{style:{fontSize:"17px",fontWeight:"800",color:s.c}},val),
+              h("span",{style:{fontSize:"11px",color:C.mu}}," mg/dL"),
+              h("div",{style:{marginTop:"2px"}},pill(s.label,s.c,s.bg))
+            )
+          ));
+        });
+        content.appendChild(rc);
+      }
+    }
+
+    else if(tb==="vitals"){
+      content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"14px"}},"❤️ "+t.vitals));
+      let w="",s="",d="",ex="";
+      const saveBtn=btn(t.save,async()=>{
+        saveBtn.textContent=t.saving;saveBtn.disabled=true;
+        const entry={date:new Date().toLocaleDateString(),
+          time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),
+          weight:w?Number(w):null,sbp:s?Number(s):null,dbp:d?Number(d):null,
+          exerciseMin:ex?Number(ex):null,
+          bmi:w?(Number(w)/(1.65*1.65)).toFixed(1):null};
+        const ok=await saveVitals(uid,entry);
+        if(ok){toast(t.saved);}else toast(t.errSave,"error");
+        saveBtn.textContent=t.save;saveBtn.disabled=false;
+        renderContent();
+      },{full:true});
+
+      content.appendChild(h("div",{style:{background:C.wh,borderRadius:"18px",padding:"18px",marginBottom:"13px",border:`1.5px solid ${C.bd}`}},
+        h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"13px"}},"Log Today's Vitals"),
+        field(t.weight,{type:"number",placeholder:"e.g. 72",onChange:v=>w=v}),
+        field(t.systolic,{type:"number",placeholder:"e.g. 130",onChange:v=>s=v}),
+        field(t.diastolic,{type:"number",placeholder:"e.g. 80",onChange:v=>d=v}),
+        field(t.exercise,{type:"number",placeholder:"e.g. 30",onChange:v=>ex=v}),
+        saveBtn
+      ));
+
+      const vitals=await loadVitals(uid);
+      if(vitals.length>0){
+        const vr=h("div",{style:{background:C.wh,borderRadius:"18px",padding:"18px",border:`1.5px solid ${C.bd}`}},
+          h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"Recent Vitals ☁️")
+        );
+        vitals.slice(0,4).forEach((v,i,arr)=>{
+          vr.appendChild(h("div",{style:{padding:"9px 0",borderBottom:i<arr.length-1?`1px solid ${C.bd}`:"none"}},
+            h("p",{style:{margin:"0 0 4px",fontSize:"12px",color:C.mu,fontWeight:"700"}},v.date),
+            h("div",{style:{display:"flex",gap:"12px",flexWrap:"wrap"}},
+              v.weight&&h("span",{style:{fontSize:"13px",color:C.dk}},"⚖️ ",h("strong",{},v.weight)," kg"),
+              v.sbp&&h("span",{style:{fontSize:"13px",color:C.dk}},"❤️ ",h("strong",{},v.sbp+"/"+v.dbp)," mmHg"),
+              v.bmi&&h("span",{style:{fontSize:"13px",color:C.dk}},"📊 BMI ",h("strong",{},v.bmi)),
+              v.exerciseMin&&h("span",{style:{fontSize:"13px",color:C.g7}},"🏃 ",h("strong",{},v.exerciseMin)," min")
+            )
+          ));
+        });
+        content.appendChild(vr);
+      }
+    }
+
+    else if(tb==="meds"){
+      content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"14px"}},"💊 "+t.medications));
+      [{name:"Metformin 500mg",taken:1,total:2,c:C.p6,bg:C.p1,icon:"💊"},
+       {name:"Glibenclamide 5mg",taken:1,total:1,c:C.g7,bg:C.g1,icon:"💊"},
+       {name:"Insulin Glargine 20u",taken:0,total:1,c:C.o5,bg:C.o1,icon:"💉"}
+      ].forEach(m=>{
+        const mc=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"16px",marginBottom:"11px",border:`1.5px solid ${C.bd}`}});
+        mc.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"9px"}},
+          h("div",{style:{display:"flex",gap:"9px",alignItems:"center"}},
+            h("div",{style:{width:"42px",height:"42px",borderRadius:"11px",background:m.bg,
+              display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px"}},m.icon),
+            h("div",{},
+              h("div",{style:{fontWeight:"800",fontSize:"14px",color:C.dk}},m.name),
+              h("div",{style:{fontSize:"11px",color:C.mu}},m.taken===m.total?"Completed":"Pending")
+            )
+          ),
+          pill(m.taken===m.total?"Done ✓":`${m.taken}/${m.total}`,m.taken===m.total?C.g7:C.o5,m.taken===m.total?C.g1:C.o1)
+        ));
+        const bar=h("div",{style:{height:"5px",background:C.bg,borderRadius:"3px",overflow:"hidden",marginBottom:"11px"}});
+        bar.appendChild(h("div",{style:{height:"100%",width:`${(m.taken/m.total)*100}%`,background:m.c,borderRadius:"3px"}}));
+        mc.appendChild(bar);
+        mc.appendChild(h("div",{style:{display:"flex",gap:"7px"}},
+          h("button",{onClick:async()=>{
+            await addDoc(collection(db,"users",uid,"missed"),{med:m.name,date:new Date().toLocaleDateString(),createdAt:serverTimestamp()});
+            toast("Missed dose logged ☁️");
+          },style:{flex:"1",padding:"7px",background:C.r1,border:"none",color:C.r5,borderRadius:"9px",fontSize:"12px",fontWeight:"700"}},"⚠️ "+t.missedDose),
+          h("button",{onClick:async()=>{
+            await addDoc(collection(db,"users",uid,"refills"),{med:m.name,date:new Date().toLocaleDateString(),status:"pending",createdAt:serverTimestamp()});
+            toast("Refill request sent ☁️");
+          },style:{flex:"1",padding:"7px",background:C.g1,border:"none",color:C.g7,borderRadius:"9px",fontSize:"12px",fontWeight:"700"}},"🔄 "+t.refill)
+        ));
+        content.appendChild(mc);
+      });
+    }
+
+    else if(tb==="visits"){
+      content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"14px"}},"📅 "+t.visits));
+      const na=h("div",{style:{background:`linear-gradient(135deg,${C.p9},${C.p6})`,borderRadius:"18px",padding:"18px",marginBottom:"13px",color:"#fff"}});
+      na.innerHTML=`<p style="font-size:11px;opacity:.65;letter-spacing:1px;margin-bottom:5px">NEXT APPOINTMENT</p>
+        <h3 style="font-size:16px;font-weight:800;margin-bottom:9px">Follow-up Consultation</h3>
+        <p style="font-size:12px;opacity:.85;margin-bottom:13px">📅 May 28, 2025 &nbsp; ⏰ 10:00 AM &nbsp; 📍 Mizan Clinic, Gondar</p>`;
+      na.appendChild(h("div",{style:{display:"flex",gap:"7px"}},
+        h("button",{onClick:()=>toast("Appointment confirmed!"),style:{flex:"1",padding:"9px",background:"rgba(255,255,255,.2)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:"9px",fontWeight:"700",fontSize:"12px"}},"✓ Confirm"),
+        h("button",{onClick:()=>toast("Reschedule request sent"),style:{flex:"1",padding:"9px",background:"transparent",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:"9px",fontWeight:"700",fontSize:"12px"}},"Reschedule")
+      ));
+      content.appendChild(na);
+    }
+
+    else if(tb==="chat"){
+      content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"4px"}},"💬 "+t.consultChat));
+      content.appendChild(h("p",{style:{color:C.mu,fontSize:"12px",marginBottom:"13px"}},"Dr. Ayenachew · "+(STATE.online?"🟢 Online":"🔴 Offline")));
+      const chatBox=h("div",{style:{background:C.wh,borderRadius:"16px",border:`1.5px solid ${C.bd}`,marginBottom:"13px",overflow:"hidden"}});
+      const msgs=h("div",{style:{padding:"13px",maxHeight:"280px",overflowY:"auto",display:"flex",flexDirection:"column",gap:"9px"}});
+      STATE.chat.forEach(m=>{
+        const isDoc=m.from==="doctor";
+        msgs.appendChild(h("div",{style:{display:"flex",justifyContent:isDoc?"flex-start":"flex-end"}},
+          h("div",{style:{maxWidth:"78%",background:isDoc?C.bg:`linear-gradient(135deg,${C.p6},${C.p9})`,
+            borderRadius:isDoc?"4px 13px 13px 13px":"13px 13px 4px 13px",padding:"9px 12px"}},
+            h("p",{style:{margin:"0",fontSize:"13px",color:isDoc?C.dk:"#fff",lineHeight:"1.5"}},m.text),
+            h("p",{style:{margin:"3px 0 0",fontSize:"9px",color:isDoc?C.mu:"rgba(255,255,255,.6)",textAlign:"right"}},m.time)
+          )
+        ));
+      });
+      chatBox.appendChild(msgs);
+      const ir=h("div",{style:{borderTop:`1px solid ${C.bd}`,padding:"9px",display:"flex",gap:"7px",alignItems:"flex-end"}});
+      const ta=h("textarea",{rows:"2",placeholder:t.typeMsg,
+        style:{flex:"1",padding:"9px 12px",borderRadius:"9px",border:`1.5px solid ${C.bd}`,
+          fontSize:"13px",resize:"none",fontFamily:"'Outfit',sans-serif",color:C.dk,background:C.bg}},
+        STATE.chatInput||"");
+      ta.addEventListener("input",e=>STATE.chatInput=e.target.value);
+      ta.addEventListener("keydown",e=>{
+        if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();
+          if(!STATE.chatInput.trim())return;
+          STATE.chat.push({from:"patient",text:STATE.chatInput,time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})});
+          STATE.chatInput="";renderContent();
+          setTimeout(()=>{STATE.chat.push({from:"doctor",text:"Thank you. I will review and respond shortly.",time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})});renderContent();},1500);
+        }
+      });
+      ir.appendChild(ta);
+      ir.appendChild(btn(t.send,()=>{
+        if(!STATE.chatInput.trim())return;
+        STATE.chat.push({from:"patient",text:STATE.chatInput,time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})});
+        STATE.chatInput="";renderContent();
+        setTimeout(()=>{STATE.chat.push({from:"doctor",text:"Thank you. I will review and respond shortly.",time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})});renderContent();},1500);
+      },{sm:true}));
+      chatBox.appendChild(ir);
+      content.appendChild(chatBox);
+    }
+
+    else if(tb==="learn"){
+      content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"13px"}},"📚 "+t.learn));
+      const grid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"11px"}});
+      [{icon:"💉",cat:"Basics",title:"Understanding Blood Sugar",time:"5 min",c:C.p6},
+       {icon:"🦶",cat:"Prevention",title:"Daily Foot Care",time:"4 min",c:C.g7},
+       {icon:"🥗",cat:"Nutrition",title:"Eating Well in Ethiopia",time:"7 min",c:C.o5},
+       {icon:"🚶",cat:"Lifestyle",title:"Exercise & Glucose",time:"6 min",c:C.p6},
+       {icon:"💊",cat:"Medication",title:"Why Adherence Matters",time:"3 min",c:C.g7},
+       {icon:"🧠",cat:"Mental Health",title:"Stress & Blood Sugar",time:"5 min",c:C.r5}
+      ].forEach(e=>{
+        grid.appendChild(h("div",{onClick:()=>toast("Opening: "+e.title),
+          style:{background:C.wh,borderRadius:"14px",padding:"13px",border:`1.5px solid ${C.bd}`,cursor:"pointer"}},
+          h("div",{style:{width:"38px",height:"38px",borderRadius:"9px",background:e.c+"20",
+            display:"flex",alignItems:"center",justifyContent:"center",fontSize:"19px",marginBottom:"7px"}},e.icon),
+          pill(e.cat,e.c,e.c+"20"),
+          h("h4",{style:{margin:"6px 0 4px",fontSize:"12px",fontWeight:"700",color:C.dk,lineHeight:"1.4"}},e.title),
+          h("p",{style:{margin:"0",fontSize:"11px",color:e.c,fontWeight:"600"}},"▶ "+e.time)
+        ));
+      });
+      content.appendChild(grid);
+    }
+
+    else if(tb==="plans"){
+      content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"13px"}},"⭐ "+t.plans_title));
+      const currentPlan=STATE.userDoc?.plan||"basic";
+      [{name:"basic",price:3,c:C.md,inc:["Glucose logging","Medication reminders","Basic education","Monthly check-in"]},
+       {name:"standard",price:7,c:C.p6,popular:true,inc:["Everything in Basic","Teleconsultation ×2/mo","Complication screening","Dietitian access"]},
+       {name:"premium",price:12,c:C.g7,inc:["Everything in Standard","Unlimited teleconsultation","Product delivery","Home visit ×1/mo"]}
+      ].forEach(p=>{
+        const isCurrent=currentPlan===p.name;
+        const pc=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"18px",marginBottom:"11px",
+          border:`${isCurrent?2:1.5}px solid ${isCurrent?p.c:C.bd}`,cursor:"pointer",position:"relative"}});
+        if(p.popular)pc.appendChild(h("div",{style:{position:"absolute",top:"-9px",right:"14px",
+          background:`linear-gradient(135deg,${C.p6},${C.p9})`,color:"#fff",
+          fontSize:"10px",fontWeight:"700",padding:"2px 10px",borderRadius:"20px"}},"MOST POPULAR"));
+        pc.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"11px"}},
+          h("div",{},
+            h("h3",{style:{fontSize:"17px",fontWeight:"900",color:p.c}},t[p.name]||p.name),
+            isCurrent&&pill("Current Plan",p.c,p.c+"15")
+          ),
+          h("div",{},h("span",{style:{fontSize:"26px",fontWeight:"900",color:p.c}},"$"+p.price),
+            h("span",{style:{fontSize:"11px",color:C.mu}},"/mo"))
+        ));
+        p.inc.forEach(f=>{
+          pc.appendChild(h("div",{style:{display:"flex",gap:"7px",alignItems:"center",marginBottom:"4px",fontSize:"13px",color:C.dk}},
+            h("span",{style:{color:p.c,fontWeight:"700"}},"✓")," ",f
+          ));
+        });
+        if(!isCurrent){
+          pc.appendChild(h("button",{onClick:async()=>{
+            await saveUserProfile(uid,{plan:p.name});
+            STATE.userDoc={...STATE.userDoc,plan:p.name};
+            toast("Plan updated to "+p.name+"! ☁️");renderContent();
+          },style:{width:"100%",marginTop:"11px",padding:"9px",background:`linear-gradient(135deg,${p.c},${C.p9})`,
+            border:"none",color:"#fff",borderRadius:"9px",fontWeight:"700",fontSize:"13px"}},"Switch to "+t[p.name]));
+        }
+        content.appendChild(pc);
+      });
+    }
+
+    // Scroll chat to bottom
+    const chatMsgs=content.querySelector("#chatMsgs");
+    if(chatMsgs)chatMsgs.scrollTop=chatMsgs.scrollHeight;
+  }
+
+  renderContent();
   return wrap;
 }
 
-// ── MAIN RENDER EXECUTION CYCLE ──────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+// CLINIC DASHBOARD (simplified but Firebase-ready)
+// ══════════════════════════════════════════════════════════════════════
+function renderClinic(){
+  const t=T[STATE.lang];
+  const MOCK_PTS=[
+    {id:"1",name:"Almaz Tadesse",age:54,gender:"F",type:"Type 2",glucose:312,hba1c:9.2,sbp:158,dbp:96,bmi:28.4,adherence:42,sub:"standard",city:"Gondar"},
+    {id:"2",name:"Bekele Haile",age:62,gender:"M",type:"Type 2",glucose:287,hba1c:8.8,sbp:145,dbp:88,bmi:26.1,adherence:58,sub:"basic",city:"Gondar"},
+    {id:"3",name:"Tigist Worku",age:41,gender:"F",type:"Type 1",glucose:168,hba1c:7.4,sbp:118,dbp:76,bmi:22.3,adherence:78,sub:"premium",city:"Debark"},
+    {id:"4",name:"Dawit Mengiste",age:48,gender:"M",type:"Type 2",glucose:126,hba1c:6.8,sbp:122,dbp:78,bmi:24.8,adherence:91,sub:"premium",city:"Gondar"},
+    {id:"5",name:"Selamawit Girma",age:37,gender:"F",type:"Type 2",glucose:194,hba1c:7.9,sbp:132,dbp:84,bmi:27.6,adherence:65,sub:"standard",city:"Maksegnit"},
+    {id:"6",name:"Yohannes Assefa",age:71,gender:"M",type:"Type 2",glucose:341,hba1c:10.1,sbp:168,dbp:102,bmi:29.2,adherence:31,sub:"basic",city:"Gondar"},
+  ].map(p=>({...p,...risk(p)}));
+
+  const wrap=h("div",{style:{minHeight:"100vh",display:"flex",fontFamily:"'Outfit',sans-serif",background:C.bg}});
+
+  // Sidebar
+  const sidebar=h("div",{style:{width:"190px",background:`linear-gradient(180deg,${C.p9} 0%,#071a2e 100%)`,
+    display:"flex",flexDirection:"column",position:"sticky",top:"0",height:"100vh",flexShrink:"0"}});
+  const sl=h("div",{style:{padding:"18px 12px 14px",borderBottom:"1px solid rgba(255,255,255,.08)"}});
+  const slp=h("div");slp.innerHTML=logoSVG(26,true);
+  sl.appendChild(h("div",{style:{display:"flex",alignItems:"center",gap:"7px",marginBottom:"9px"}},slp,
+    h("div",{},h("div",{style:{color:"#fff",fontWeight:"800",fontSize:"11px"}},"Mizan Clinic"),
+      h("div",{style:{color:"rgba(255,255,255,.4)",fontSize:"9px"}},"Dashboard"))
+  ));
+  sl.appendChild(langToggle(true));
+  sidebar.appendChild(sl);
+
+  const nav=h("nav",{style:{padding:"10px 7px",flex:"1"}});
+  [{id:"overview",icon:"📊",label:t.overview},{id:"patients",icon:"👥",label:t.patients},
+   {id:"analytics",icon:"📈",label:t.analytics},{id:"followup",icon:"🔔",label:t.followup}
+  ].forEach(n=>{
+    const active=STATE.clinicView===n.id&&!STATE.selectedPt;
+    nav.appendChild(h("button",{onClick:()=>{STATE.clinicView=n.id;STATE.selectedPt=null;renderMain();},
+      style:{width:"100%",display:"flex",alignItems:"center",gap:"7px",padding:"8px 9px",
+        borderRadius:"9px",border:"none",marginBottom:"2px",textAlign:"left",
+        background:active?"rgba(255,255,255,.13)":"transparent",
+        color:active?"#fff":"rgba(255,255,255,.5)",fontWeight:active?"700":"500",fontSize:"12px",
+        borderLeft:active?`3px solid ${C.g6}`:"3px solid transparent"}},
+      h("span",{style:{fontSize:"14px"}},n.icon),n.label));
+  });
+  sidebar.appendChild(nav);
+
+  const sdoc=h("div",{style:{padding:"0 7px 14px"}});
+  sdoc.appendChild(h("div",{style:{background:"rgba(255,255,255,.07)",borderRadius:"9px",padding:"9px 11px",marginBottom:"7px"}},
+    h("div",{style:{fontSize:"16px",marginBottom:"3px"}},"👨‍⚕️"),
+    h("p",{style:{color:"#fff",margin:"0",fontSize:"11px",fontWeight:"700"}},"Dr. Ayenachew"),
+    h("p",{style:{color:"rgba(255,255,255,.4)",margin:"2px 0 0",fontSize:"9px"}},"CEO & Founder")
+  ));
+  sdoc.appendChild(h("button",{onClick:async()=>{await signOut(auth);},
+    style:{width:"100%",padding:"7px",borderRadius:"8px",border:"1px solid rgba(255,255,255,.12)",
+      background:"transparent",color:"rgba(255,255,255,.55)",fontSize:"11px",fontWeight:"600"}},"← Sign Out"));
+  sidebar.appendChild(sdoc);
+  wrap.appendChild(sidebar);
+
+  const main=h("div",{id:"clinicMain",style:{flex:"1",padding:"22px",overflowY:"auto",maxHeight:"100vh"}});
+  wrap.appendChild(main);
+
+  function renderMain(){
+    main.innerHTML="";
+    if(STATE.selectedPt){renderPtDetail();return;}
+
+    if(STATE.clinicView==="overview"){
+      main.appendChild(h("div",{className:"fu",style:{marginBottom:"20px"}},
+        h("h1",{style:{fontSize:"24px",fontWeight:"900",color:C.dk,margin:"0"}},"Good morning, Dr. Ayenachew 👋"),
+        h("p",{style:{color:C.mu,fontSize:"13px",margin:"3px 0 0"}},new Date().toDateString()+" · "+MOCK_PTS.length+" patients")
+      ));
+      const high=MOCK_PTS.filter(p=>p.level==="high").length;
+      const totalRev=MOCK_PTS.reduce((s,p)=>s+(p.sub==="premium"?12:p.sub==="standard"?7:3),0);
+      const grid=h("div",{className:"fu1",style:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"11px",marginBottom:"18px"}});
+      [{l:"Total Patients",v:MOCK_PTS.length,i:"👥",c:C.p6,bg:C.p1},
+       {l:"Subscriptions",v:MOCK_PTS.length,i:"⭐",c:C.g7,bg:C.g1},
+       {l:"High Risk",v:high,i:"🚨",c:C.r5,bg:C.r1},
+       {l:"Monthly Rev",v:"$"+totalRev,i:"💰",c:C.o5,bg:C.o1}
+      ].forEach(k=>{
+        grid.appendChild(h("div",{style:{background:C.wh,borderRadius:"14px",padding:"15px",border:`1.5px solid ${C.bd}`}},
+          h("div",{style:{width:"36px",height:"36px",borderRadius:"9px",background:k.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"17px",marginBottom:"9px"}},k.i),
+          h("div",{style:{fontSize:"26px",fontWeight:"900",color:k.c,letterSpacing:"-1px",lineHeight:"1"}},k.v),
+          h("div",{style:{fontSize:"11px",fontWeight:"700",color:C.dk,margin:"4px 0 0"}},k.l)
+        ));
+      });
+      main.appendChild(grid);
+      // Firebase status card
+      main.appendChild(h("div",{className:"fu2",style:{background:`linear-gradient(135deg,${C.p9},${C.g9})`,
+        borderRadius:"16px",padding:"18px",color:"#fff",marginBottom:"16px"}},
+        h("p",{style:{fontSize:"11px",opacity:".6",letterSpacing:"1.5px",marginBottom:"7px"}},"☁️ FIREBASE STATUS"),
+        h("h3",{style:{fontSize:"16px",fontWeight:"800",marginBottom:"10px"}},"Backend Connected · Real-time sync active"),
+        h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"9px"}},
+          [{icon:"🔐",l:"Auth",s:"Active"},{icon:"📊",l:"Firestore",s:"Connected"},{icon:"🔄",l:"Sync",s:"Live"}].map(a=>
+            h("div",{style:{background:"rgba(255,255,255,.1)",borderRadius:"9px",padding:"10px",textAlign:"center"}},
+              h("div",{style:{fontSize:"18px",marginBottom:"3px"}},a.icon),
+              h("p",{style:{margin:"0",fontSize:"11px",fontWeight:"700"}},a.l),
+              h("p",{style:{margin:"2px 0 0",fontSize:"10px",opacity:".7"}},a.s)
+            )
+          )
+        )
+      ));
+      // High risk patients
+      const hrCard=h("div",{className:"fu3",style:{background:C.wh,borderRadius:"16px",padding:"18px",border:`1.5px solid ${C.bd}`}});
+      hrCard.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"🚨 High Risk Patients"));
+      MOCK_PTS.filter(p=>p.level==="high").forEach((p,i,arr)=>{
+        hrCard.appendChild(h("div",{onClick:()=>{STATE.selectedPt=p;STATE.ptDetailTab="overview";renderMain();},
+          style:{padding:"10px 0",borderBottom:i<arr.length-1?`1px solid ${C.bd}`:"none",cursor:"pointer"}},
+          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"2px"}},
+            h("span",{style:{fontSize:"13px",fontWeight:"700",color:C.dk}},p.name),
+            pill("Score: "+p.score,C.r5,C.r1)
+          ),
+          h("p",{style:{margin:"0",fontSize:"11px",color:C.mu}},"Glucose: "+p.glucose+" · HbA1c: "+p.hba1c+"% · Adh: "+p.adherence+"%")
+        ));
+      });
+      main.appendChild(hrCard);
+    }
+
+    else if(STATE.clinicView==="patients"){
+      main.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"18px"}},
+        h("h1",{style:{fontSize:"22px",fontWeight:"900",color:C.dk,margin:"0"}},"Patient Registry"),
+        btn(t.enrollPt||"+ Enroll",()=>toast("Opening enrollment form..."),{sm:true})
+      ));
+      const filters=h("div",{style:{display:"flex",gap:"7px",marginBottom:"14px",flexWrap:"wrap"}});
+      ["all","high","medium","low"].forEach(f=>{
+        const active=STATE.clinicFilter===f;
+        filters.appendChild(h("button",{onClick:()=>{STATE.clinicFilter=f;renderMain();},
+          style:{padding:"6px 13px",borderRadius:"14px",border:active?"none":`1.5px solid ${C.bd}`,
+            background:active?`linear-gradient(135deg,${C.p6},${C.p9})`:C.wh,
+            color:active?"#fff":C.md,fontWeight:"700",fontSize:"12px"}},
+          f==="all"?"All":f==="high"?t.highRisk:f==="medium"?t.medRisk:t.lowRisk));
+      });
+      main.appendChild(filters);
+      const filtered=STATE.clinicFilter==="all"?MOCK_PTS:MOCK_PTS.filter(p=>p.level===STATE.clinicFilter);
+      const tbl=h("div",{style:{background:C.wh,borderRadius:"14px",border:`1.5px solid ${C.bd}`,overflow:"auto"}});
+      const thead=h("div",{style:{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr 70px",
+        background:C.bg,padding:"9px 14px",gap:"10px"}});
+      ["Patient","Risk","Glucose","HbA1c","Adherence",""].forEach(h2=>
+        thead.appendChild(h("span",{style:{fontSize:"10px",fontWeight:"700",color:C.mu,letterSpacing:".7px"}},h2.toUpperCase()))
+      );
+      tbl.appendChild(thead);
+      filtered.forEach(p=>{
+        const row=h("div",{onClick:()=>{STATE.selectedPt=p;STATE.ptDetailTab="overview";renderMain();},
+          style:{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr 70px",
+            padding:"11px 14px",gap:"10px",borderTop:`1px solid ${C.bd}`,cursor:"pointer",alignItems:"center"}});
+        row.addEventListener("mouseover",()=>row.style.background=C.bg);
+        row.addEventListener("mouseout",()=>row.style.background="");
+        row.appendChild(h("div",{},
+          h("div",{style:{fontWeight:"700",fontSize:"13px",color:C.dk}},p.name),
+          h("div",{style:{fontSize:"10px",color:C.mu}},"Age "+p.age+" · "+p.city)
+        ));
+        row.appendChild(pill(p.level.toUpperCase(),rC(p.level),rBg(p.level)));
+        row.appendChild(h("span",{style:{fontSize:"13px",fontWeight:"800",color:gSt(p.glucose).c}},p.glucose));
+        row.appendChild(h("span",{style:{fontSize:"12px",fontWeight:"700",color:p.hba1c>8?C.r5:p.hba1c>7?C.o5:C.g7}},p.hba1c+"%"));
+        const bar=h("div",{style:{display:"flex",alignItems:"center",gap:"5px"}},
+          h("div",{style:{width:"36px",height:"4px",background:C.bd,borderRadius:"2px"}},
+            h("div",{style:{height:"100%",width:p.adherence+"%",background:p.adherence>70?C.g6:p.adherence>50?C.o5:C.r5,borderRadius:"2px"}})),
+          h("span",{style:{fontSize:"11px",fontWeight:"700",color:p.adherence>70?C.g7:C.r5}},p.adherence+"%")
+        );
+        row.appendChild(bar);
+        row.appendChild(h("button",{onClick:(e)=>{e.stopPropagation();STATE.selectedPt=p;STATE.ptDetailTab="overview";renderMain();},
+          style:{background:C.p1,border:"none",color:C.p6,borderRadius:"7px",padding:"5px 9px",fontSize:"11px",fontWeight:"700"}},"View →"));
+        tbl.appendChild(row);
+      });
+      main.appendChild(tbl);
+    }
+
+    else if(STATE.clinicView==="analytics"){
+      main.appendChild(h("h1",{style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"18px"}},"📈 Analytics"));
+      const totalRev=MOCK_PTS.reduce((s,p)=>s+(p.sub==="premium"?12:p.sub==="standard"?7:3),0);
+      const twoCol=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"14px"}});
+      const rd=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"18px",border:`1.5px solid ${C.bd}`}});
+      rd.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"14px"}},"Risk Distribution"));
+      [{l:t.highRisk,n:MOCK_PTS.filter(p=>p.level==="high").length,c:C.r5},
+       {l:t.medRisk,n:MOCK_PTS.filter(p=>p.level==="medium").length,c:C.o5},
+       {l:t.lowRisk,n:MOCK_PTS.filter(p=>p.level==="low").length,c:C.g6}
+      ].forEach(r=>{
+        const pct=Math.round(r.n/MOCK_PTS.length*100);
+        rd.appendChild(h("div",{style:{marginBottom:"11px"}},
+          h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"4px"}},
+            h("span",{style:{fontSize:"12px",fontWeight:"700",color:C.dk}},r.l),
+            h("span",{style:{fontSize:"11px",fontWeight:"700",color:r.c}},r.n+" ("+pct+"%)")
+          ),
+          h("div",{style:{height:"5px",background:C.bg,borderRadius:"3px",overflow:"hidden"}},
+            h("div",{style:{height:"100%",width:pct+"%",background:r.c,borderRadius:"3px"}})
+          )
+        ));
+      });
+      twoCol.appendChild(rd);
+      const rev=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"18px",border:`1.5px solid ${C.bd}`}});
+      rev.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"14px"}},"Revenue"));
+      [{plan:"Premium ($12)",n:2,rev:24,c:C.g7},{plan:"Standard ($7)",n:2,rev:14,c:C.p6},{plan:"Basic ($3)",n:2,rev:6,c:C.mu}].forEach((s,i)=>{
+        rev.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:i<2?`1px solid ${C.bd}`:"none"}},
+          h("span",{style:{fontSize:"12px",color:C.dk}},s.plan),
+          h("span",{style:{fontSize:"13px",fontWeight:"800",color:s.c}},"$"+s.rev+"/mo")
+        ));
+      });
+      rev.appendChild(h("div",{style:{marginTop:"11px",background:`linear-gradient(135deg,${C.g1},${C.p1})`,
+        borderRadius:"9px",padding:"11px",textAlign:"center"}},
+        h("p",{style:{margin:"0 0 2px",fontSize:"11px",color:C.md,fontWeight:"600"}},"Total Monthly"),
+        h("p",{style:{margin:"0",fontSize:"24px",fontWeight:"900",color:C.g7}},"$"+totalRev,
+          h("span",{style:{fontSize:"11px",color:C.mu,fontWeight:"500"}},"/mo"))
+      ));
+      twoCol.appendChild(rev);
+      main.appendChild(twoCol);
+    }
+
+    else if(STATE.clinicView==="followup"){
+      main.appendChild(h("div",{style:{marginBottom:"18px"}},
+        h("h1",{style:{fontSize:"22px",fontWeight:"900",color:C.dk,margin:"0"}},"🔔 Follow-up Monitor"),
+        h("p",{style:{color:C.mu,fontSize:"12px",margin:"3px 0 0"}},"AI-powered follow-up")
+      ));
+      MOCK_PTS.forEach(p=>{
+        const lvl=p.level;
+        const rec=lvl==="high"?"Urgent: Consider insulin or referral.":p.adherence<50?"Poor adherence. Schedule counseling.":"Continue current care plan.";
+        main.appendChild(h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",marginBottom:"9px",
+          border:`1.5px solid ${C.bd}`,borderLeft:`4px solid ${rC(lvl)}`}},
+          h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"10px"}},
+            h("div",{style:{flex:"1"}},
+              h("div",{style:{display:"flex",alignItems:"center",gap:"7px",marginBottom:"5px",flexWrap:"wrap"}},
+                h("span",{style:{fontSize:"14px",fontWeight:"800",color:C.dk}},p.name),
+                pill(p.level.toUpperCase(),rC(p.level),rBg(p.level)),
+                pill("Score: "+p.score,rC(p.level),rBg(p.level))
+              ),
+              h("div",{style:{fontSize:"11px",color:C.mu,marginBottom:"7px"}},
+                "Glucose: "+p.glucose+" · HbA1c: "+p.hba1c+"% · Adh: "+p.adherence+"%"),
+              h("div",{style:{background:lvl==="high"?C.r1:lvl==="medium"?C.o1:C.g1,
+                borderRadius:"7px",padding:"7px 10px",fontSize:"12px",color:C.dk,fontWeight:"600"}},"🤖 "+rec)
+            ),
+            h("div",{style:{display:"flex",flexDirection:"column",gap:"5px"}},
+              h("button",{onClick:()=>toast("SMS sent to "+p.name),
+                style:{padding:"6px 11px",background:`linear-gradient(135deg,${C.p6},${C.p9})`,border:"none",color:"#fff",borderRadius:"7px",fontSize:"11px",fontWeight:"700"}},"📱 SMS"),
+              h("button",{onClick:()=>{STATE.selectedPt=p;STATE.ptDetailTab="overview";renderMain();},
+                style:{padding:"6px 11px",background:C.p1,border:"none",color:C.p6,borderRadius:"7px",fontSize:"11px",fontWeight:"700"}},"View")
+            )
+          )
+        ));
+      });
+    }
+  }
+
+  function renderPtDetail(){
+    const p=STATE.selectedPt;
+    const{score,level}=risk(p);
+    main.appendChild(h("button",{onClick:()=>{STATE.selectedPt=null;renderMain();},
+      style:{background:"none",border:"none",color:C.p6,fontWeight:"700",fontSize:"13px",cursor:"pointer",marginBottom:"16px"}},"← Back"));
+    const ph=h("div",{style:{background:`linear-gradient(135deg,${C.p9},${C.g9})`,borderRadius:"16px",
+      padding:"18px",marginBottom:"14px",color:"#fff",display:"flex",justifyContent:"space-between",
+      alignItems:"center",flexWrap:"wrap",gap:"10px"}});
+    ph.appendChild(h("div",{style:{display:"flex",gap:"12px",alignItems:"center"}},
+      h("div",{style:{width:"48px",height:"48px",borderRadius:"50%",background:"rgba(255,255,255,.15)",
+        display:"flex",alignItems:"center",justifyContent:"center",fontSize:"22px"}},"👤"),
+      h("div",{},
+        h("h2",{style:{fontSize:"17px",fontWeight:"800",margin:"0"}},p.name),
+        h("p",{style:{margin:"3px 0 0",fontSize:"11px",opacity:".7"}},p.type+" · Age "+p.age+" · "+p.city),
+        h("div",{style:{marginTop:"5px",display:"flex",gap:"5px"}},
+          pill(level.toUpperCase()+" RISK",rC(level),"rgba(255,255,255,.2)"),
+          pill("Score: "+score,"#fff","rgba(255,255,255,.15)")
+        )
+      )
+    ));
+    ph.appendChild(h("div",{style:{display:"flex",gap:"6px"}},
+      h("button",{onClick:()=>toast("SMS sent"),style:{padding:"7px 12px",background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:"9px",fontWeight:"700",fontSize:"11px"}},"📱 SMS"),
+      h("button",{onClick:()=>toast("Appointment booked!"),style:{padding:"7px 12px",background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:"9px",fontWeight:"700",fontSize:"11px"}},"📅 Book")
+    ));
+    main.appendChild(ph);
+
+    // Tabs
+    const ptTabs=h("div",{style:{display:"flex",gap:"5px",marginBottom:"14px",overflowX:"auto",paddingBottom:"3px"}});
+    [["overview","📊 Overview"],["actions","⚡ Actions"]].forEach(([id,label])=>{
+      const active=STATE.ptDetailTab===id;
+      ptTabs.appendChild(h("button",{onClick:()=>{STATE.ptDetailTab=id;renderMain();},
+        style:{padding:"6px 13px",borderRadius:"9px",border:active?"none":`1.5px solid ${C.bd}`,
+          background:active?`linear-gradient(135deg,${C.p6},${C.p9})`:C.wh,
+          color:active?"#fff":C.md,fontWeight:"700",fontSize:"12px",whiteSpace:"nowrap"}},label));
+    });
+    main.appendChild(ptTabs);
+
+    if(STATE.ptDetailTab==="overview"){
+      const vs=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",marginBottom:"12px",border:`1.5px solid ${C.bd}`}});
+      vs.appendChild(h("h4",{style:{fontSize:"12px",fontWeight:"800",color:C.dk,margin:"0 0 11px",letterSpacing:".5px"}},"VITALS"));
+      [{l:"Glucose",v:p.glucose+" mg/dL",c:gSt(p.glucose).c},{l:"HbA1c",v:p.hba1c+"%",c:p.hba1c>8?C.r5:p.hba1c>7?C.o5:C.g7},
+       {l:"Blood Pressure",v:p.sbp+"/"+p.dbp,c:p.sbp>140?C.r5:C.g7},{l:"BMI",v:p.bmi,c:C.p6},{l:"Adherence",v:p.adherence+"%",c:p.adherence>70?C.g6:C.r5}
+      ].forEach((s,i)=>{
+        vs.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:`1px solid ${C.bd}`}},
+          h("span",{style:{fontSize:"12px",color:C.mu,fontWeight:"600"}},s.l),
+          h("span",{style:{fontSize:"12px",fontWeight:"800",color:s.c}},s.v)
+        ));
+      });
+      main.appendChild(vs);
+      // AI recommendation
+      main.appendChild(h("div",{style:{background:level==="high"?C.r1:level==="medium"?C.o1:C.g1,
+        borderRadius:"14px",padding:"14px",border:`1px solid ${rC(level)}30`}},
+        h("p",{style:{fontSize:"11px",fontWeight:"700",color:C.mu,marginBottom:"6px"}},"🤖 AI RECOMMENDATION"),
+        h("div",{style:{display:"flex",alignItems:"center",gap:"10px"}},
+          h("div",{style:{width:"48px",height:"48px",borderRadius:"50%",background:rBg(level),
+            display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+            border:`2px solid ${rC(level)}`,flexShrink:"0"}},
+            h("span",{style:{fontSize:"14px",fontWeight:"900",color:rC(level)}},score),
+            h("span",{style:{fontSize:"8px",color:rC(level),fontWeight:"700"}},"/100")
+          ),
+          h("p",{style:{margin:"0",fontSize:"13px",color:C.dk,fontWeight:"600",lineHeight:"1.5"}},
+            level==="high"?"Urgent consultation needed. Consider insulin initiation or emergency referral.":
+            p.adherence<50?"Poor adherence detected. Schedule counseling session urgently.":
+            "Patient on track. Continue current care plan.")
+        )
+      ));
+    }
+
+    else if(STATE.ptDetailTab==="actions"){
+      const ag=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}});
+      [{l:"📅 Book Appointment",fn:()=>toast("Appointment booked!")},
+       {l:"📱 Send SMS",fn:()=>toast("SMS sent to "+p.name)},
+       {l:"💊 Update Medications",fn:()=>toast("Medication editor opening...")},
+       {l:"📊 Request Lab Work",fn:()=>toast("Lab request sent!")},
+       {l:"🖼️ Request Imaging",fn:()=>toast("Imaging request sent!")},
+       {l:"📤 Refer to Specialist",fn:()=>toast("Referral sent!")},
+       {l:"📞 Call Patient",fn:()=>toast("Opening phone...")},
+       {l:"🚨 Flag Emergency",fn:()=>toast("Patient flagged!","warn"),danger:true}
+      ].forEach(a=>{
+        ag.appendChild(h("button",{onClick:a.fn,
+          style:{padding:"13px",background:a.danger?C.r1:C.wh,border:`1.5px solid ${a.danger?C.r5:C.bd}`,
+            borderRadius:"11px",color:a.danger?C.r5:C.dk,fontWeight:"700",fontSize:"13px",
+            cursor:"pointer",textAlign:"left"}},a.l));
+      });
+      main.appendChild(ag);
+    }
+  }
+
+  renderMain();
+  return wrap;
+}
+
+// ── MAIN RENDER ───────────────────────────────────────────────────────
 function render(){
   const app=document.getElementById("app");
-  if(!app) return;
   app.innerHTML="";
-  
-  if(STATE.screen==="auth") app.appendChild(renderAuth());
-  else if(STATE.role==="patient") app.appendChild(renderPatient());
+  if(STATE.screen==="auth")app.appendChild(renderAuth());
+  else if(STATE.role==="patient")app.appendChild(renderPatient());
   else app.appendChild(renderClinic());
 }
 
-// Online/offline environment detection handlers
-window.addEventListener("online",()=>{STATE.online=true;render();toast("Connected to cloud backend framework.");});
-window.addEventListener("offline",()=>{STATE.online=false;render();toast("Local fallback active. Preserving clinical changes locally.","warn");});
-
-// ── DATA INITIALIZATION & BACKEND SYNC INTEGRATION ────────────────────────
-STATE.readings = load("readings", []);
-STATE.vitals = load("vitals", []);
-STATE.missed = load("missed", []);
-
-if (!STATE.screen) {
-  STATE.screen = "auth";
-}
-
-// 1. Firebase Authentication State Core Observer
-window.auth.onAuthStateChanged((user) => {
-  if (user) {
-    STATE.screen = "app";
-    if (user.email && user.email.includes("doctor")) {
-      STATE.role = "doctor";
-    } else {
-      STATE.role = "patient";
-    }
-  } else {
-    STATE.screen = "auth";
-    STATE.role = null;
+// ── AUTH STATE LISTENER ───────────────────────────────────────────────
+onAuthStateChanged(auth,async(user)=>{
+  document.getElementById("loadingScreen").style.display="none";
+  document.getElementById("app").style.display="block";
+  if(user){
+    STATE.user=user;
+    const profile=await getUserProfile(user.uid);
+    STATE.userDoc=profile;
+    STATE.role=profile?.role||"patient";
+    STATE.screen="app";
+  }else{
+    STATE.user=null;STATE.userDoc=null;STATE.role=null;STATE.screen="auth";
   }
   render();
 });
 
-// 2. Global Cloud Authentication Event Controller Trigger
-window.loginWithFirebase = async (email, password) => {
-  try {
-    if (!email || !password) {
-      toast("Please provide both email and password.", "warn");
-      return;
-    }
-    const { signInWithEmailAndPassword } = window.authModules;
-    await signInWithEmailAndPassword(window.auth, email.trim(), password);
-    toast("Welcome back to Mizan!", "success");
-  } catch (error) {
-    let cleanMsg = error.message;
-    if (error.code === "auth/invalid-credential") cleanMsg = "Incorrect email or password.";
-    if (error.code === "auth/invalid-email") cleanMsg = "Please enter a valid email format.";
-    alert("Authentication Error: " + cleanMsg);
-  }
-};
+window.addEventListener("online",()=>{STATE.online=true;render();});
+window.addEventListener("offline",()=>{STATE.online=false;render();});
 
-// Initial system draw paint
-render();
 </script>
 </body>
 </html>
