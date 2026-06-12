@@ -41,7 +41,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, addDoc, collection, query, where, getDocs, orderBy, serverTimestamp }
+import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, collection, query, where, getDocs, orderBy, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ── FIREBASE CONFIG ──────────────────────────────────────────────────
@@ -946,8 +946,18 @@ function renderClinic(){
           h("span",{style:{fontSize:"11px",fontWeight:"700",color:p.adherence>70?C.g7:C.r5}},p.adherence+"%")
         );
         row.appendChild(bar);
-        row.appendChild(h("button",{onClick:(e)=>{e.stopPropagation();STATE.selectedPt=p;STATE.ptDetailTab="overview";renderMain();},
-          style:{background:C.p1,border:"none",color:C.p6,borderRadius:"7px",padding:"5px 9px",fontSize:"11px",fontWeight:"700"}},"View →"));
+        row.appendChild(h("div",{style:{display:"flex",gap:"5px"}},
+          h("button",{onClick:(e)=>{e.stopPropagation();STATE.selectedPt=p;STATE.ptDetailTab="overview";renderMain();},
+            style:{background:C.p1,border:"none",color:C.p6,borderRadius:"7px",padding:"5px 9px",fontSize:"11px",fontWeight:"700"}},"View →"),
+          h("button",{onClick:(e)=>{e.stopPropagation();
+            if(confirm("Delete "+p.name+"? All their data will be permanently removed.")){
+              deleteDoc(doc(db,"users",p.id)).then(()=>{
+                toast(p.name+" deleted.","warn");
+                loadPatientsAndRender();
+              }).catch(()=>toast("Delete failed","error"));
+            }
+          },style:{background:C.r1,border:"none",color:C.r5,borderRadius:"7px",padding:"5px 9px",fontSize:"11px",fontWeight:"700"}},"🗑")
+        ));
         tbl.appendChild(row);
       });
       main.appendChild(tbl);
