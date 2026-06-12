@@ -33,8 +33,25 @@ input:focus,textarea:focus,select:focus{outline:2px solid #1278d4;outline-offset
 <div id="loadingScreen">
   <div class="spinner"></div>
   <p style="color:#1278d4;font-weight:700;font-size:16px;font-family:'Outfit',sans-serif;">Loading Mizan...</p>
+  <p id="loadMsg" style="color:#7a9bb5;font-size:13px;margin-top:8px;font-family:'Outfit',sans-serif;text-align:center;padding:0 20px;"></p>
 </div>
 <div id="app" style="display:none"></div>
+<script>
+window.onerror=function(msg,src,line,col,err){
+  document.getElementById("loadMsg").innerHTML="<span style='color:#e8344a'>Error: "+msg+"<br>Line: "+line+"</span>";
+  console.error(msg,src,line,col,err);
+};
+window.addEventListener("unhandledrejection",function(e){
+  document.getElementById("loadMsg").innerHTML="<span style='color:#e8344a'>Firebase Error: "+e.reason+"</span>";
+  console.error(e.reason);
+});
+setTimeout(function(){
+  var lm=document.getElementById("loadMsg");
+  if(document.getElementById("loadingScreen").style.display!=="none"){
+    lm.textContent="Taking longer than usual... check your internet connection.";
+  }
+},8000);
+</script>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -836,6 +853,4 @@ function renderClinic(){
     }
 
     else if(dtb==="actions"){
-      const ag=el("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}});
-      [{l:"💬 Send Message",fn:async()=>{const msg=prompt("Message to "+p.name+":");if(msg){await addToCol("chats/"+p.id+"/messages",{text:msg,senderId:S.user.uid,senderName:docName,senderRole:"doctor",time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),patientId:p.id});await saveDoc("chats/"+p.id,{lastMsg:msg,lastTime:serverTimestamp(),unreadByDoctor:false});toast("Message sent! ☁️");}}},
-       {l:"📅 Book Appointment",fn:async()=>{await addToCol("users/"+p.id+"/appointments",{reason:"Follow-up",date:"TBD",status:"confirmed",doctor:docName,createdAt:serverTimestamp()});await addToCol("chats/"+p.id+"/messages",{text:"📅 A follow-up appointment has been scheduled. We will confirm the date s
+      co
