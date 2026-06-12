@@ -216,14 +216,18 @@ function btn(label,onClick,opts={}){
 }
 
 function field(label,opts={}){
-  const{type="text",value="",onChange,placeholder="",hint="",rows=0}=opts;
+  const{type="text",value="",onChange,placeholder="",hint="",rows=0,options=null}=opts;
   const wrap=h("div",{style:{marginBottom:"15px"}});
   if(label)wrap.appendChild(h("label",{style:{display:"block",marginBottom:"5px",fontSize:"13px",fontWeight:"700",color:C.dk}},label));
   const s={width:"100%",padding:"11px 13px",borderRadius:"11px",border:`1.5px solid ${C.bd}`,fontSize:"15px",color:C.dk,background:C.bg,resize:"vertical"};
   let inp;
-  if(rows>0){inp=h("textarea",{style:s,placeholder,rows:""+rows},value||"");}
+  if(options){
+    inp=h("select",{style:s});
+    options.forEach(([v2,l])=>inp.appendChild(h("option",{value:v2},l)));
+    if(onChange)inp.addEventListener("change",e=>onChange(e.target.value));
+  }else if(rows>0){inp=h("textarea",{style:s,placeholder,rows:""+rows},value||"");}
   else{inp=h("input",{type,style:s,placeholder,value:value||""});}
-  if(onChange)inp.addEventListener("input",e=>onChange(e.target.value));
+  if(onChange&&!options)inp.addEventListener("input",e=>onChange(e.target.value));
   inp.addEventListener("focus",()=>inp.style.border=`1.5px solid ${C.p6}`);
   inp.addEventListener("blur",()=>inp.style.border=`1.5px solid ${C.bd}`);
   wrap.appendChild(inp);
@@ -303,7 +307,7 @@ async function getUserProfile(uid){
 // ══════════════════════════════════════════════════════════════════════
 function renderAuth(){
   const t=T[STATE.lang];
-  let mode="login",role="patient",email="",pass="",name="";
+  let mode="login",role="patient",email="",pass="",name="",phone="",sex="",age="",city="",diabType="";
 
   function build(){
     const wrap=h("div",{id:"authWrap",style:{minHeight:"100vh",display:"flex"}});
@@ -364,7 +368,16 @@ function renderAuth(){
       inner.appendChild(rs);
     }
 
-    if(mode==="register")inner.appendChild(field(t.name,{placeholder:"Full name",onChange:v=>name=v}));
+    if(mode==="register"){
+      inner.appendChild(field(t.name,{placeholder:"Full name",onChange:v=>name=v}));
+      if(role==="patient"){
+        inner.appendChild(field("Phone Number",{type:"tel",placeholder:"e.g. 0911234567",onChange:v=>phone=v}));
+        inner.appendChild(field("Sex",{type:"select",options:[["","-- Select --"],["male","Male"],["female","Female"]],onChange:v=>sex=v}));
+        inner.appendChild(field("Age",{type:"number",placeholder:"e.g. 45",onChange:v=>age=v}));
+        inner.appendChild(field("City",{placeholder:"e.g. Gondar",onChange:v=>city=v}));
+        inner.appendChild(field("Diabetes Type",{type:"select",options:[["","-- Select --"],["type1","Type 1"],["type2","Type 2"],["gestational","Gestational"],["other","Other"]],onChange:v=>diabType=v}));
+      }
+    }
     inner.appendChild(field(t.email,{type:"email",placeholder:"email@example.com",onChange:v=>email=v}));
     if(mode!=="forgot")inner.appendChild(field(t.password,{type:"password",placeholder:"••••••••",onChange:v=>pass=v}));
 
@@ -383,9 +396,13 @@ function renderAuth(){
           const cred=await createUserWithEmailAndPassword(auth,email,pass);
           await saveUserProfile(cred.user.uid,{
             name:name||email.split("@")[0],email,role,
-            createdAt:new Date().toISOString(),plan:"basic"
+            phone:phone||"",sex:sex||"",age:Number(age)||0,
+            city:city||"",diabType:diabType||"",
+            status:role==="patient"?"pending":"active",
+            createdAt:new Date().toISOString(),plan:"basic",planStatus:"unpaid",
+            glucose:"",hba1c:"",sbp:"",dbp:"",bmi:"",weight:"",adherence:100
           });
-          toast("Account created! Welcome to Mizan 🎉");
+          toast("Account created! "+(role==="patient"?"Awaiting doctor approval.":"Welcome!")+" 🎉");
         }else{
           await signInWithEmailAndPassword(auth,email,pass);
         }
@@ -1112,11 +1129,28 @@ function render(){
   const app=document.getElementById("app");
   app.innerHTML="";
   if(STATE.screen==="auth")app.appendChild(renderAuth());
+  else if(STATE.screen==="pending")app.appendChild(renderPending());
   else if(STATE.role==="patient")app.appendChild(renderPatient());
   else app.appendChild(renderClinic());
 }
 
-// ── AUTH STATE LISTENER ───────────────────────────────────────────────
+// ── PENDING SCREEN ────────────────────────────────────────────────────────
+function renderPending(){
+  return h("div",{style:{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:`linear-gradient(160deg,${C.p9},#071a2e)`,padding:"20px"}},
+    h("div",{style:{background:C.wh,borderRadius:"24px",padding:"36px 28px",maxWidth:"380px",width:"100%",textAlign:"center"}},
+      h("div",{style:{fontSize:"56px",marginBottom:"16px"}},"⏳"),
+      h("h2",{style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"10px"}},"Account Pending Approval"),
+      h("p",{style:{fontSize:"14px",color:C.mu,lineHeight:"1.7",marginBottom:"24px"}},"Your account is under review. A Mizan doctor will approve you shortly."),
+      h("div",{style:{background:C.p1,borderRadius:"12px",padding:"14px",marginBottom:"20px"}},
+        h("p",{style:{fontSize:"13px",color:C.p6,fontWeight:"600"}},"👤 "+(STATE.userDoc?.name||"")),
+        h("p",{style:{fontSize:"12px",color:C.mu,marginTop:"4px"}},"📍 "+(STATE.userDoc?.city||"")+" · "+(STATE.userDoc?.diabType||""))
+      ),
+      btn("Sign Out",async()=>{await signOut(auth)},{full:true,v:"muted"})
+    )
+  );
+}
+
+
 onAuthStateChanged(auth,async(user)=>{
   document.getElementById("loadingScreen").style.display="none";
   document.getElementById("app").style.display="block";
@@ -1125,7 +1159,8 @@ onAuthStateChanged(auth,async(user)=>{
     const profile=await getUserProfile(user.uid);
     STATE.userDoc=profile;
     STATE.role=profile?.role||"patient";
-    STATE.screen="app";
+    if(STATE.role==="patient"&&profile?.status==="pending")STATE.screen="pending";
+    else STATE.screen="app";
   }else{
     STATE.user=null;STATE.userDoc=null;STATE.role=null;STATE.screen="auth";
   }
