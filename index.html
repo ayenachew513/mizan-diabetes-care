@@ -826,6 +826,7 @@ function renderClinic(){
 
   const nav=h("nav",{style:{padding:"10px 7px",flex:"1"}});
   [{id:"overview",icon:"📊",label:t.overview},{id:"patients",icon:"👥",label:t.patients},
+   {id:"approvals",icon:"✅",label:"Approvals"},
    {id:"analytics",icon:"📈",label:t.analytics},{id:"followup",icon:"🔔",label:t.followup}
   ].forEach(n=>{
     const active=STATE.clinicView===n.id&&!STATE.selectedPt;
@@ -956,6 +957,53 @@ function renderClinic(){
         tbl.appendChild(row);
       });
       main.appendChild(tbl);
+    }
+
+    else if(STATE.clinicView==="approvals"){
+      main.appendChild(h("h1",{style:{fontSize:"24px",fontWeight:"900",color:C.dk,marginBottom:"18px"}},"✅ Pending Approvals"));
+      const pendingDiv=h("div",{id:"pendingList"});
+      main.appendChild(pendingDiv);
+      async function loadPending(){
+        pendingDiv.innerHTML="<p style='color:"+C.mu+";font-size:14px;'>Loading...</p>";
+        const snap=await getDocs(query(collection(db,"users"),where("role","==","patient"),where("status","==","pending")));
+        const pending=snap.docs.map(d=>({id:d.id,...d.data()}));
+        pendingDiv.innerHTML="";
+        if(pending.length===0){
+          pendingDiv.appendChild(h("div",{style:{background:C.wh,borderRadius:"16px",padding:"32px",textAlign:"center",border:`1.5px solid ${C.bd}`}},
+            h("div",{style:{fontSize:"40px",marginBottom:"10px"}},"✅"),
+            h("p",{style:{color:C.mu,fontSize:"14px"}},"No pending approvals.")
+          ));return;
+        }
+        pending.forEach(p=>{
+          const card=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"18px",marginBottom:"12px",border:`1.5px solid ${C.o5}30`,borderLeft:`4px solid ${C.o5}`}});
+          card.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"12px"}},
+            h("div",{},
+              h("h3",{style:{fontSize:"16px",fontWeight:"800",color:C.dk,margin:"0 0 4px"}},p.name),
+              h("p",{style:{margin:"0 0 2px",fontSize:"13px",color:C.mu}},"📍 "+(p.city||"?")+" · "+(p.diabType||"?")),
+              h("p",{style:{margin:"0 0 2px",fontSize:"13px",color:C.mu}},"📞 "+(p.phone||"?")),
+              h("p",{style:{margin:"0 0 2px",fontSize:"13px",color:C.mu}},"✉️ "+(p.email||"?")),
+              h("p",{style:{margin:"0",fontSize:"12px",color:C.mu}},"Age: "+(p.age||"?")+" · Sex: "+(p.sex||"?"))
+            ),
+            h("span",{style:{background:C.o1,color:C.o5,borderRadius:"20px",padding:"3px 10px",fontSize:"12px",fontWeight:"700"}},"PENDING")
+          ));
+          card.appendChild(h("div",{style:{display:"flex",gap:"10px"}},
+            btn("✓ Approve",async()=>{
+              await setDoc(doc(db,"users",p.id),{status:"active"},{merge:true});
+              toast("✓ "+p.name+" approved!");
+              loadPending();
+            },{v:"green",sm:true}),
+            btn("✗ Reject",async()=>{
+              if(confirm("Reject "+p.name+"? This will mark them as rejected.")){
+                await setDoc(doc(db,"users",p.id),{status:"rejected"},{merge:true});
+                toast(p.name+" rejected.","warn");
+                loadPending();
+              }
+            },{v:"danger",sm:true})
+          ));
+          pendingDiv.appendChild(card);
+        });
+      }
+      loadPending();
     }
 
     else if(STATE.clinicView==="analytics"){
