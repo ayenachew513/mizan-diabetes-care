@@ -1059,12 +1059,13 @@ function renderClinic(){
         ir.appendChild(ta);ir.appendChild(btn("Send",send,{sm:true,v:"green"}));
         box.appendChild(ir);replyDiv.appendChild(box);
       }
-      loadChatList();
       // Auto-open if coming from patient row chat button
       if(STATE.chatOpenPatient){
         const p=STATE.chatOpenPatient;
         STATE.chatOpenPatient=null;
-        setTimeout(()=>openChat({patientId:p.id,patientName:p.name,id:p.id}),200);
+        openChat({patientId:p.id,patientName:p.name,id:p.id});
+      }else{
+        loadChatList();
       }
     }
 
