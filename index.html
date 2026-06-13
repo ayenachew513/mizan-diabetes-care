@@ -872,6 +872,11 @@ function renderClinic(){
   wrap.appendChild(main);
 
   function renderMain(){
+    async function openPatientChat(p){
+      STATE.clinicView="chat";
+      STATE.chatOpenPatient=p;
+      renderMain();
+    }
     main.innerHTML="";
     if(STATE.selectedPt){renderPtDetail();return;}
 
@@ -971,6 +976,8 @@ function renderClinic(){
         row.appendChild(h("div",{style:{display:"flex",gap:"5px"}},
           h("button",{onClick:(e)=>{e.stopPropagation();STATE.selectedPt=p;STATE.ptDetailTab="overview";renderMain();},
             style:{background:C.p1,border:"none",color:C.p6,borderRadius:"7px",padding:"5px 9px",fontSize:"11px",fontWeight:"700"}},"View →"),
+          h("button",{onClick:(e)=>{e.stopPropagation();openPatientChat(p);},
+            style:{background:C.g1,border:"none",color:C.g7,borderRadius:"7px",padding:"5px 9px",fontSize:"11px",fontWeight:"700"}},"💬"),
           h("button",{onClick:(e)=>{e.stopPropagation();
             if(confirm("Delete "+p.name+"? All their data will be permanently removed.")){
               deleteDoc(doc(db,"users",p.id)).then(()=>{
@@ -1051,6 +1058,12 @@ function renderClinic(){
         box.appendChild(ir);replyDiv.appendChild(box);
       }
       loadChatList();
+      // Auto-open if coming from patient row chat button
+      if(STATE.chatOpenPatient){
+        const p=STATE.chatOpenPatient;
+        STATE.chatOpenPatient=null;
+        setTimeout(()=>openChat({patientId:p.id,patientName:p.name,id:p.id}),200);
+      }
     }
 
     else if(STATE.clinicView==="approvals"){
@@ -1164,8 +1177,8 @@ function renderClinic(){
                 borderRadius:"7px",padding:"7px 10px",fontSize:"12px",color:C.dk,fontWeight:"600"}},"🤖 "+rec)
             ),
             h("div",{style:{display:"flex",flexDirection:"column",gap:"5px"}},
-              h("button",{onClick:()=>toast("SMS sent to "+p.name),
-                style:{padding:"6px 11px",background:`linear-gradient(135deg,${C.p6},${C.p9})`,border:"none",color:"#fff",borderRadius:"7px",fontSize:"11px",fontWeight:"700"}},"📱 SMS"),
+              h("button",{onClick:()=>openPatientChat(p),
+                style:{padding:"6px 11px",background:`linear-gradient(135deg,${C.g6},${C.g9})`,border:"none",color:"#fff",borderRadius:"7px",fontSize:"11px",fontWeight:"700"}},"💬 Chat"),
               h("button",{onClick:()=>{STATE.selectedPt=p;STATE.ptDetailTab="overview";renderMain();},
                 style:{padding:"6px 11px",background:C.p1,border:"none",color:C.p6,borderRadius:"7px",fontSize:"11px",fontWeight:"700"}},"View")
             )
@@ -1196,7 +1209,7 @@ function renderClinic(){
       )
     ));
     ph.appendChild(h("div",{style:{display:"flex",gap:"6px"}},
-      h("button",{onClick:()=>toast("SMS sent"),style:{padding:"7px 12px",background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:"9px",fontWeight:"700",fontSize:"11px"}},"📱 SMS"),
+      h("button",{onClick:()=>{openPatientChat(p);},style:{padding:"7px 12px",background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:"9px",fontWeight:"700",fontSize:"11px"}},"💬 Chat"),
       h("button",{onClick:()=>toast("Appointment booked!"),style:{padding:"7px 12px",background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:"9px",fontWeight:"700",fontSize:"11px"}},"📅 Book")
     ));
     main.appendChild(ph);
