@@ -871,12 +871,14 @@ function renderClinic(){
   const main=h("div",{id:"clinicMain",style:{flex:"1",padding:"22px",overflowY:"auto",maxHeight:"100vh"}});
   wrap.appendChild(main);
 
+  // Open chat for a specific patient from anywhere in the clinic dashboard
+  function openPatientChat(p){
+    STATE.clinicView="chat";
+    STATE.chatOpenPatient=p;
+    renderMain();
+  }
+
   function renderMain(){
-    async function openPatientChat(p){
-      STATE.clinicView="chat";
-      STATE.chatOpenPatient=p;
-      renderMain();
-    }
     main.innerHTML="";
     if(STATE.selectedPt){renderPtDetail();return;}
 
