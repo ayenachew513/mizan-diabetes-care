@@ -687,42 +687,63 @@ function renderPatient(){
     }
 
     else if(tb==="chat"){
+      const uid=STATE.user?.uid;
+      const uName=STATE.userDoc?.name||"Patient";
       content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"4px"}},"💬 "+t.consultChat));
-      content.appendChild(h("p",{style:{color:C.mu,fontSize:"12px",marginBottom:"13px"}},"Dr. Ayenachew · "+(STATE.online?"🟢 Online":"🔴 Offline")));
+      content.appendChild(h("p",{style:{color:C.mu,fontSize:"12px",marginBottom:"13px"}},"Mizan Clinic · "+(STATE.online?"🟢 Online":"🔴 Offline")));
       const chatBox=h("div",{style:{background:C.wh,borderRadius:"16px",border:`1.5px solid ${C.bd}`,marginBottom:"13px",overflow:"hidden"}});
-      const msgs=h("div",{style:{padding:"13px",maxHeight:"280px",overflowY:"auto",display:"flex",flexDirection:"column",gap:"9px"}});
-      STATE.chat.forEach(m=>{
-        const isDoc=m.from==="doctor";
-        msgs.appendChild(h("div",{style:{display:"flex",justifyContent:isDoc?"flex-start":"flex-end"}},
-          h("div",{style:{maxWidth:"78%",background:isDoc?C.bg:`linear-gradient(135deg,${C.p6},${C.p9})`,
-            borderRadius:isDoc?"4px 13px 13px 13px":"13px 13px 4px 13px",padding:"9px 12px"}},
-            h("p",{style:{margin:"0",fontSize:"13px",color:isDoc?C.dk:"#fff",lineHeight:"1.5"}},m.text),
-            h("p",{style:{margin:"3px 0 0",fontSize:"9px",color:isDoc?C.mu:"rgba(255,255,255,.6)",textAlign:"right"}},m.time)
-          )
-        ));
-      });
+      const msgs=h("div",{style:{padding:"13px",maxHeight:"320px",overflowY:"auto",display:"flex",flexDirection:"column",gap:"9px"}});
+
+      function renderMsgs(msgList){
+        msgs.innerHTML="";
+        if(msgList.length===0){
+          msgs.appendChild(h("p",{style:{textAlign:"center",color:C.mu,fontSize:"13px",padding:"20px 0"}},"No messages yet. Send a message to the clinic."));
+        }
+        msgList.forEach(m=>{
+          const isMe=m.senderId===uid;
+          msgs.appendChild(h("div",{style:{display:"flex",justifyContent:isMe?"flex-end":"flex-start"}},
+            h("div",{style:{maxWidth:"78%",background:isMe?`linear-gradient(135deg,${C.p6},${C.p9})`:C.bg,
+              borderRadius:isMe?"13px 13px 4px 13px":"4px 13px 13px 13px",padding:"9px 12px"}},
+              h("p",{style:{margin:"0 0 2px",fontSize:"10px",fontWeight:"700",color:isMe?"rgba(255,255,255,.7)":C.mu}},isMe?"You":(m.senderName||"Clinic")),
+              h("p",{style:{margin:"0",fontSize:"13px",color:isMe?"#fff":C.dk,lineHeight:"1.5"}},m.text),
+              h("p",{style:{margin:"3px 0 0",fontSize:"9px",color:isMe?"rgba(255,255,255,.6)":C.mu,textAlign:"right"}},m.time||"")
+            )
+          ));
+        });
+        msgs.scrollTop=msgs.scrollHeight;
+      }
+
+      // Load messages and listen for new ones
+      renderMsgs([]);
+      getDocs(query(collection(db,"chats",uid,"messages"),orderBy("createdAt","asc"))).then(snap=>{
+        renderMsgs(snap.docs.map(d=>({id:d.id,...d.data()})));
+      }).catch(()=>{});
+
       chatBox.appendChild(msgs);
       const ir=h("div",{style:{borderTop:`1px solid ${C.bd}`,padding:"9px",display:"flex",gap:"7px",alignItems:"flex-end"}});
       const ta=h("textarea",{rows:"2",placeholder:t.typeMsg,
         style:{flex:"1",padding:"9px 12px",borderRadius:"9px",border:`1.5px solid ${C.bd}`,
-          fontSize:"13px",resize:"none",fontFamily:"'Outfit',sans-serif",color:C.dk,background:C.bg}},
-        STATE.chatInput||"");
-      ta.addEventListener("input",e=>STATE.chatInput=e.target.value);
-      ta.addEventListener("keydown",e=>{
-        if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();
-          if(!STATE.chatInput.trim())return;
-          STATE.chat.push({from:"patient",text:STATE.chatInput,time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})});
-          STATE.chatInput="";renderContent();
-          setTimeout(()=>{STATE.chat.push({from:"doctor",text:"Thank you. I will review and respond shortly.",time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})});renderContent();},1500);
-        }
-      });
+          fontSize:"13px",resize:"none",fontFamily:"'Outfit',sans-serif",color:C.dk,background:C.bg}});
+      let chatVal="";
+      ta.addEventListener("input",e=>chatVal=e.target.value);
+
+      async function sendMsg(){
+        if(!chatVal.trim())return;
+        const msg={text:chatVal,senderId:uid,senderName:uName,senderRole:"patient",
+          time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),
+          createdAt:serverTimestamp()};
+        ta.value="";chatVal="";
+        await addDoc(collection(db,"chats",uid,"messages"),msg);
+        await setDoc(doc(db,"chats",uid),{patientId:uid,patientName:uName,
+          lastMsg:msg.text,lastTime:serverTimestamp(),unreadByDoctor:true},{merge:true});
+        // Reload messages
+        const snap=await getDocs(query(collection(db,"chats",uid,"messages"),orderBy("createdAt","asc")));
+        renderMsgs(snap.docs.map(d=>({id:d.id,...d.data()})));
+      }
+
+      ta.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg();}});
       ir.appendChild(ta);
-      ir.appendChild(btn(t.send,()=>{
-        if(!STATE.chatInput.trim())return;
-        STATE.chat.push({from:"patient",text:STATE.chatInput,time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})});
-        STATE.chatInput="";renderContent();
-        setTimeout(()=>{STATE.chat.push({from:"doctor",text:"Thank you. I will review and respond shortly.",time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})});renderContent();},1500);
-      },{sm:true}));
+      ir.appendChild(btn(t.send,sendMsg,{sm:true}));
       chatBox.appendChild(ir);
       content.appendChild(chatBox);
     }
@@ -821,6 +842,7 @@ function renderClinic(){
   const nav=h("nav",{style:{padding:"10px 7px",flex:"1"}});
   [{id:"overview",icon:"📊",label:t.overview},{id:"patients",icon:"👥",label:t.patients},
    {id:"approvals",icon:"✅",label:"Approvals"},
+   {id:"chat",icon:"💬",label:"Chat"},
    {id:"analytics",icon:"📈",label:t.analytics},{id:"followup",icon:"🔔",label:t.followup}
   ].forEach(n=>{
     const active=STATE.clinicView===n.id&&!STATE.selectedPt;
@@ -961,6 +983,74 @@ function renderClinic(){
         tbl.appendChild(row);
       });
       main.appendChild(tbl);
+    }
+
+    else if(STATE.clinicView==="chat"){
+      main.appendChild(h("h1",{style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"16px"}},"💬 Patient Chats"));
+      const listDiv=h("div");const replyDiv=h("div",{style:{display:"none"}});
+      main.appendChild(listDiv);main.appendChild(replyDiv);
+
+      async function loadChatList(){
+        listDiv.innerHTML="<p style='color:"+C.mu+";font-size:14px;'>Loading chats...</p>";
+        const snap=await getDocs(collection(db,"chats"));
+        const chats=snap.docs.map(d=>({id:d.id,...d.data()}));
+        listDiv.innerHTML="";
+        if(chats.length===0){listDiv.appendChild(h("div",{style:{background:C.wh,borderRadius:"14px",padding:"28px",textAlign:"center",border:`1.5px solid ${C.bd}`}},h("div",{style:{fontSize:"36px",marginBottom:"8px"}},"💬"),h("p",{style:{color:C.mu,fontSize:"14px"}},"No patient messages yet.")));return;}
+        chats.forEach(chat=>{
+          listDiv.appendChild(h("div",{onClick:()=>openChat(chat),style:{background:C.wh,borderRadius:"12px",padding:"14px",marginBottom:"8px",border:`1.5px solid ${chat.unreadByDoctor?C.p6:C.bd}`,cursor:"pointer",borderLeft:`4px solid ${chat.unreadByDoctor?C.p6:C.bd}`}},
+            h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+              h("div",{},h("p",{style:{margin:"0 0 3px",fontSize:"14px",fontWeight:"700",color:C.dk}},chat.patientName||"Patient"),h("p",{style:{margin:"0",fontSize:"12px",color:C.mu}},chat.lastMsg?chat.lastMsg.substring(0,50)+"...":"No messages")),
+              chat.unreadByDoctor&&h("span",{style:{background:C.p1,color:C.p6,borderRadius:"20px",padding:"2px 9px",fontSize:"11px",fontWeight:"700"}},"NEW")
+            )
+          ));
+        });
+      }
+
+      async function openChat(chat){
+        listDiv.style.display="none";replyDiv.style.display="block";replyDiv.innerHTML="";
+        replyDiv.appendChild(h("button",{onClick:()=>{listDiv.style.display="block";replyDiv.style.display="none";replyDiv.innerHTML="";loadChatList();},style:{background:"none",border:"none",color:C.p6,fontWeight:"700",fontSize:"13px",cursor:"pointer",marginBottom:"14px"}},"← Back to chats"));
+        replyDiv.appendChild(h("h3",{style:{fontSize:"16px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},chat.patientName||"Patient"));
+        await setDoc(doc(db,"chats",chat.patientId||chat.id),{unreadByDoctor:false},{merge:true});
+        const box=h("div",{style:{background:C.wh,borderRadius:"14px",border:`1.5px solid ${C.bd}`,overflow:"hidden"}});
+        const msgsDiv=h("div",{style:{padding:"12px",maxHeight:"350px",overflowY:"auto",display:"flex",flexDirection:"column",gap:"8px"}});
+        const snap=await getDocs(query(collection(db,"chats",chat.patientId||chat.id,"messages"),orderBy("createdAt","asc")));
+        const msgList=snap.docs.map(d=>({id:d.id,...d.data()}));
+        msgList.forEach(m=>{
+          const isDoc=m.senderRole==="doctor";
+          msgsDiv.appendChild(h("div",{style:{display:"flex",justifyContent:isDoc?"flex-end":"flex-start"}},
+            h("div",{style:{maxWidth:"75%",background:isDoc?`linear-gradient(135deg,${C.g6},${C.g9})`:C.bg,borderRadius:isDoc?"13px 13px 4px 13px":"4px 13px 13px 13px",padding:"9px 11px"}},
+              h("p",{style:{margin:"0 0 2px",fontSize:"10px",fontWeight:"700",color:isDoc?"rgba(255,255,255,.7)":C.mu}},isDoc?(STATE.userDoc?.name||"Doctor"):"Patient"),
+              h("p",{style:{margin:"0",fontSize:"13px",color:isDoc?"#fff":C.dk,lineHeight:"1.5"}},m.text),
+              h("p",{style:{margin:"2px 0 0",fontSize:"9px",color:isDoc?"rgba(255,255,255,.6)":C.mu,textAlign:"right"}},m.time||"")
+            )
+          ));
+        });
+        msgsDiv.scrollTop=msgsDiv.scrollHeight;
+        box.appendChild(msgsDiv);
+        const ir=h("div",{style:{borderTop:`1px solid ${C.bd}`,padding:"9px",display:"flex",gap:"7px",alignItems:"flex-end"}});
+        const ta=h("textarea",{rows:"2",placeholder:"Reply to "+(chat.patientName||"patient")+"...",style:{flex:"1",padding:"9px 11px",borderRadius:"9px",border:`1.5px solid ${C.bd}`,fontSize:"13px",resize:"none",fontFamily:"'Outfit',sans-serif",color:C.dk,background:C.bg}});
+        let cv="";ta.addEventListener("input",e=>cv=e.target.value);
+        async function send(){
+          if(!cv.trim())return;
+          const docName=STATE.userDoc?.name||"Doctor";
+          const msg={text:cv,senderId:STATE.user.uid,senderName:docName,senderRole:"doctor",time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),createdAt:serverTimestamp()};
+          ta.value="";cv="";
+          await addDoc(collection(db,"chats",chat.patientId||chat.id,"messages"),msg);
+          await setDoc(doc(db,"chats",chat.patientId||chat.id),{lastMsg:msg.text,lastTime:serverTimestamp(),unreadByDoctor:false},{merge:true});
+          // Reload messages
+          const s2=await getDocs(query(collection(db,"chats",chat.patientId||chat.id,"messages"),orderBy("createdAt","asc")));
+          msgsDiv.innerHTML="";
+          s2.docs.map(d=>({id:d.id,...d.data()})).forEach(m=>{
+            const isDoc=m.senderRole==="doctor";
+            msgsDiv.appendChild(h("div",{style:{display:"flex",justifyContent:isDoc?"flex-end":"flex-start"}},h("div",{style:{maxWidth:"75%",background:isDoc?`linear-gradient(135deg,${C.g6},${C.g9})`:C.bg,borderRadius:isDoc?"13px 13px 4px 13px":"4px 13px 13px 13px",padding:"9px 11px"}},h("p",{style:{margin:"0 0 2px",fontSize:"10px",fontWeight:"700",color:isDoc?"rgba(255,255,255,.7)":C.mu}},isDoc?(STATE.userDoc?.name||"Doctor"):"Patient"),h("p",{style:{margin:"0",fontSize:"13px",color:isDoc?"#fff":C.dk,lineHeight:"1.5"}},m.text),h("p",{style:{margin:"2px 0 0",fontSize:"9px",color:isDoc?"rgba(255,255,255,.6)":C.mu,textAlign:"right"}},m.time||""))));
+          });
+          msgsDiv.scrollTop=msgsDiv.scrollHeight;
+        }
+        ta.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}});
+        ir.appendChild(ta);ir.appendChild(btn("Send",send,{sm:true,v:"green"}));
+        box.appendChild(ir);replyDiv.appendChild(box);
+      }
+      loadChatList();
     }
 
     else if(STATE.clinicView==="approvals"){
