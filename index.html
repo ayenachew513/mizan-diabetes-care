@@ -771,38 +771,106 @@ function renderPatient(){
     }
 
     else if(tb==="plans"){
-      content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"13px"}},"⭐ "+t.plans_title));
+      const uid=STATE.user?.uid;
+      content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"4px"}},"⭐ "+t.plans_title));
+      content.appendChild(h("p",{style:{color:C.mu,fontSize:"12px",marginBottom:"14px"}},"Pay via Telebirr · Verified by clinic within 24 hours"));
+
       const currentPlan=STATE.userDoc?.plan||"basic";
-      [{name:"basic",price:3,c:C.md,inc:["Glucose logging","Medication reminders","Basic education","Monthly check-in"]},
-       {name:"standard",price:7,c:C.p6,popular:true,inc:["Everything in Basic","Teleconsultation ×2/mo","Complication screening","Dietitian access"]},
-       {name:"premium",price:12,c:C.g7,inc:["Everything in Standard","Unlimited teleconsultation","Product delivery","Home visit ×1/mo"]}
+      const planStatus=STATE.userDoc?.planStatus||"unpaid";
+
+      // Show current plan status banner
+      if(planStatus==="pending_verification"){
+        content.appendChild(h("div",{style:{background:C.o1,border:`1.5px solid ${C.o5}`,borderRadius:"14px",padding:"14px",marginBottom:"14px",display:"flex",gap:"10px",alignItems:"center"}},
+          h("span",{style:{fontSize:"24px"}},"⏳"),
+          h("div",{},
+            h("p",{style:{margin:"0",fontSize:"14px",fontWeight:"800",color:C.o5}},"Payment Pending Verification"),
+            h("p",{style:{margin:"3px 0 0",fontSize:"12px",color:C.md}},"Your "+currentPlan+" plan payment is being reviewed by the clinic. You will be notified once verified.")
+          )
+        ));
+      }else if(planStatus==="active"){
+        content.appendChild(h("div",{style:{background:C.g1,border:`1.5px solid ${C.g2}`,borderRadius:"14px",padding:"14px",marginBottom:"14px",display:"flex",gap:"10px",alignItems:"center"}},
+          h("span",{style:{fontSize:"24px"}},"✅"),
+          h("div",{},
+            h("p",{style:{margin:"0",fontSize:"14px",fontWeight:"800",color:C.g7}},"Active Plan: "+currentPlan.charAt(0).toUpperCase()+currentPlan.slice(1)),
+            h("p",{style:{margin:"3px 0 0",fontSize:"12px",color:C.g7}},"Your subscription is active. Enjoy all your plan benefits!")
+          )
+        ));
+      }
+
+      [{name:"basic",price:3,c:C.md,
+        inc:["Glucose logging","Medication reminders","Basic education","Monthly check-in"],
+        exc:["In-app chat","Complication screening","Product delivery","Home visit"]},
+       {name:"standard",price:7,c:C.p6,popular:true,
+        inc:["Everything in Basic","In-app chat with clinic","Complication screening","Dietitian access"],
+        exc:["Product delivery","Home visit"]},
+       {name:"premium",price:12,c:C.g7,
+        inc:["Everything in Standard","Product delivery to home","Home nursing visit ×1/month","Priority support 24/7"],
+        exc:[]}
       ].forEach(p=>{
         const isCurrent=currentPlan===p.name;
-        const pc=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"18px",marginBottom:"11px",
-          border:`${isCurrent?2:1.5}px solid ${isCurrent?p.c:C.bd}`,cursor:"pointer",position:"relative"}});
-        if(p.popular)pc.appendChild(h("div",{style:{position:"absolute",top:"-9px",right:"14px",
+        const isActive=isCurrent&&planStatus==="active";
+        const isPending=isCurrent&&planStatus==="pending_verification";
+
+        const pc=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"18px",marginBottom:"12px",
+          border:`${isCurrent?2:1.5}px solid ${isCurrent?p.c:C.bd}`,position:"relative",
+          boxShadow:isCurrent?`0 4px 20px ${p.c}20`:"none"}});
+
+        if(p.popular&&!isCurrent)pc.appendChild(h("div",{style:{position:"absolute",top:"-9px",right:"14px",
           background:`linear-gradient(135deg,${C.p6},${C.p9})`,color:"#fff",
           fontSize:"10px",fontWeight:"700",padding:"2px 10px",borderRadius:"20px"}},"MOST POPULAR"));
+        if(isActive)pc.appendChild(h("div",{style:{position:"absolute",top:"-9px",left:"14px",
+          background:`linear-gradient(135deg,${C.g6},${C.g9})`,color:"#fff",
+          fontSize:"10px",fontWeight:"700",padding:"2px 10px",borderRadius:"20px"}},"✓ ACTIVE"));
+        if(isPending)pc.appendChild(h("div",{style:{position:"absolute",top:"-9px",left:"14px",
+          background:`linear-gradient(135deg,${C.o5},#c4640e)`,color:"#fff",
+          fontSize:"10px",fontWeight:"700",padding:"2px 10px",borderRadius:"20px"}},"⏳ PENDING"));
+
         pc.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"11px"}},
-          h("div",{},
-            h("h3",{style:{fontSize:"17px",fontWeight:"900",color:p.c}},t[p.name]||p.name),
-            isCurrent&&pill("Current Plan",p.c,p.c+"15")
-          ),
+          h("h3",{style:{fontSize:"18px",fontWeight:"900",color:p.c}},t[p.name]||p.name),
           h("div",{},h("span",{style:{fontSize:"26px",fontWeight:"900",color:p.c}},"$"+p.price),
-            h("span",{style:{fontSize:"11px",color:C.mu}},"/mo"))
+            h("span",{style:{fontSize:"11px",color:C.mu}},"/mo ≈ "+Math.round(p.price*57)+" ETB"))
         ));
-        p.inc.forEach(f=>{
-          pc.appendChild(h("div",{style:{display:"flex",gap:"7px",alignItems:"center",marginBottom:"4px",fontSize:"13px",color:C.dk}},
-            h("span",{style:{color:p.c,fontWeight:"700"}},"✓")," ",f
+        p.inc.forEach(f=>pc.appendChild(h("div",{style:{display:"flex",gap:"7px",alignItems:"center",marginBottom:"4px",fontSize:"12px",color:C.dk}},
+          h("span",{style:{color:p.c,fontWeight:"700"}},"✓")," ",f)));
+        p.exc.forEach(f=>pc.appendChild(h("div",{style:{display:"flex",gap:"7px",alignItems:"center",marginBottom:"4px",fontSize:"12px",color:C.mu}},"✗ ",f)));
+
+        if(isActive){
+          pc.appendChild(h("div",{style:{marginTop:"10px",background:C.g1,borderRadius:"9px",padding:"9px 12px",
+            fontSize:"12px",color:C.g7,fontWeight:"700",textAlign:"center"}},"✓ Your current active plan"));
+        }else if(isPending){
+          pc.appendChild(h("div",{style:{marginTop:"10px",background:C.o1,borderRadius:"9px",padding:"9px 12px",
+            fontSize:"12px",color:C.o5,fontWeight:"700",textAlign:"center"}},"⏳ Payment sent — awaiting clinic verification"));
+        }else{
+          // Show Telebirr payment instructions
+          pc.appendChild(h("div",{style:{marginTop:"13px",background:`${p.c}10`,borderRadius:"10px",padding:"13px"}},
+            h("p",{style:{fontSize:"12px",fontWeight:"800",color:p.c,marginBottom:"8px"}},"📱 Pay via Telebirr"),
+            h("div",{style:{background:C.wh,borderRadius:"8px",padding:"10px",marginBottom:"8px"}},
+              h("p",{style:{fontSize:"12px",color:C.mu,marginBottom:"3px"}},"Send to:"),
+              h("p",{style:{fontSize:"16px",fontWeight:"900",color:C.dk,letterSpacing:"1px"}},"0930563960"),
+              h("p",{style:{fontSize:"12px",color:C.mu,marginTop:"3px"}},"Recipient: ",h("strong",{},"Ayenachew Nigus")),
+              h("p",{style:{fontSize:"13px",fontWeight:"800",color:p.c,marginTop:"6px"}},"Amount: $"+p.price+" ≈ "+Math.round(p.price*57)+" ETB")
+            ),
+            h("p",{style:{fontSize:"11px",color:C.mu,marginBottom:"10px"}},"After sending, tap the button below. The clinic will verify within 24 hours."),
+            h("button",{onClick:async()=>{
+              await saveUserProfile(uid,{plan:p.name,planStatus:"pending_verification",planRequestedAt:new Date().toISOString()});
+              // Notify clinic via chat
+              await addDoc(collection(db,"chats",uid,"messages"),{
+                text:"💳 Payment notification: I have paid "+Math.round(p.price*57)+" ETB for the "+p.name+" plan ($"+p.price+"/mo) via Telebirr to 0930563960. Please verify.",
+                senderId:uid,senderName:STATE.userDoc?.name||"Patient",senderRole:"patient",
+                time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),
+                createdAt:serverTimestamp()
+              });
+              await setDoc(doc(db,"chats",uid),{
+                patientId:uid,patientName:STATE.userDoc?.name,
+                lastMsg:"Payment notification sent",lastTime:serverTimestamp(),unreadByDoctor:true
+              },{merge:true});
+              STATE.userDoc={...STATE.userDoc,plan:p.name,planStatus:"pending_verification"};
+              toast("Payment notification sent! Clinic will verify within 24 hours.");
+              renderContent();
+            },style:{width:"100%",padding:"11px",background:`linear-gradient(135deg,${p.c},${C.p9})`,
+              border:"none",color:"#fff",borderRadius:"9px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}},
+            "✓ I Have Paid — Notify Clinic")
           ));
-        });
-        if(!isCurrent){
-          pc.appendChild(h("button",{onClick:async()=>{
-            await saveUserProfile(uid,{plan:p.name});
-            STATE.userDoc={...STATE.userDoc,plan:p.name};
-            toast("Plan updated to "+p.name+"! ☁️");renderContent();
-          },style:{width:"100%",marginTop:"11px",padding:"9px",background:`linear-gradient(135deg,${p.c},${C.p9})`,
-            border:"none",color:"#fff",borderRadius:"9px",fontWeight:"700",fontSize:"13px"}},"Switch to "+t[p.name]));
         }
         content.appendChild(pc);
       });
@@ -843,6 +911,7 @@ function renderClinic(){
   [{id:"overview",icon:"📊",label:t.overview},{id:"patients",icon:"👥",label:t.patients},
    {id:"approvals",icon:"✅",label:"Approvals"},
    {id:"chat",icon:"💬",label:"Chat"},
+   {id:"payments",icon:"💳",label:"Payments"},
    {id:"analytics",icon:"📈",label:t.analytics},{id:"followup",icon:"🔔",label:t.followup}
   ].forEach(n=>{
     const active=STATE.clinicView===n.id&&!STATE.selectedPt;
@@ -1115,6 +1184,92 @@ function renderClinic(){
         });
       }
       loadPending();
+    }
+
+    else if(STATE.clinicView==="payments"){
+      main.appendChild(h("h1",{style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"16px"}},"💳 Payment Verification"));
+      const pending=REAL_PTS.filter(p=>p.planStatus==="pending_verification");
+      const active=REAL_PTS.filter(p=>p.planStatus==="active");
+      const unpaid=REAL_PTS.filter(p=>!p.planStatus||p.planStatus==="unpaid");
+
+      if(pending.length>0){
+        main.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.o5,marginBottom:"10px"}},"⏳ Pending Verification ("+pending.length+")"));
+        pending.forEach(p=>{
+          const card=h("div",{style:{background:C.wh,borderRadius:"12px",padding:"15px",marginBottom:"9px",
+            border:`1.5px solid ${C.o5}30`,borderLeft:`4px solid ${C.o5}`}});
+          card.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}},
+            h("div",{},
+              h("p",{style:{margin:"0 0 2px",fontSize:"14px",fontWeight:"700",color:C.dk}},p.name),
+              h("p",{style:{margin:"0 0 2px",fontSize:"12px",color:C.mu}},"Plan: "+(p.plan||"basic")+" · $"+(p.plan==="premium"?12:p.plan==="standard"?7:3)+"/mo ≈ "+Math.round((p.plan==="premium"?12:p.plan==="standard"?7:3)*57)+" ETB"),
+              h("p",{style:{margin:"0",fontSize:"11px",color:C.mu}},(p.city||"?")+" · "+(p.phone||"?"))
+            ),
+            h("span",{style:{background:C.o1,color:C.o5,borderRadius:"20px",padding:"3px 10px",fontSize:"11px",fontWeight:"700"}},"PENDING")
+          ));
+          card.appendChild(h("p",{style:{fontSize:"12px",color:C.mu,marginBottom:"9px"}},"Patient sent Telebirr payment to 0930563960. Check your Telebirr app and verify."));
+          card.appendChild(h("div",{style:{display:"flex",gap:"8px"}},
+            h("button",{onClick:async()=>{
+              await setDoc(doc(db,"users",p.id),{planStatus:"active",planActivatedAt:new Date().toISOString(),planActivatedBy:STATE.userDoc?.name||"Doctor"},{merge:true});
+              await addDoc(collection(db,"chats",p.id,"messages"),{
+                text:"✅ Your "+p.plan+" plan payment has been verified and is now ACTIVE! You now have full access to all your plan benefits. Thank you for choosing Mizan! 🎉",
+                senderId:STATE.user.uid,senderName:STATE.userDoc?.name||"Doctor",senderRole:"doctor",
+                time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),createdAt:serverTimestamp()
+              });
+              await setDoc(doc(db,"chats",p.id),{lastMsg:"Plan activated!",lastTime:serverTimestamp(),unreadByDoctor:false},{merge:true});
+              toast("✓ "+p.name+"'s payment verified & plan activated!");
+              loadPatientsAndRender();
+            },style:{flex:"1",padding:"9px",background:`linear-gradient(135deg,${C.g6},${C.g9})`,border:"none",color:"#fff",borderRadius:"9px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}},"✓ Verify & Activate"),
+            h("button",{onClick:async()=>{
+              if(confirm("Reject payment for "+p.name+"?")){
+                await setDoc(doc(db,"users",p.id),{planStatus:"unpaid"},{merge:true});
+                await addDoc(collection(db,"chats",p.id,"messages"),{
+                  text:"❌ We could not verify your payment. Please ensure you sent the correct amount to Telebirr 0930563960 (Ayenachew Nigus) and tap 'I Have Paid' again.",
+                  senderId:STATE.user.uid,senderName:STATE.userDoc?.name||"Doctor",senderRole:"doctor",
+                  time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),createdAt:serverTimestamp()
+                });
+                await setDoc(doc(db,"chats",p.id),{lastMsg:"Payment verification failed",lastTime:serverTimestamp(),unreadByDoctor:false},{merge:true});
+                toast(p.name+"'s payment rejected. Patient notified.","warn");
+                loadPatientsAndRender();
+              }
+            },style:{padding:"9px 14px",background:C.r1,border:"none",color:C.r5,borderRadius:"9px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}},"✗ Reject")
+          ));
+          main.appendChild(card);
+        });
+      }
+
+      if(active.length>0){
+        main.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.g7,margin:"18px 0 10px"}},"✅ Active Subscriptions ("+active.length+")"));
+        active.forEach(p=>{
+          main.appendChild(h("div",{style:{background:C.wh,borderRadius:"12px",padding:"13px",marginBottom:"8px",
+            border:`1.5px solid ${C.g2}`,display:"flex",justifyContent:"space-between",alignItems:"center"}},
+            h("div",{},
+              h("p",{style:{margin:"0 0 2px",fontSize:"13px",fontWeight:"700",color:C.dk}},p.name),
+              h("p",{style:{margin:"0",fontSize:"11px",color:C.mu}},(p.plan||"basic")+" · $"+(p.plan==="premium"?12:p.plan==="standard"?7:3)+"/mo")
+            ),
+            h("span",{style:{background:C.g1,color:C.g7,borderRadius:"20px",padding:"3px 10px",fontSize:"11px",fontWeight:"700"}},"ACTIVE")
+          ));
+        });
+      }
+
+      if(unpaid.length>0){
+        main.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.mu,margin:"18px 0 10px"}},"⭕ Unpaid ("+unpaid.length+")"));
+        unpaid.forEach(p=>{
+          main.appendChild(h("div",{style:{background:C.wh,borderRadius:"12px",padding:"13px",marginBottom:"8px",
+            border:`1.5px solid ${C.bd}`,display:"flex",justifyContent:"space-between",alignItems:"center"}},
+            h("div",{},
+              h("p",{style:{margin:"0 0 2px",fontSize:"13px",fontWeight:"700",color:C.dk}},p.name),
+              h("p",{style:{margin:"0",fontSize:"11px",color:C.mu}},(p.city||"?")+" · "+(p.phone||"?"))
+            ),
+            h("span",{style:{background:C.bg,color:C.mu,borderRadius:"20px",padding:"3px 10px",fontSize:"11px",fontWeight:"700"}},"UNPAID")
+          ));
+        });
+      }
+
+      if(pending.length===0&&active.length===0&&unpaid.length===0){
+        main.appendChild(h("div",{style:{background:C.wh,borderRadius:"14px",padding:"28px",textAlign:"center",border:`1.5px solid ${C.bd}`}},
+          h("div",{style:{fontSize:"36px",marginBottom:"8px"}},"💳"),
+          h("p",{style:{color:C.mu,fontSize:"14px"}},"No patients enrolled yet.")
+        ));
+      }
     }
 
     else if(STATE.clinicView==="analytics"){
