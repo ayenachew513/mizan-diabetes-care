@@ -544,24 +544,30 @@ function renderPatient(){
 
     else if(tb==="glucose"){
       content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"14px"}},"📊 "+t.glucose));
-      let f="",r="";
+      let f="",pm="",r="",note="";
       const saveBtn=btn(t.save,async()=>{
-        if(!f&&!r){toast("Enter at least one reading","error");return;}
+        if(!f&&!pm&&!r){toast("Enter at least one reading","error");return;}
         saveBtn.textContent=t.saving;saveBtn.disabled=true;
         const entry={date:new Date().toLocaleDateString(),
           time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),
-          fasting:f?Number(f):null,random:r?Number(r):null};
+          fasting:f?Number(f):null,postMeal:pm?Number(pm):null,random:r?Number(r):null,note:note||""};
         const ok=await saveReading(uid,entry);
-        if(ok){toast(t.saved);STATE.readings.unshift(entry);}
-        else toast(t.errSave,"error");
+        if(ok){
+          toast(t.saved);
+          // Update patient's latest glucose in profile
+          const latestVal=f||pm||r;
+          if(latestVal)await saveUserProfile(uid,{glucose:Number(latestVal)});
+        }else toast(t.errSave,"error");
         saveBtn.textContent=t.save;saveBtn.disabled=false;
         renderContent();
       },{full:true,v:"green"});
 
       const fc=h("div",{style:{background:C.wh,borderRadius:"18px",padding:"18px",marginBottom:"13px",border:`1.5px solid ${C.bd}`}},
         h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"13px"}},"📝 "+t.logGlucose),
-        field(t.fasting,{type:"number",placeholder:"e.g. 126",onChange:v=>f=v}),
-        field(t.random,{type:"number",placeholder:"e.g. 180",onChange:v=>r=v}),
+        field(t.fasting,{type:"number",placeholder:"e.g. 126",hint:"Before eating, morning",onChange:v=>f=v}),
+        field("Post-meal (mg/dL)",{type:"number",placeholder:"e.g. 180",hint:"2 hours after eating",onChange:v=>pm=v}),
+        field(t.random,{type:"number",placeholder:"e.g. 160",hint:"Any time of day",onChange:v=>r=v}),
+        field("Note (optional)",{placeholder:"e.g. After exercise, sick day",onChange:v=>note=v}),
         saveBtn
       );
       content.appendChild(fc);
@@ -573,14 +579,15 @@ function renderPatient(){
         const rc=h("div",{style:{background:C.wh,borderRadius:"18px",padding:"18px",border:`1.5px solid ${C.bd}`}},
           h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"Recent Readings ☁️")
         );
-        readings.slice(0,6).forEach((rd,i,arr)=>{
-          const val=rd.fasting||rd.random;
+        readings.slice(0,8).forEach((rd,i,arr)=>{
+          const val=rd.fasting||rd.postMeal||rd.random;
+          const type=rd.fasting?"Fasting":rd.postMeal?"Post-meal":"Random";
           const s=gSt(Number(val));
           rc.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",
             padding:"9px 0",borderBottom:i<arr.length-1?`1px solid ${C.bd}`:"none"}},
             h("div",{},
-              h("p",{style:{margin:"0",fontSize:"13px",fontWeight:"700",color:C.dk}},(rd.fasting?"Fasting":"Random")+" · "+rd.date),
-              h("p",{style:{margin:"2px 0 0",fontSize:"11px",color:C.mu}},rd.time)
+              h("p",{style:{margin:"0",fontSize:"13px",fontWeight:"700",color:C.dk}},type+" · "+rd.date),
+              h("p",{style:{margin:"2px 0 0",fontSize:"11px",color:C.mu}},rd.time+(rd.note?" · "+rd.note:""))
             ),
             h("div",{style:{textAlign:"right"}},
               h("span",{style:{fontSize:"17px",fontWeight:"800",color:s.c}},val),
@@ -590,21 +597,34 @@ function renderPatient(){
           ));
         });
         content.appendChild(rc);
+      }else{
+        content.appendChild(h("div",{style:{background:C.wh,borderRadius:"16px",padding:"24px",textAlign:"center",border:`1.5px solid ${C.bd}`}},
+          h("div",{style:{fontSize:"36px",marginBottom:"8px"}},"📊"),
+          h("p",{style:{color:C.mu,fontSize:"14px"}},"No readings yet. Log your first reading above.")
+        ));
       }
     }
 
     else if(tb==="vitals"){
       content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"14px"}},"❤️ "+t.vitals));
-      let w="",s="",d="",ex="";
+      let w="",s="",d="",ex="",hba1c="";
       const saveBtn=btn(t.save,async()=>{
+        if(!w&&!s&&!ex&&!hba1c){toast("Enter at least one vital","error");return;}
         saveBtn.textContent=t.saving;saveBtn.disabled=true;
+        const bmiVal=w?(Number(w)/(1.65*1.65)).toFixed(1):null;
         const entry={date:new Date().toLocaleDateString(),
           time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),
           weight:w?Number(w):null,sbp:s?Number(s):null,dbp:d?Number(d):null,
-          exerciseMin:ex?Number(ex):null,
-          bmi:w?(Number(w)/(1.65*1.65)).toFixed(1):null};
+          exerciseMin:ex?Number(ex):null,hba1c:hba1c?Number(hba1c):null,bmi:bmiVal};
         const ok=await saveVitals(uid,entry);
-        if(ok){toast(t.saved);}else toast(t.errSave,"error");
+        if(ok){
+          toast(t.saved);
+          // Update patient profile so doctor sees latest vitals
+          const upd={};
+          if(w)upd.weight=Number(w);if(s)upd.sbp=Number(s);if(d)upd.dbp=Number(d);
+          if(bmiVal)upd.bmi=Number(bmiVal);if(hba1c)upd.hba1c=Number(hba1c);
+          if(Object.keys(upd).length)await saveUserProfile(uid,upd);
+        }else toast(t.errSave,"error");
         saveBtn.textContent=t.save;saveBtn.disabled=false;
         renderContent();
       },{full:true});
@@ -614,6 +634,7 @@ function renderPatient(){
         field(t.weight,{type:"number",placeholder:"e.g. 72",onChange:v=>w=v}),
         field(t.systolic,{type:"number",placeholder:"e.g. 130",onChange:v=>s=v}),
         field(t.diastolic,{type:"number",placeholder:"e.g. 80",onChange:v=>d=v}),
+        field("HbA1c (%)",{type:"number",placeholder:"e.g. 7.5",onChange:v=>hba1c=v}),
         field(t.exercise,{type:"number",placeholder:"e.g. 30",onChange:v=>ex=v}),
         saveBtn
       ));
@@ -625,16 +646,22 @@ function renderPatient(){
         );
         vitals.slice(0,4).forEach((v,i,arr)=>{
           vr.appendChild(h("div",{style:{padding:"9px 0",borderBottom:i<arr.length-1?`1px solid ${C.bd}`:"none"}},
-            h("p",{style:{margin:"0 0 4px",fontSize:"12px",color:C.mu,fontWeight:"700"}},v.date),
+            h("p",{style:{margin:"0 0 4px",fontSize:"12px",color:C.mu,fontWeight:"700"}},v.date+" "+v.time),
             h("div",{style:{display:"flex",gap:"12px",flexWrap:"wrap"}},
               v.weight&&h("span",{style:{fontSize:"13px",color:C.dk}},"⚖️ ",h("strong",{},v.weight)," kg"),
               v.sbp&&h("span",{style:{fontSize:"13px",color:C.dk}},"❤️ ",h("strong",{},v.sbp+"/"+v.dbp)," mmHg"),
               v.bmi&&h("span",{style:{fontSize:"13px",color:C.dk}},"📊 BMI ",h("strong",{},v.bmi)),
+              v.hba1c&&h("span",{style:{fontSize:"13px",color:C.r5}},"HbA1c ",h("strong",{},v.hba1c+"%")),
               v.exerciseMin&&h("span",{style:{fontSize:"13px",color:C.g7}},"🏃 ",h("strong",{},v.exerciseMin)," min")
             )
           ));
         });
         content.appendChild(vr);
+      }else{
+        content.appendChild(h("div",{style:{background:C.wh,borderRadius:"16px",padding:"24px",textAlign:"center",border:`1.5px solid ${C.bd}`}},
+          h("div",{style:{fontSize:"36px",marginBottom:"8px"}},"❤️"),
+          h("p",{style:{color:C.mu,fontSize:"14px"}},"No vitals logged yet.")
+        ));
       }
     }
 
