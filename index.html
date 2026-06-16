@@ -667,40 +667,48 @@ function renderPatient(){
 
     else if(tb==="meds"){
       content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"14px"}},"💊 "+t.medications));
-      [{name:"Metformin 500mg",taken:1,total:2,c:C.p6,bg:C.p1,icon:"💊"},
-       {name:"Glibenclamide 5mg",taken:1,total:1,c:C.g7,bg:C.g1,icon:"💊"},
-       {name:"Insulin Glargine 20u",taken:0,total:1,c:C.o5,bg:C.o1,icon:"💉"}
-      ].forEach(m=>{
-        const mc=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"16px",marginBottom:"11px",border:`1.5px solid ${C.bd}`}});
-        mc.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"9px"}},
-          h("div",{style:{display:"flex",gap:"9px",alignItems:"center"}},
-            h("div",{style:{width:"42px",height:"42px",borderRadius:"11px",background:m.bg,
-              display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px"}},m.icon),
-            h("div",{},
-              h("div",{style:{fontWeight:"800",fontSize:"14px",color:C.dk}},m.name),
-              h("div",{style:{fontSize:"11px",color:C.mu}},m.taken===m.total?"Completed":"Pending")
-            )
-          ),
-          pill(m.taken===m.total?"Done ✓":`${m.taken}/${m.total}`,m.taken===m.total?C.g7:C.o5,m.taken===m.total?C.g1:C.o1)
+      const medsSnap=await getDocs(collection(db,"users",uid,"medications"));
+      const meds=medsSnap.docs.map(d=>({id:d.id,...d.data()}));
+      if(meds.length===0){
+        content.appendChild(h("div",{style:{background:C.wh,borderRadius:"16px",padding:"28px",textAlign:"center",border:`1.5px solid ${C.bd}`,marginBottom:"14px"}},
+          h("div",{style:{fontSize:"40px",marginBottom:"10px"}},"💊"),
+          h("p",{style:{color:C.dk,fontSize:"14px",fontWeight:"700",marginBottom:"6px"}},"No medications yet"),
+          h("p",{style:{color:C.mu,fontSize:"13px"}},"Your doctor will add your medications after your first consultation.")
         ));
-        const bar=h("div",{style:{height:"5px",background:C.bg,borderRadius:"3px",overflow:"hidden",marginBottom:"11px"}});
-        bar.appendChild(h("div",{style:{height:"100%",width:`${(m.taken/m.total)*100}%`,background:m.c,borderRadius:"3px"}}));
-        mc.appendChild(bar);
-        mc.appendChild(h("div",{style:{display:"flex",gap:"7px"}},
-          h("button",{onClick:async()=>{
-            await addDoc(collection(db,"users",uid,"missed"),{med:m.name,date:new Date().toLocaleDateString(),createdAt:serverTimestamp()});
-            toast("Missed dose logged ☁️");
-          },style:{flex:"1",padding:"7px",background:C.r1,border:"none",color:C.r5,borderRadius:"9px",fontSize:"12px",fontWeight:"700"}},"⚠️ "+t.missedDose),
-          h("button",{onClick:async()=>{
-            await addDoc(collection(db,"users",uid,"refills"),{med:m.name,date:new Date().toLocaleDateString(),status:"pending",createdAt:serverTimestamp()});
-            toast("Refill request sent ☁️");
-          },style:{flex:"1",padding:"7px",background:C.g1,border:"none",color:C.g7,borderRadius:"9px",fontSize:"12px",fontWeight:"700"}},"🔄 "+t.refill)
-        ));
-        content.appendChild(mc);
-      });
+      }else{
+        meds.forEach(m=>{
+          const icon=m.name?.toLowerCase().includes("insulin")?"💉":"💊";
+          const col=icon==="💉"?{c:C.o5,bg:C.o1}:{c:C.p6,bg:C.p1};
+          const mc=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"16px",marginBottom:"11px",border:`1.5px solid ${C.bd}`}});
+          mc.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"9px"}},
+            h("div",{style:{display:"flex",gap:"9px",alignItems:"center"}},
+              h("div",{style:{width:"42px",height:"42px",borderRadius:"11px",background:col.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px"}},icon),
+              h("div",{},
+                h("div",{style:{fontWeight:"800",fontSize:"14px",color:C.dk}},m.name),
+                h("div",{style:{fontSize:"11px",color:C.mu}},m.dose+" · "+m.frequency),
+                m.instructions&&h("div",{style:{fontSize:"11px",color:C.mu,marginTop:"2px"}},m.instructions)
+              )
+            ),
+            pill(m.active!==false?"Active":"Paused",m.active!==false?C.g7:C.mu,m.active!==false?C.g1:C.bg)
+          ));
+          mc.appendChild(h("div",{style:{display:"flex",gap:"7px"}},
+            h("button",{onClick:async()=>{
+              await addDoc(collection(db,"users",uid,"missed"),{med:m.name,dose:m.dose,date:new Date().toLocaleDateString(),time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),createdAt:serverTimestamp()});
+              await addDoc(collection(db,"chats",uid,"messages"),{text:"⚠️ Missed dose: "+m.name+" "+m.dose,senderId:uid,senderName:STATE.userDoc?.name||"Patient",senderRole:"patient",time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),createdAt:serverTimestamp()});
+              await setDoc(doc(db,"chats",uid),{lastMsg:"Missed dose: "+m.name,lastTime:serverTimestamp(),unreadByDoctor:true},{merge:true});
+              toast("Missed dose logged & clinic notified ☁️");
+            },style:{flex:"1",padding:"7px",background:C.r1,border:"none",color:C.r5,borderRadius:"9px",fontSize:"12px",fontWeight:"700",cursor:"pointer"}},"⚠️ "+t.missedDose),
+            h("button",{onClick:async()=>{
+              await addDoc(collection(db,"users",uid,"refills"),{med:m.name,dose:m.dose,date:new Date().toLocaleDateString(),status:"pending",createdAt:serverTimestamp()});
+              await addDoc(collection(db,"chats",uid,"messages"),{text:"🔄 Refill request: "+m.name+" "+m.dose,senderId:uid,senderName:STATE.userDoc?.name||"Patient",senderRole:"patient",time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),createdAt:serverTimestamp()});
+              await setDoc(doc(db,"chats",uid),{lastMsg:"Refill request: "+m.name,lastTime:serverTimestamp(),unreadByDoctor:true},{merge:true});
+              toast("Refill request sent to clinic ☁️");
+            },style:{flex:"1",padding:"7px",background:C.g1,border:"none",color:C.g7,borderRadius:"9px",fontSize:"12px",fontWeight:"700",cursor:"pointer"}},"🔄 "+t.refill)
+          ));
+          content.appendChild(mc);
+        });
+      }
     }
-
-    else if(tb==="visits"){
       content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"14px"}},"📅 "+t.visits));
       const na=h("div",{style:{background:`linear-gradient(135deg,${C.p9},${C.p6})`,borderRadius:"18px",padding:"18px",marginBottom:"13px",color:"#fff"}});
       na.innerHTML=`<p style="font-size:11px;opacity:.65;letter-spacing:1px;margin-bottom:5px">NEXT APPOINTMENT</p>
@@ -1401,7 +1409,8 @@ function renderClinic(){
 
     // Tabs
     const ptTabs=h("div",{style:{display:"flex",gap:"5px",marginBottom:"14px",overflowX:"auto",paddingBottom:"3px"}});
-    [["overview","📊 Overview"],["actions","⚡ Actions"]].forEach(([id,label])=>{
+    [["overview","📊 Overview"],["history","📋 History"],["investigations","🔬 Labs"],
+     ["imaging","🖼️ Imaging"],["meds","💊 Meds"],["actions","⚡ Actions"]].forEach(([id,label])=>{
       const active=STATE.ptDetailTab===id;
       ptTabs.appendChild(h("button",{onClick:()=>{STATE.ptDetailTab=id;renderMain();},
         style:{padding:"6px 13px",borderRadius:"9px",border:active?"none":`1.5px solid ${C.bd}`,
@@ -1441,97 +1450,151 @@ function renderClinic(){
       ));
     }
 
-    else if(STATE.ptDetailTab==="actions"){
-      const ag=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}});
-      [{l:"📅 Book Appointment",fn:()=>toast("Appointment booked!")},
-       {l:"📱 Send SMS",fn:()=>toast("SMS sent to "+p.name)},
-       {l:"💊 Update Medications",fn:()=>toast("Medication editor opening...")},
-       {l:"📊 Request Lab Work",fn:()=>toast("Lab request sent!")},
-       {l:"🖼️ Request Imaging",fn:()=>toast("Imaging request sent!")},
-       {l:"📤 Refer to Specialist",fn:()=>toast("Referral sent!")},
-       {l:"📞 Call Patient",fn:()=>toast("Opening phone...")},
-       {l:"🚨 Flag Emergency",fn:()=>toast("Patient flagged!","warn"),danger:true}
-      ].forEach(a=>{
-        ag.appendChild(h("button",{onClick:a.fn,
-          style:{padding:"13px",background:a.danger?C.r1:C.wh,border:`1.5px solid ${a.danger?C.r5:C.bd}`,
-            borderRadius:"11px",color:a.danger?C.r5:C.dk,fontWeight:"700",fontSize:"13px",
-            cursor:"pointer",textAlign:"left"}},a.l));
-      });
-      main.appendChild(ag);
+    else if(STATE.ptDetailTab==="history"){
+      const notesDiv=h("div");main.appendChild(notesDiv);
+      async function loadNotes(){
+        notesDiv.innerHTML="";
+        const snap=await getDocs(query(collection(db,"users",p.id,"notes"),orderBy("createdAt","desc")));
+        const notes=snap.docs.map(d=>({id:d.id,...d.data()}));
+        const nc=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",marginBottom:"12px",border:`1.5px solid ${C.bd}`}});
+        nc.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"📋 Clinical History"));
+        if(notes.length===0)nc.appendChild(h("p",{style:{color:C.mu,fontSize:"13px",textAlign:"center",padding:"14px 0"}},"No clinical notes yet."));
+        notes.forEach((n,i,arr)=>{
+          nc.appendChild(h("div",{style:{padding:"11px 0",borderBottom:i<arr.length-1?`1px solid ${C.bd}`:"none"}},
+            h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"4px"}},
+              h("span",{style:{fontSize:"12px",fontWeight:"800",color:C.p6}},n.date||""),
+              h("span",{style:{fontSize:"11px",color:C.mu}},"👨‍⚕️ "+(n.doctor||"Doctor"))
+            ),
+            h("p",{style:{margin:"0",fontSize:"13px",color:C.dk,lineHeight:"1.6"}},n.text||"")
+          ));
+        });
+        notesDiv.appendChild(nc);
+        let noteText="";
+        const af=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",border:`1.5px solid ${C.bd}`}});
+        af.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"11px"}},"➕ Add Clinical Note"));
+        af.appendChild(field("Clinical Note",{rows:4,placeholder:"Enter clinical observations, plan...",onChange:v=>noteText=v}));
+        af.appendChild(btn("Save Note",async()=>{
+          if(!noteText.trim()){toast("Enter a note","error");return;}
+          await addDoc(collection(db,"users",p.id,"notes"),{text:noteText,date:new Date().toLocaleDateString(),doctor:STATE.userDoc?.name||"Doctor",createdAt:serverTimestamp()});
+          toast("Note saved! ☁️");loadNotes();
+        },{full:true}));
+        notesDiv.appendChild(af);
+      }
+      loadNotes();
     }
-  }
 
-  // Load real patients from Firebase then render
-  async function loadPatientsAndRender(){
-    main.innerHTML="<p style='padding:20px;color:"+C.mu+";font-size:14px;'>Loading patients...</p>";
-    try{
-      const snap=await getDocs(query(collection(db,"users"),where("role","==","patient"),where("status","==","active")));
-      REAL_PTS=snap.docs.map(d=>({id:d.id,...d.data(),...risk(d.data())}));
-    }catch(e){REAL_PTS=[];}
-    renderMain();
-  }
+    else if(STATE.ptDetailTab==="investigations"){
+      const invDiv=h("div");main.appendChild(invDiv);
+      async function loadInv(){
+        invDiv.innerHTML="";
+        const snap=await getDocs(query(collection(db,"users",p.id,"investigations"),orderBy("createdAt","desc")));
+        const invs=snap.docs.map(d=>({id:d.id,...d.data()}));
+        const ic=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",marginBottom:"12px",border:`1.5px solid ${C.bd}`,overflowX:"auto"}});
+        ic.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"🔬 Investigation Results"));
+        if(invs.length===0)ic.appendChild(h("p",{style:{color:C.mu,fontSize:"13px",textAlign:"center",padding:"14px 0"}},"No investigations yet."));
+        invs.forEach(inv=>{
+          const sc=inv.status==="high"?C.r5:inv.status==="elevated"?C.o5:C.g6;
+          const sbg=inv.status==="high"?C.r1:inv.status==="elevated"?C.o1:C.g1;
+          ic.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${C.bd}`}},
+            h("div",{},
+              h("p",{style:{margin:"0 0 2px",fontSize:"13px",fontWeight:"700",color:C.dk}},inv.test||""),
+              h("p",{style:{margin:"0",fontSize:"11px",color:C.mu}},inv.date+" · Ref: "+(inv.ref||""))
+            ),
+            h("div",{style:{textAlign:"right"}},
+              h("p",{style:{margin:"0 0 2px",fontSize:"14px",fontWeight:"800",color:sc}},inv.result||""),
+              pill((inv.status||"normal").toUpperCase(),sc,sbg)
+            )
+          ));
+        });
+        invDiv.appendChild(ic);
+        let iv={test:"",result:"",ref:"",status:"normal"};
+        const af=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",border:`1.5px solid ${C.bd}`}});
+        af.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"11px"}},"➕ Add Investigation Result"));
+        af.appendChild(field("Test Name",{placeholder:"e.g. HbA1c, Fasting Glucose, Creatinine",onChange:v=>iv.test=v}));
+        af.appendChild(field("Result",{placeholder:"e.g. 8.5%",onChange:v=>iv.result=v}));
+        af.appendChild(field("Reference Range",{placeholder:"e.g. <7%",onChange:v=>iv.ref=v}));
+        af.appendChild(field("Status",{type:"select",options:[["normal","Normal"],["elevated","Elevated"],["high","High / Abnormal"]],onChange:v=>iv.status=v}));
+        af.appendChild(btn("Save Result",async()=>{
+          if(!iv.test||!iv.result){toast("Enter test and result","error");return;}
+          await addDoc(collection(db,"users",p.id,"investigations"),{...iv,date:new Date().toLocaleDateString(),addedBy:STATE.userDoc?.name||"Doctor",createdAt:serverTimestamp()});
+          toast("Investigation saved! ☁️");loadInv();
+        },{full:true}));
+        invDiv.appendChild(af);
+      }
+      loadInv();
+    }
 
-  loadPatientsAndRender();
-  return wrap;
-}
+    else if(STATE.ptDetailTab==="imaging"){
+      const imgDiv=h("div");main.appendChild(imgDiv);
+      async function loadImaging(){
+        imgDiv.innerHTML="";
+        const snap=await getDocs(query(collection(db,"users",p.id,"imaging"),orderBy("createdAt","desc")));
+        const imgs=snap.docs.map(d=>({id:d.id,...d.data()}));
+        const ic=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",marginBottom:"12px",border:`1.5px solid ${C.bd}`}});
+        ic.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"🖼️ Imaging Reports"));
+        if(imgs.length===0)ic.appendChild(h("p",{style:{color:C.mu,fontSize:"13px",textAlign:"center",padding:"14px 0"}},"No imaging reports yet."));
+        imgs.forEach(img=>{
+          ic.appendChild(h("div",{style:{background:C.bg,borderRadius:"10px",padding:"12px",marginBottom:"8px",border:`1px solid ${C.bd}`}},
+            h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"5px"}},
+              h("span",{style:{fontSize:"13px",fontWeight:"800",color:C.dk}},"🖼️ "+(img.type||"")),
+              h("span",{style:{fontSize:"11px",color:C.mu}},img.date||"")
+            ),
+            h("p",{style:{margin:"0 0 3px",fontSize:"12px",color:C.dk,lineHeight:"1.6"}},img.finding||""),
+            h("p",{style:{margin:"0",fontSize:"10px",color:C.mu}},"Reported by: "+(img.rep||"Doctor"))
+          ));
+        });
+        imgDiv.appendChild(ic);
+        let imgv={type:"",finding:""};
+        const af=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",border:`1.5px solid ${C.bd}`}});
+        af.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"11px"}},"➕ Add Imaging Report"));
+        af.appendChild(field("Imaging Type",{placeholder:"e.g. Chest X-Ray, Fundoscopy, Renal Ultrasound",onChange:v=>imgv.type=v}));
+        af.appendChild(field("Finding",{rows:3,placeholder:"Enter radiologist report finding...",onChange:v=>imgv.finding=v}));
+        af.appendChild(btn("Save Report",async()=>{
+          if(!imgv.type||!imgv.finding){toast("Enter type and finding","error");return;}
+          await addDoc(collection(db,"users",p.id,"imaging"),{...imgv,date:new Date().toLocaleDateString(),rep:STATE.userDoc?.name||"Doctor",createdAt:serverTimestamp()});
+          toast("Imaging report saved! ☁️");loadImaging();
+        },{full:true}));
+        imgDiv.appendChild(af);
+      }
+      loadImaging();
+    }
 
-// ── MAIN RENDER ───────────────────────────────────────────────────────
-function render(){
-  const app=document.getElementById("app");
-  app.innerHTML="";
-  if(STATE.screen==="auth")app.appendChild(renderAuth());
-  else if(STATE.screen==="pending")app.appendChild(renderPending());
-  else if(STATE.role==="patient")app.appendChild(renderPatient());
-  else app.appendChild(renderClinic());
-}
-
-// ── PENDING SCREEN ────────────────────────────────────────────────────────
-function renderPending(){
-  return h("div",{style:{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:`linear-gradient(160deg,${C.p9},#071a2e)`,padding:"20px"}},
-    h("div",{style:{background:C.wh,borderRadius:"24px",padding:"36px 28px",maxWidth:"380px",width:"100%",textAlign:"center"}},
-      h("div",{style:{fontSize:"56px",marginBottom:"16px"}},"⏳"),
-      h("h2",{style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"10px"}},"Account Pending Approval"),
-      h("p",{style:{fontSize:"14px",color:C.mu,lineHeight:"1.7",marginBottom:"24px"}},"Your account is under review. A Mizan doctor will approve you shortly."),
-      h("div",{style:{background:C.p1,borderRadius:"12px",padding:"14px",marginBottom:"20px"}},
-        h("p",{style:{fontSize:"13px",color:C.p6,fontWeight:"600"}},"👤 "+(STATE.userDoc?.name||"")),
-        h("p",{style:{fontSize:"12px",color:C.mu,marginTop:"4px"}},"📍 "+(STATE.userDoc?.city||"")+" · "+(STATE.userDoc?.diabType||""))
-      ),
-      btn("Sign Out",async()=>{await signOut(auth)},{full:true,v:"muted"})
-    )
-  );
-}
-
-
-onAuthStateChanged(auth,async(user)=>{
-  document.getElementById("loadingScreen").style.display="none";
-  document.getElementById("app").style.display="block";
-  if(user){
-    STATE.user=user;
-    const profile=await getUserProfile(user.uid);
-    STATE.userDoc=profile;
-    STATE.role=profile?.role||"patient";
-    if(STATE.role==="patient"&&profile?.status==="pending")STATE.screen="pending";
-    else STATE.screen="app";
-  }else{
-    STATE.user=null;STATE.userDoc=null;STATE.role=null;STATE.screen="auth";
-  }
-  render();
-});
-
-window.addEventListener("online",()=>{STATE.online=true;render();});
-window.addEventListener("offline",()=>{STATE.online=false;render();});
-
-// Fallback: show login after 12s if Firebase never responds
-setTimeout(()=>{
-  const ls=document.getElementById("loadingScreen");
-  if(ls&&ls.style.display!=="none"){
-    ls.style.display="none";
-    document.getElementById("app").style.display="block";
-    STATE.screen="auth";
-    render();
-  }
-},12000);
-
-</script>
-</body>
-</html>
+    else if(STATE.ptDetailTab==="meds"){
+      const medsDiv=h("div");main.appendChild(medsDiv);
+      async function loadMeds(){
+        medsDiv.innerHTML="";
+        const snap=await getDocs(collection(db,"users",p.id,"medications"));
+        const meds=snap.docs.map(d=>({id:d.id,...d.data()}));
+        const mc=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",marginBottom:"12px",border:`1.5px solid ${C.bd}`}});
+        mc.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"💊 Current Medications"));
+        if(meds.length===0){mc.appendChild(h("p",{style:{color:C.mu,fontSize:"13px",textAlign:"center",padding:"14px 0"}},"No medications added yet."));}
+        meds.forEach(m=>{
+          mc.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${C.bd}`}},
+            h("div",{},
+              h("p",{style:{margin:"0 0 2px",fontSize:"13px",fontWeight:"700",color:C.dk}},m.name),
+              h("p",{style:{margin:"0",fontSize:"11px",color:C.mu}},m.dose+" · "+m.frequency)
+            ),
+            h("div",{style:{display:"flex",gap:"5px",alignItems:"center"}},
+              pill(m.active!==false?"Active":"Paused",m.active!==false?C.g7:C.mu,m.active!==false?C.g1:C.bg),
+              h("button",{onClick:async()=>{
+                if(confirm("Remove "+m.name+"?")){
+                  await deleteDoc(doc(db,"users",p.id,"medications",m.id));
+                  toast(m.name+" removed.");loadMeds();
+                }
+              },style:{background:C.r1,border:"none",color:C.r5,borderRadius:"7px",padding:"4px 8px",fontSize:"11px",fontWeight:"700",cursor:"pointer"}},"✕")
+            )
+          ));
+        });
+        medsDiv.appendChild(mc);
+        // Add medication form
+        let mv={name:"",dose:"",frequency:"",instructions:""};
+        const af=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",border:`1.5px solid ${C.bd}`}});
+        af.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"➕ Add Medication"));
+        af.appendChild(field("Medication Name",{placeholder:"e.g. Metformin",required:true,onChange:v=>mv.name=v}));
+        af.appendChild(field("Dose",{placeholder:"e.g. 500mg",required:true,onChange:v=>mv.dose=v}));
+        af.appendChild(field("Frequency",{placeholder:"e.g. Twice daily with meals",required:true,onChange:v=>mv.frequency=v}));
+        af.appendChild(field("Instructions (optional)",{placeholder:"e.g. Take with food",onChange:v=>mv.instructions=v}));
+        af.appendChild(btn("Add Medication",async()=>{
+          if(!mv.name||!mv.dose||!mv.frequency){toast("Fill all required fields","error");return;}
+          await addDoc(collection(db,"users",p.id,"medications"),{...mv,active:true,addedBy:STATE.userDoc?.name||"Doctor",addedAt:new Date().toLocaleDateString(),createdAt:serverTimestamp()});
+          // No
