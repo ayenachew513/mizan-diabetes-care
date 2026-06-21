@@ -36,7 +36,12 @@
 
 <div id="app" style="display:none"></div>
 <script>
-setTimeout(function(){var ls=document.getElementById("loadingScreen");var ap=document.getElementById("app");if(ls)ls.style.display="none";if(ap)ap.style.display="block";},3000);
+setTimeout(function(){
+  var ls=document.getElementById("loadingScreen");
+  var ap=document.getElementById("app");
+  if(ls)ls.style.display="none";
+  if(ap){ap.style.display="block";}
+},3000);
 </script>
 
 <!-- Firebase SDKs -->
@@ -44,7 +49,7 @@ setTimeout(function(){var ls=document.getElementById("loadingScreen");var ap=doc
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, collection, query, where, getDocs, orderBy, serverTimestamp }
+import { getFirestore, doc, setDoc, getDoc, addDoc, collection, query, where, getDocs, orderBy, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ── FIREBASE CONFIG ──────────────────────────────────────────────────
@@ -219,18 +224,14 @@ function btn(label,onClick,opts={}){
 }
 
 function field(label,opts={}){
-  const{type="text",value="",onChange,placeholder="",hint="",rows=0,options=null}=opts;
+  const{type="text",value="",onChange,placeholder="",hint="",rows=0}=opts;
   const wrap=h("div",{style:{marginBottom:"15px"}});
   if(label)wrap.appendChild(h("label",{style:{display:"block",marginBottom:"5px",fontSize:"13px",fontWeight:"700",color:C.dk}},label));
   const s={width:"100%",padding:"11px 13px",borderRadius:"11px",border:`1.5px solid ${C.bd}`,fontSize:"15px",color:C.dk,background:C.bg,resize:"vertical"};
   let inp;
-  if(options){
-    inp=h("select",{style:s});
-    options.forEach(([v2,l])=>inp.appendChild(h("option",{value:v2},l)));
-    if(onChange)inp.addEventListener("change",e=>onChange(e.target.value));
-  }else if(rows>0){inp=h("textarea",{style:s,placeholder,rows:""+rows},value||"");}
+  if(rows>0){inp=h("textarea",{style:s,placeholder,rows:""+rows},value||"");}
   else{inp=h("input",{type,style:s,placeholder,value:value||""});}
-  if(onChange&&!options)inp.addEventListener("input",e=>onChange(e.target.value));
+  if(onChange)inp.addEventListener("input",e=>onChange(e.target.value));
   inp.addEventListener("focus",()=>inp.style.border=`1.5px solid ${C.p6}`);
   inp.addEventListener("blur",()=>inp.style.border=`1.5px solid ${C.bd}`);
   wrap.appendChild(inp);
@@ -310,7 +311,7 @@ async function getUserProfile(uid){
 // ══════════════════════════════════════════════════════════════════════
 function renderAuth(){
   const t=T[STATE.lang];
-  let mode="login",role="patient",email="",pass="",name="",phone="",sex="",age="",city="",diabType="";
+  let mode="login",role="patient",email="",pass="",name="";
 
   function build(){
     const wrap=h("div",{id:"authWrap",style:{minHeight:"100vh",display:"flex"}});
@@ -371,16 +372,7 @@ function renderAuth(){
       inner.appendChild(rs);
     }
 
-    if(mode==="register"){
-      inner.appendChild(field(t.name,{placeholder:"Full name",onChange:v=>name=v}));
-      if(role==="patient"){
-        inner.appendChild(field("Phone Number",{type:"tel",placeholder:"e.g. 0911234567",onChange:v=>phone=v}));
-        inner.appendChild(field("Sex",{type:"select",options:[["","-- Select --"],["male","Male"],["female","Female"]],onChange:v=>sex=v}));
-        inner.appendChild(field("Age",{type:"number",placeholder:"e.g. 45",onChange:v=>age=v}));
-        inner.appendChild(field("City",{placeholder:"e.g. Gondar",onChange:v=>city=v}));
-        inner.appendChild(field("Diabetes Type",{type:"select",options:[["","-- Select --"],["type1","Type 1"],["type2","Type 2"],["gestational","Gestational"],["other","Other"]],onChange:v=>diabType=v}));
-      }
-    }
+    if(mode==="register")inner.appendChild(field(t.name,{placeholder:"Full name",onChange:v=>name=v}));
     inner.appendChild(field(t.email,{type:"email",placeholder:"email@example.com",onChange:v=>email=v}));
     if(mode!=="forgot")inner.appendChild(field(t.password,{type:"password",placeholder:"••••••••",onChange:v=>pass=v}));
 
@@ -399,13 +391,9 @@ function renderAuth(){
           const cred=await createUserWithEmailAndPassword(auth,email,pass);
           await saveUserProfile(cred.user.uid,{
             name:name||email.split("@")[0],email,role,
-            phone:phone||"",sex:sex||"",age:Number(age)||0,
-            city:city||"",diabType:diabType||"",
-            status:role==="patient"?"pending":"active",
-            createdAt:new Date().toISOString(),plan:"basic",planStatus:"unpaid",
-            glucose:"",hba1c:"",sbp:"",dbp:"",bmi:"",weight:"",adherence:100
+            createdAt:new Date().toISOString(),plan:"basic"
           });
-          toast("Account created! "+(role==="patient"?"Awaiting doctor approval.":"Welcome!")+" 🎉");
+          toast("Account created! Welcome to Mizan 🎉");
         }else{
           await signInWithEmailAndPassword(auth,email,pass);
         }
@@ -547,30 +535,24 @@ function renderPatient(){
 
     else if(tb==="glucose"){
       content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"14px"}},"📊 "+t.glucose));
-      let f="",pm="",r="",note="";
+      let f="",r="";
       const saveBtn=btn(t.save,async()=>{
-        if(!f&&!pm&&!r){toast("Enter at least one reading","error");return;}
+        if(!f&&!r){toast("Enter at least one reading","error");return;}
         saveBtn.textContent=t.saving;saveBtn.disabled=true;
         const entry={date:new Date().toLocaleDateString(),
           time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),
-          fasting:f?Number(f):null,postMeal:pm?Number(pm):null,random:r?Number(r):null,note:note||""};
+          fasting:f?Number(f):null,random:r?Number(r):null};
         const ok=await saveReading(uid,entry);
-        if(ok){
-          toast(t.saved);
-          // Update patient's latest glucose in profile
-          const latestVal=f||pm||r;
-          if(latestVal)await saveUserProfile(uid,{glucose:Number(latestVal)});
-        }else toast(t.errSave,"error");
+        if(ok){toast(t.saved);STATE.readings.unshift(entry);}
+        else toast(t.errSave,"error");
         saveBtn.textContent=t.save;saveBtn.disabled=false;
         renderContent();
       },{full:true,v:"green"});
 
       const fc=h("div",{style:{background:C.wh,borderRadius:"18px",padding:"18px",marginBottom:"13px",border:`1.5px solid ${C.bd}`}},
         h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"13px"}},"📝 "+t.logGlucose),
-        field(t.fasting,{type:"number",placeholder:"e.g. 126",hint:"Before eating, morning",onChange:v=>f=v}),
-        field("Post-meal (mg/dL)",{type:"number",placeholder:"e.g. 180",hint:"2 hours after eating",onChange:v=>pm=v}),
-        field(t.random,{type:"number",placeholder:"e.g. 160",hint:"Any time of day",onChange:v=>r=v}),
-        field("Note (optional)",{placeholder:"e.g. After exercise, sick day",onChange:v=>note=v}),
+        field(t.fasting,{type:"number",placeholder:"e.g. 126",onChange:v=>f=v}),
+        field(t.random,{type:"number",placeholder:"e.g. 180",onChange:v=>r=v}),
         saveBtn
       );
       content.appendChild(fc);
@@ -582,15 +564,14 @@ function renderPatient(){
         const rc=h("div",{style:{background:C.wh,borderRadius:"18px",padding:"18px",border:`1.5px solid ${C.bd}`}},
           h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"Recent Readings ☁️")
         );
-        readings.slice(0,8).forEach((rd,i,arr)=>{
-          const val=rd.fasting||rd.postMeal||rd.random;
-          const type=rd.fasting?"Fasting":rd.postMeal?"Post-meal":"Random";
+        readings.slice(0,6).forEach((rd,i,arr)=>{
+          const val=rd.fasting||rd.random;
           const s=gSt(Number(val));
           rc.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",
             padding:"9px 0",borderBottom:i<arr.length-1?`1px solid ${C.bd}`:"none"}},
             h("div",{},
-              h("p",{style:{margin:"0",fontSize:"13px",fontWeight:"700",color:C.dk}},type+" · "+rd.date),
-              h("p",{style:{margin:"2px 0 0",fontSize:"11px",color:C.mu}},rd.time+(rd.note?" · "+rd.note:""))
+              h("p",{style:{margin:"0",fontSize:"13px",fontWeight:"700",color:C.dk}},(rd.fasting?"Fasting":"Random")+" · "+rd.date),
+              h("p",{style:{margin:"2px 0 0",fontSize:"11px",color:C.mu}},rd.time)
             ),
             h("div",{style:{textAlign:"right"}},
               h("span",{style:{fontSize:"17px",fontWeight:"800",color:s.c}},val),
@@ -600,34 +581,21 @@ function renderPatient(){
           ));
         });
         content.appendChild(rc);
-      }else{
-        content.appendChild(h("div",{style:{background:C.wh,borderRadius:"16px",padding:"24px",textAlign:"center",border:`1.5px solid ${C.bd}`}},
-          h("div",{style:{fontSize:"36px",marginBottom:"8px"}},"📊"),
-          h("p",{style:{color:C.mu,fontSize:"14px"}},"No readings yet. Log your first reading above.")
-        ));
       }
     }
 
     else if(tb==="vitals"){
       content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"14px"}},"❤️ "+t.vitals));
-      let w="",s="",d="",ex="",hba1c="";
+      let w="",s="",d="",ex="";
       const saveBtn=btn(t.save,async()=>{
-        if(!w&&!s&&!ex&&!hba1c){toast("Enter at least one vital","error");return;}
         saveBtn.textContent=t.saving;saveBtn.disabled=true;
-        const bmiVal=w?(Number(w)/(1.65*1.65)).toFixed(1):null;
         const entry={date:new Date().toLocaleDateString(),
           time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),
           weight:w?Number(w):null,sbp:s?Number(s):null,dbp:d?Number(d):null,
-          exerciseMin:ex?Number(ex):null,hba1c:hba1c?Number(hba1c):null,bmi:bmiVal};
+          exerciseMin:ex?Number(ex):null,
+          bmi:w?(Number(w)/(1.65*1.65)).toFixed(1):null};
         const ok=await saveVitals(uid,entry);
-        if(ok){
-          toast(t.saved);
-          // Update patient profile so doctor sees latest vitals
-          const upd={};
-          if(w)upd.weight=Number(w);if(s)upd.sbp=Number(s);if(d)upd.dbp=Number(d);
-          if(bmiVal)upd.bmi=Number(bmiVal);if(hba1c)upd.hba1c=Number(hba1c);
-          if(Object.keys(upd).length)await saveUserProfile(uid,upd);
-        }else toast(t.errSave,"error");
+        if(ok){toast(t.saved);}else toast(t.errSave,"error");
         saveBtn.textContent=t.save;saveBtn.disabled=false;
         renderContent();
       },{full:true});
@@ -637,7 +605,6 @@ function renderPatient(){
         field(t.weight,{type:"number",placeholder:"e.g. 72",onChange:v=>w=v}),
         field(t.systolic,{type:"number",placeholder:"e.g. 130",onChange:v=>s=v}),
         field(t.diastolic,{type:"number",placeholder:"e.g. 80",onChange:v=>d=v}),
-        field("HbA1c (%)",{type:"number",placeholder:"e.g. 7.5",onChange:v=>hba1c=v}),
         field(t.exercise,{type:"number",placeholder:"e.g. 30",onChange:v=>ex=v}),
         saveBtn
       ));
@@ -649,69 +616,55 @@ function renderPatient(){
         );
         vitals.slice(0,4).forEach((v,i,arr)=>{
           vr.appendChild(h("div",{style:{padding:"9px 0",borderBottom:i<arr.length-1?`1px solid ${C.bd}`:"none"}},
-            h("p",{style:{margin:"0 0 4px",fontSize:"12px",color:C.mu,fontWeight:"700"}},v.date+" "+v.time),
+            h("p",{style:{margin:"0 0 4px",fontSize:"12px",color:C.mu,fontWeight:"700"}},v.date),
             h("div",{style:{display:"flex",gap:"12px",flexWrap:"wrap"}},
               v.weight&&h("span",{style:{fontSize:"13px",color:C.dk}},"⚖️ ",h("strong",{},v.weight)," kg"),
               v.sbp&&h("span",{style:{fontSize:"13px",color:C.dk}},"❤️ ",h("strong",{},v.sbp+"/"+v.dbp)," mmHg"),
               v.bmi&&h("span",{style:{fontSize:"13px",color:C.dk}},"📊 BMI ",h("strong",{},v.bmi)),
-              v.hba1c&&h("span",{style:{fontSize:"13px",color:C.r5}},"HbA1c ",h("strong",{},v.hba1c+"%")),
               v.exerciseMin&&h("span",{style:{fontSize:"13px",color:C.g7}},"🏃 ",h("strong",{},v.exerciseMin)," min")
             )
           ));
         });
         content.appendChild(vr);
-      }else{
-        content.appendChild(h("div",{style:{background:C.wh,borderRadius:"16px",padding:"24px",textAlign:"center",border:`1.5px solid ${C.bd}`}},
-          h("div",{style:{fontSize:"36px",marginBottom:"8px"}},"❤️"),
-          h("p",{style:{color:C.mu,fontSize:"14px"}},"No vitals logged yet.")
-        ));
       }
     }
 
     else if(tb==="meds"){
       content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"14px"}},"💊 "+t.medications));
-      const medsSnap=await getDocs(collection(db,"users",uid,"medications"));
-      const meds=medsSnap.docs.map(d=>({id:d.id,...d.data()}));
-      if(meds.length===0){
-        content.appendChild(h("div",{style:{background:C.wh,borderRadius:"16px",padding:"28px",textAlign:"center",border:`1.5px solid ${C.bd}`,marginBottom:"14px"}},
-          h("div",{style:{fontSize:"40px",marginBottom:"10px"}},"💊"),
-          h("p",{style:{color:C.dk,fontSize:"14px",fontWeight:"700",marginBottom:"6px"}},"No medications yet"),
-          h("p",{style:{color:C.mu,fontSize:"13px"}},"Your doctor will add your medications after your first consultation.")
+      [{name:"Metformin 500mg",taken:1,total:2,c:C.p6,bg:C.p1,icon:"💊"},
+       {name:"Glibenclamide 5mg",taken:1,total:1,c:C.g7,bg:C.g1,icon:"💊"},
+       {name:"Insulin Glargine 20u",taken:0,total:1,c:C.o5,bg:C.o1,icon:"💉"}
+      ].forEach(m=>{
+        const mc=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"16px",marginBottom:"11px",border:`1.5px solid ${C.bd}`}});
+        mc.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"9px"}},
+          h("div",{style:{display:"flex",gap:"9px",alignItems:"center"}},
+            h("div",{style:{width:"42px",height:"42px",borderRadius:"11px",background:m.bg,
+              display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px"}},m.icon),
+            h("div",{},
+              h("div",{style:{fontWeight:"800",fontSize:"14px",color:C.dk}},m.name),
+              h("div",{style:{fontSize:"11px",color:C.mu}},m.taken===m.total?"Completed":"Pending")
+            )
+          ),
+          pill(m.taken===m.total?"Done ✓":`${m.taken}/${m.total}`,m.taken===m.total?C.g7:C.o5,m.taken===m.total?C.g1:C.o1)
         ));
-      }else{
-        meds.forEach(m=>{
-          const icon=m.name?.toLowerCase().includes("insulin")?"💉":"💊";
-          const col=icon==="💉"?{c:C.o5,bg:C.o1}:{c:C.p6,bg:C.p1};
-          const mc=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"16px",marginBottom:"11px",border:`1.5px solid ${C.bd}`}});
-          mc.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"9px"}},
-            h("div",{style:{display:"flex",gap:"9px",alignItems:"center"}},
-              h("div",{style:{width:"42px",height:"42px",borderRadius:"11px",background:col.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px"}},icon),
-              h("div",{},
-                h("div",{style:{fontWeight:"800",fontSize:"14px",color:C.dk}},m.name),
-                h("div",{style:{fontSize:"11px",color:C.mu}},m.dose+" · "+m.frequency),
-                m.instructions&&h("div",{style:{fontSize:"11px",color:C.mu,marginTop:"2px"}},m.instructions)
-              )
-            ),
-            pill(m.active!==false?"Active":"Paused",m.active!==false?C.g7:C.mu,m.active!==false?C.g1:C.bg)
-          ));
-          mc.appendChild(h("div",{style:{display:"flex",gap:"7px"}},
-            h("button",{onClick:async()=>{
-              await addDoc(collection(db,"users",uid,"missed"),{med:m.name,dose:m.dose,date:new Date().toLocaleDateString(),time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),createdAt:serverTimestamp()});
-              await addDoc(collection(db,"chats",uid,"messages"),{text:"⚠️ Missed dose: "+m.name+" "+m.dose,senderId:uid,senderName:STATE.userDoc?.name||"Patient",senderRole:"patient",time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),createdAt:serverTimestamp()});
-              await setDoc(doc(db,"chats",uid),{lastMsg:"Missed dose: "+m.name,lastTime:serverTimestamp(),unreadByDoctor:true},{merge:true});
-              toast("Missed dose logged & clinic notified ☁️");
-            },style:{flex:"1",padding:"7px",background:C.r1,border:"none",color:C.r5,borderRadius:"9px",fontSize:"12px",fontWeight:"700",cursor:"pointer"}},"⚠️ "+t.missedDose),
-            h("button",{onClick:async()=>{
-              await addDoc(collection(db,"users",uid,"refills"),{med:m.name,dose:m.dose,date:new Date().toLocaleDateString(),status:"pending",createdAt:serverTimestamp()});
-              await addDoc(collection(db,"chats",uid,"messages"),{text:"🔄 Refill request: "+m.name+" "+m.dose,senderId:uid,senderName:STATE.userDoc?.name||"Patient",senderRole:"patient",time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),createdAt:serverTimestamp()});
-              await setDoc(doc(db,"chats",uid),{lastMsg:"Refill request: "+m.name,lastTime:serverTimestamp(),unreadByDoctor:true},{merge:true});
-              toast("Refill request sent to clinic ☁️");
-            },style:{flex:"1",padding:"7px",background:C.g1,border:"none",color:C.g7,borderRadius:"9px",fontSize:"12px",fontWeight:"700",cursor:"pointer"}},"🔄 "+t.refill)
-          ));
-          content.appendChild(mc);
-        });
-      }
+        const bar=h("div",{style:{height:"5px",background:C.bg,borderRadius:"3px",overflow:"hidden",marginBottom:"11px"}});
+        bar.appendChild(h("div",{style:{height:"100%",width:`${(m.taken/m.total)*100}%`,background:m.c,borderRadius:"3px"}}));
+        mc.appendChild(bar);
+        mc.appendChild(h("div",{style:{display:"flex",gap:"7px"}},
+          h("button",{onClick:async()=>{
+            await addDoc(collection(db,"users",uid,"missed"),{med:m.name,date:new Date().toLocaleDateString(),createdAt:serverTimestamp()});
+            toast("Missed dose logged ☁️");
+          },style:{flex:"1",padding:"7px",background:C.r1,border:"none",color:C.r5,borderRadius:"9px",fontSize:"12px",fontWeight:"700"}},"⚠️ "+t.missedDose),
+          h("button",{onClick:async()=>{
+            await addDoc(collection(db,"users",uid,"refills"),{med:m.name,date:new Date().toLocaleDateString(),status:"pending",createdAt:serverTimestamp()});
+            toast("Refill request sent ☁️");
+          },style:{flex:"1",padding:"7px",background:C.g1,border:"none",color:C.g7,borderRadius:"9px",fontSize:"12px",fontWeight:"700"}},"🔄 "+t.refill)
+        ));
+        content.appendChild(mc);
+      });
     }
+
+    else if(tb==="visits"){
       content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"14px"}},"📅 "+t.visits));
       const na=h("div",{style:{background:`linear-gradient(135deg,${C.p9},${C.p6})`,borderRadius:"18px",padding:"18px",marginBottom:"13px",color:"#fff"}});
       na.innerHTML=`<p style="font-size:11px;opacity:.65;letter-spacing:1px;margin-bottom:5px">NEXT APPOINTMENT</p>
@@ -725,63 +678,42 @@ function renderPatient(){
     }
 
     else if(tb==="chat"){
-      const uid=STATE.user?.uid;
-      const uName=STATE.userDoc?.name||"Patient";
       content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"4px"}},"💬 "+t.consultChat));
-      content.appendChild(h("p",{style:{color:C.mu,fontSize:"12px",marginBottom:"13px"}},"Mizan Clinic · "+(STATE.online?"🟢 Online":"🔴 Offline")));
+      content.appendChild(h("p",{style:{color:C.mu,fontSize:"12px",marginBottom:"13px"}},"Dr. Ayenachew · "+(STATE.online?"🟢 Online":"🔴 Offline")));
       const chatBox=h("div",{style:{background:C.wh,borderRadius:"16px",border:`1.5px solid ${C.bd}`,marginBottom:"13px",overflow:"hidden"}});
-      const msgs=h("div",{style:{padding:"13px",maxHeight:"320px",overflowY:"auto",display:"flex",flexDirection:"column",gap:"9px"}});
-
-      function renderMsgs(msgList){
-        msgs.innerHTML="";
-        if(msgList.length===0){
-          msgs.appendChild(h("p",{style:{textAlign:"center",color:C.mu,fontSize:"13px",padding:"20px 0"}},"No messages yet. Send a message to the clinic."));
-        }
-        msgList.forEach(m=>{
-          const isMe=m.senderId===uid;
-          msgs.appendChild(h("div",{style:{display:"flex",justifyContent:isMe?"flex-end":"flex-start"}},
-            h("div",{style:{maxWidth:"78%",background:isMe?`linear-gradient(135deg,${C.p6},${C.p9})`:C.bg,
-              borderRadius:isMe?"13px 13px 4px 13px":"4px 13px 13px 13px",padding:"9px 12px"}},
-              h("p",{style:{margin:"0 0 2px",fontSize:"10px",fontWeight:"700",color:isMe?"rgba(255,255,255,.7)":C.mu}},isMe?"You":(m.senderName||"Clinic")),
-              h("p",{style:{margin:"0",fontSize:"13px",color:isMe?"#fff":C.dk,lineHeight:"1.5"}},m.text),
-              h("p",{style:{margin:"3px 0 0",fontSize:"9px",color:isMe?"rgba(255,255,255,.6)":C.mu,textAlign:"right"}},m.time||"")
-            )
-          ));
-        });
-        msgs.scrollTop=msgs.scrollHeight;
-      }
-
-      // Load messages and listen for new ones
-      renderMsgs([]);
-      getDocs(query(collection(db,"chats",uid,"messages"),orderBy("createdAt","asc"))).then(snap=>{
-        renderMsgs(snap.docs.map(d=>({id:d.id,...d.data()})));
-      }).catch(()=>{});
-
+      const msgs=h("div",{style:{padding:"13px",maxHeight:"280px",overflowY:"auto",display:"flex",flexDirection:"column",gap:"9px"}});
+      STATE.chat.forEach(m=>{
+        const isDoc=m.from==="doctor";
+        msgs.appendChild(h("div",{style:{display:"flex",justifyContent:isDoc?"flex-start":"flex-end"}},
+          h("div",{style:{maxWidth:"78%",background:isDoc?C.bg:`linear-gradient(135deg,${C.p6},${C.p9})`,
+            borderRadius:isDoc?"4px 13px 13px 13px":"13px 13px 4px 13px",padding:"9px 12px"}},
+            h("p",{style:{margin:"0",fontSize:"13px",color:isDoc?C.dk:"#fff",lineHeight:"1.5"}},m.text),
+            h("p",{style:{margin:"3px 0 0",fontSize:"9px",color:isDoc?C.mu:"rgba(255,255,255,.6)",textAlign:"right"}},m.time)
+          )
+        ));
+      });
       chatBox.appendChild(msgs);
       const ir=h("div",{style:{borderTop:`1px solid ${C.bd}`,padding:"9px",display:"flex",gap:"7px",alignItems:"flex-end"}});
       const ta=h("textarea",{rows:"2",placeholder:t.typeMsg,
         style:{flex:"1",padding:"9px 12px",borderRadius:"9px",border:`1.5px solid ${C.bd}`,
-          fontSize:"13px",resize:"none",fontFamily:"'Outfit',sans-serif",color:C.dk,background:C.bg}});
-      let chatVal="";
-      ta.addEventListener("input",e=>chatVal=e.target.value);
-
-      async function sendMsg(){
-        if(!chatVal.trim())return;
-        const msg={text:chatVal,senderId:uid,senderName:uName,senderRole:"patient",
-          time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),
-          createdAt:serverTimestamp()};
-        ta.value="";chatVal="";
-        await addDoc(collection(db,"chats",uid,"messages"),msg);
-        await setDoc(doc(db,"chats",uid),{patientId:uid,patientName:uName,
-          lastMsg:msg.text,lastTime:serverTimestamp(),unreadByDoctor:true},{merge:true});
-        // Reload messages
-        const snap=await getDocs(query(collection(db,"chats",uid,"messages"),orderBy("createdAt","asc")));
-        renderMsgs(snap.docs.map(d=>({id:d.id,...d.data()})));
-      }
-
-      ta.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMsg();}});
+          fontSize:"13px",resize:"none",fontFamily:"'Outfit',sans-serif",color:C.dk,background:C.bg}},
+        STATE.chatInput||"");
+      ta.addEventListener("input",e=>STATE.chatInput=e.target.value);
+      ta.addEventListener("keydown",e=>{
+        if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();
+          if(!STATE.chatInput.trim())return;
+          STATE.chat.push({from:"patient",text:STATE.chatInput,time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})});
+          STATE.chatInput="";renderContent();
+          setTimeout(()=>{STATE.chat.push({from:"doctor",text:"Thank you. I will review and respond shortly.",time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})});renderContent();},1500);
+        }
+      });
       ir.appendChild(ta);
-      ir.appendChild(btn(t.send,sendMsg,{sm:true}));
+      ir.appendChild(btn(t.send,()=>{
+        if(!STATE.chatInput.trim())return;
+        STATE.chat.push({from:"patient",text:STATE.chatInput,time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})});
+        STATE.chatInput="";renderContent();
+        setTimeout(()=>{STATE.chat.push({from:"doctor",text:"Thank you. I will review and respond shortly.",time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})});renderContent();},1500);
+      },{sm:true}));
       chatBox.appendChild(ir);
       content.appendChild(chatBox);
     }
@@ -809,106 +741,38 @@ function renderPatient(){
     }
 
     else if(tb==="plans"){
-      const uid=STATE.user?.uid;
-      content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"4px"}},"⭐ "+t.plans_title));
-      content.appendChild(h("p",{style:{color:C.mu,fontSize:"12px",marginBottom:"14px"}},"Pay via Telebirr · Verified by clinic within 24 hours"));
-
+      content.appendChild(h("h2",{className:"fu",style:{fontSize:"21px",fontWeight:"900",color:C.dk,marginBottom:"13px"}},"⭐ "+t.plans_title));
       const currentPlan=STATE.userDoc?.plan||"basic";
-      const planStatus=STATE.userDoc?.planStatus||"unpaid";
-
-      // Show current plan status banner
-      if(planStatus==="pending_verification"){
-        content.appendChild(h("div",{style:{background:C.o1,border:`1.5px solid ${C.o5}`,borderRadius:"14px",padding:"14px",marginBottom:"14px",display:"flex",gap:"10px",alignItems:"center"}},
-          h("span",{style:{fontSize:"24px"}},"⏳"),
-          h("div",{},
-            h("p",{style:{margin:"0",fontSize:"14px",fontWeight:"800",color:C.o5}},"Payment Pending Verification"),
-            h("p",{style:{margin:"3px 0 0",fontSize:"12px",color:C.md}},"Your "+currentPlan+" plan payment is being reviewed by the clinic. You will be notified once verified.")
-          )
-        ));
-      }else if(planStatus==="active"){
-        content.appendChild(h("div",{style:{background:C.g1,border:`1.5px solid ${C.g2}`,borderRadius:"14px",padding:"14px",marginBottom:"14px",display:"flex",gap:"10px",alignItems:"center"}},
-          h("span",{style:{fontSize:"24px"}},"✅"),
-          h("div",{},
-            h("p",{style:{margin:"0",fontSize:"14px",fontWeight:"800",color:C.g7}},"Active Plan: "+currentPlan.charAt(0).toUpperCase()+currentPlan.slice(1)),
-            h("p",{style:{margin:"3px 0 0",fontSize:"12px",color:C.g7}},"Your subscription is active. Enjoy all your plan benefits!")
-          )
-        ));
-      }
-
-      [{name:"basic",price:3,c:C.md,
-        inc:["Glucose logging","Medication reminders","Basic education","Monthly check-in"],
-        exc:["In-app chat","Complication screening","Product delivery","Home visit"]},
-       {name:"standard",price:7,c:C.p6,popular:true,
-        inc:["Everything in Basic","In-app chat with clinic","Complication screening","Dietitian access"],
-        exc:["Product delivery","Home visit"]},
-       {name:"premium",price:12,c:C.g7,
-        inc:["Everything in Standard","Product delivery to home","Home nursing visit ×1/month","Priority support 24/7"],
-        exc:[]}
+      [{name:"basic",price:3,c:C.md,inc:["Glucose logging","Medication reminders","Basic education","Monthly check-in"]},
+       {name:"standard",price:7,c:C.p6,popular:true,inc:["Everything in Basic","Teleconsultation ×2/mo","Complication screening","Dietitian access"]},
+       {name:"premium",price:12,c:C.g7,inc:["Everything in Standard","Unlimited teleconsultation","Product delivery","Home visit ×1/mo"]}
       ].forEach(p=>{
         const isCurrent=currentPlan===p.name;
-        const isActive=isCurrent&&planStatus==="active";
-        const isPending=isCurrent&&planStatus==="pending_verification";
-
-        const pc=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"18px",marginBottom:"12px",
-          border:`${isCurrent?2:1.5}px solid ${isCurrent?p.c:C.bd}`,position:"relative",
-          boxShadow:isCurrent?`0 4px 20px ${p.c}20`:"none"}});
-
-        if(p.popular&&!isCurrent)pc.appendChild(h("div",{style:{position:"absolute",top:"-9px",right:"14px",
+        const pc=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"18px",marginBottom:"11px",
+          border:`${isCurrent?2:1.5}px solid ${isCurrent?p.c:C.bd}`,cursor:"pointer",position:"relative"}});
+        if(p.popular)pc.appendChild(h("div",{style:{position:"absolute",top:"-9px",right:"14px",
           background:`linear-gradient(135deg,${C.p6},${C.p9})`,color:"#fff",
           fontSize:"10px",fontWeight:"700",padding:"2px 10px",borderRadius:"20px"}},"MOST POPULAR"));
-        if(isActive)pc.appendChild(h("div",{style:{position:"absolute",top:"-9px",left:"14px",
-          background:`linear-gradient(135deg,${C.g6},${C.g9})`,color:"#fff",
-          fontSize:"10px",fontWeight:"700",padding:"2px 10px",borderRadius:"20px"}},"✓ ACTIVE"));
-        if(isPending)pc.appendChild(h("div",{style:{position:"absolute",top:"-9px",left:"14px",
-          background:`linear-gradient(135deg,${C.o5},#c4640e)`,color:"#fff",
-          fontSize:"10px",fontWeight:"700",padding:"2px 10px",borderRadius:"20px"}},"⏳ PENDING"));
-
         pc.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"11px"}},
-          h("h3",{style:{fontSize:"18px",fontWeight:"900",color:p.c}},t[p.name]||p.name),
+          h("div",{},
+            h("h3",{style:{fontSize:"17px",fontWeight:"900",color:p.c}},t[p.name]||p.name),
+            isCurrent&&pill("Current Plan",p.c,p.c+"15")
+          ),
           h("div",{},h("span",{style:{fontSize:"26px",fontWeight:"900",color:p.c}},"$"+p.price),
-            h("span",{style:{fontSize:"11px",color:C.mu}},"/mo ≈ "+Math.round(p.price*57)+" ETB"))
+            h("span",{style:{fontSize:"11px",color:C.mu}},"/mo"))
         ));
-        p.inc.forEach(f=>pc.appendChild(h("div",{style:{display:"flex",gap:"7px",alignItems:"center",marginBottom:"4px",fontSize:"12px",color:C.dk}},
-          h("span",{style:{color:p.c,fontWeight:"700"}},"✓")," ",f)));
-        p.exc.forEach(f=>pc.appendChild(h("div",{style:{display:"flex",gap:"7px",alignItems:"center",marginBottom:"4px",fontSize:"12px",color:C.mu}},"✗ ",f)));
-
-        if(isActive){
-          pc.appendChild(h("div",{style:{marginTop:"10px",background:C.g1,borderRadius:"9px",padding:"9px 12px",
-            fontSize:"12px",color:C.g7,fontWeight:"700",textAlign:"center"}},"✓ Your current active plan"));
-        }else if(isPending){
-          pc.appendChild(h("div",{style:{marginTop:"10px",background:C.o1,borderRadius:"9px",padding:"9px 12px",
-            fontSize:"12px",color:C.o5,fontWeight:"700",textAlign:"center"}},"⏳ Payment sent — awaiting clinic verification"));
-        }else{
-          // Show Telebirr payment instructions
-          pc.appendChild(h("div",{style:{marginTop:"13px",background:`${p.c}10`,borderRadius:"10px",padding:"13px"}},
-            h("p",{style:{fontSize:"12px",fontWeight:"800",color:p.c,marginBottom:"8px"}},"📱 Pay via Telebirr"),
-            h("div",{style:{background:C.wh,borderRadius:"8px",padding:"10px",marginBottom:"8px"}},
-              h("p",{style:{fontSize:"12px",color:C.mu,marginBottom:"3px"}},"Send to:"),
-              h("p",{style:{fontSize:"16px",fontWeight:"900",color:C.dk,letterSpacing:"1px"}},"0930563960"),
-              h("p",{style:{fontSize:"12px",color:C.mu,marginTop:"3px"}},"Recipient: ",h("strong",{},"Ayenachew Nigus")),
-              h("p",{style:{fontSize:"13px",fontWeight:"800",color:p.c,marginTop:"6px"}},"Amount: $"+p.price+" ≈ "+Math.round(p.price*57)+" ETB")
-            ),
-            h("p",{style:{fontSize:"11px",color:C.mu,marginBottom:"10px"}},"After sending, tap the button below. The clinic will verify within 24 hours."),
-            h("button",{onClick:async()=>{
-              await saveUserProfile(uid,{plan:p.name,planStatus:"pending_verification",planRequestedAt:new Date().toISOString()});
-              // Notify clinic via chat
-              await addDoc(collection(db,"chats",uid,"messages"),{
-                text:"💳 Payment notification: I have paid "+Math.round(p.price*57)+" ETB for the "+p.name+" plan ($"+p.price+"/mo) via Telebirr to 0930563960. Please verify.",
-                senderId:uid,senderName:STATE.userDoc?.name||"Patient",senderRole:"patient",
-                time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),
-                createdAt:serverTimestamp()
-              });
-              await setDoc(doc(db,"chats",uid),{
-                patientId:uid,patientName:STATE.userDoc?.name,
-                lastMsg:"Payment notification sent",lastTime:serverTimestamp(),unreadByDoctor:true
-              },{merge:true});
-              STATE.userDoc={...STATE.userDoc,plan:p.name,planStatus:"pending_verification"};
-              toast("Payment notification sent! Clinic will verify within 24 hours.");
-              renderContent();
-            },style:{width:"100%",padding:"11px",background:`linear-gradient(135deg,${p.c},${C.p9})`,
-              border:"none",color:"#fff",borderRadius:"9px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}},
-            "✓ I Have Paid — Notify Clinic")
+        p.inc.forEach(f=>{
+          pc.appendChild(h("div",{style:{display:"flex",gap:"7px",alignItems:"center",marginBottom:"4px",fontSize:"13px",color:C.dk}},
+            h("span",{style:{color:p.c,fontWeight:"700"}},"✓")," ",f
           ));
+        });
+        if(!isCurrent){
+          pc.appendChild(h("button",{onClick:async()=>{
+            await saveUserProfile(uid,{plan:p.name});
+            STATE.userDoc={...STATE.userDoc,plan:p.name};
+            toast("Plan updated to "+p.name+"! ☁️");renderContent();
+          },style:{width:"100%",marginTop:"11px",padding:"9px",background:`linear-gradient(135deg,${p.c},${C.p9})`,
+            border:"none",color:"#fff",borderRadius:"9px",fontWeight:"700",fontSize:"13px"}},"Switch to "+t[p.name]));
         }
         content.appendChild(pc);
       });
@@ -924,12 +788,18 @@ function renderPatient(){
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// CLINIC DASHBOARD
+// CLINIC DASHBOARD (simplified but Firebase-ready)
 // ══════════════════════════════════════════════════════════════════════
 function renderClinic(){
   const t=T[STATE.lang];
-  // Real patients loaded from Firebase
-  let REAL_PTS=[];
+  const MOCK_PTS=[
+    {id:"1",name:"Almaz Tadesse",age:54,gender:"F",type:"Type 2",glucose:312,hba1c:9.2,sbp:158,dbp:96,bmi:28.4,adherence:42,sub:"standard",city:"Gondar"},
+    {id:"2",name:"Bekele Haile",age:62,gender:"M",type:"Type 2",glucose:287,hba1c:8.8,sbp:145,dbp:88,bmi:26.1,adherence:58,sub:"basic",city:"Gondar"},
+    {id:"3",name:"Tigist Worku",age:41,gender:"F",type:"Type 1",glucose:168,hba1c:7.4,sbp:118,dbp:76,bmi:22.3,adherence:78,sub:"premium",city:"Debark"},
+    {id:"4",name:"Dawit Mengiste",age:48,gender:"M",type:"Type 2",glucose:126,hba1c:6.8,sbp:122,dbp:78,bmi:24.8,adherence:91,sub:"premium",city:"Gondar"},
+    {id:"5",name:"Selamawit Girma",age:37,gender:"F",type:"Type 2",glucose:194,hba1c:7.9,sbp:132,dbp:84,bmi:27.6,adherence:65,sub:"standard",city:"Maksegnit"},
+    {id:"6",name:"Yohannes Assefa",age:71,gender:"M",type:"Type 2",glucose:341,hba1c:10.1,sbp:168,dbp:102,bmi:29.2,adherence:31,sub:"basic",city:"Gondar"},
+  ].map(p=>({...p,...risk(p)}));
 
   const wrap=h("div",{style:{minHeight:"100vh",display:"flex",fontFamily:"'Outfit',sans-serif",background:C.bg}});
 
@@ -947,9 +817,6 @@ function renderClinic(){
 
   const nav=h("nav",{style:{padding:"10px 7px",flex:"1"}});
   [{id:"overview",icon:"📊",label:t.overview},{id:"patients",icon:"👥",label:t.patients},
-   {id:"approvals",icon:"✅",label:"Approvals"},
-   {id:"chat",icon:"💬",label:"Chat"},
-   {id:"payments",icon:"💳",label:"Payments"},
    {id:"analytics",icon:"📈",label:t.analytics},{id:"followup",icon:"🔔",label:t.followup}
   ].forEach(n=>{
     const active=STATE.clinicView===n.id&&!STATE.selectedPt;
@@ -978,13 +845,6 @@ function renderClinic(){
   const main=h("div",{id:"clinicMain",style:{flex:"1",padding:"22px",overflowY:"auto",maxHeight:"100vh"}});
   wrap.appendChild(main);
 
-  // Open chat for a specific patient from anywhere in the clinic dashboard
-  function openPatientChat(p){
-    STATE.clinicView="chat";
-    STATE.chatOpenPatient=p;
-    renderMain();
-  }
-
   function renderMain(){
     main.innerHTML="";
     if(STATE.selectedPt){renderPtDetail();return;}
@@ -992,13 +852,13 @@ function renderClinic(){
     if(STATE.clinicView==="overview"){
       main.appendChild(h("div",{className:"fu",style:{marginBottom:"20px"}},
         h("h1",{style:{fontSize:"24px",fontWeight:"900",color:C.dk,margin:"0"}},"Good morning, Dr. Ayenachew 👋"),
-        h("p",{style:{color:C.mu,fontSize:"13px",margin:"3px 0 0"}},new Date().toDateString()+" · "+REAL_PTS.length+" patients")
+        h("p",{style:{color:C.mu,fontSize:"13px",margin:"3px 0 0"}},new Date().toDateString()+" · "+MOCK_PTS.length+" patients")
       ));
-      const high=REAL_PTS.filter(p=>p.level==="high").length;
-      const totalRev=REAL_PTS.reduce((s,p)=>s+(p.sub==="premium"?12:p.sub==="standard"?7:3),0);
+      const high=MOCK_PTS.filter(p=>p.level==="high").length;
+      const totalRev=MOCK_PTS.reduce((s,p)=>s+(p.sub==="premium"?12:p.sub==="standard"?7:3),0);
       const grid=h("div",{className:"fu1",style:{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"11px",marginBottom:"18px"}});
-      [{l:"Total Patients",v:REAL_PTS.length,i:"👥",c:C.p6,bg:C.p1},
-       {l:"Subscriptions",v:REAL_PTS.length,i:"⭐",c:C.g7,bg:C.g1},
+      [{l:"Total Patients",v:MOCK_PTS.length,i:"👥",c:C.p6,bg:C.p1},
+       {l:"Subscriptions",v:MOCK_PTS.length,i:"⭐",c:C.g7,bg:C.g1},
        {l:"High Risk",v:high,i:"🚨",c:C.r5,bg:C.r1},
        {l:"Monthly Rev",v:"$"+totalRev,i:"💰",c:C.o5,bg:C.o1}
       ].forEach(k=>{
@@ -1027,7 +887,7 @@ function renderClinic(){
       // High risk patients
       const hrCard=h("div",{className:"fu3",style:{background:C.wh,borderRadius:"16px",padding:"18px",border:`1.5px solid ${C.bd}`}});
       hrCard.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"🚨 High Risk Patients"));
-      REAL_PTS.filter(p=>p.level==="high").forEach((p,i,arr)=>{
+      MOCK_PTS.filter(p=>p.level==="high").forEach((p,i,arr)=>{
         hrCard.appendChild(h("div",{onClick:()=>{STATE.selectedPt=p;STATE.ptDetailTab="overview";renderMain();},
           style:{padding:"10px 0",borderBottom:i<arr.length-1?`1px solid ${C.bd}`:"none",cursor:"pointer"}},
           h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"2px"}},
@@ -1055,7 +915,7 @@ function renderClinic(){
           f==="all"?"All":f==="high"?t.highRisk:f==="medium"?t.medRisk:t.lowRisk));
       });
       main.appendChild(filters);
-      const filtered=STATE.clinicFilter==="all"?REAL_PTS:REAL_PTS.filter(p=>p.level===STATE.clinicFilter);
+      const filtered=STATE.clinicFilter==="all"?MOCK_PTS:MOCK_PTS.filter(p=>p.level===STATE.clinicFilter);
       const tbl=h("div",{style:{background:C.wh,borderRadius:"14px",border:`1.5px solid ${C.bd}`,overflow:"auto"}});
       const thead=h("div",{style:{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr 70px",
         background:C.bg,padding:"9px 14px",gap:"10px"}});
@@ -1082,245 +942,24 @@ function renderClinic(){
           h("span",{style:{fontSize:"11px",fontWeight:"700",color:p.adherence>70?C.g7:C.r5}},p.adherence+"%")
         );
         row.appendChild(bar);
-        row.appendChild(h("div",{style:{display:"flex",gap:"5px"}},
-          h("button",{onClick:(e)=>{e.stopPropagation();STATE.selectedPt=p;STATE.ptDetailTab="overview";renderMain();},
-            style:{background:C.p1,border:"none",color:C.p6,borderRadius:"7px",padding:"5px 9px",fontSize:"11px",fontWeight:"700"}},"View →"),
-          h("button",{onClick:(e)=>{e.stopPropagation();openPatientChat(p);},
-            style:{background:C.g1,border:"none",color:C.g7,borderRadius:"7px",padding:"5px 9px",fontSize:"11px",fontWeight:"700"}},"💬"),
-          h("button",{onClick:(e)=>{e.stopPropagation();
-            if(confirm("Delete "+p.name+"? All their data will be permanently removed.")){
-              deleteDoc(doc(db,"users",p.id)).then(()=>{
-                toast(p.name+" deleted.","warn");
-                loadPatientsAndRender();
-              }).catch(()=>toast("Delete failed","error"));
-            }
-          },style:{background:C.r1,border:"none",color:C.r5,borderRadius:"7px",padding:"5px 9px",fontSize:"11px",fontWeight:"700"}},"🗑")
-        ));
+        row.appendChild(h("button",{onClick:(e)=>{e.stopPropagation();STATE.selectedPt=p;STATE.ptDetailTab="overview";renderMain();},
+          style:{background:C.p1,border:"none",color:C.p6,borderRadius:"7px",padding:"5px 9px",fontSize:"11px",fontWeight:"700"}},"View →"));
         tbl.appendChild(row);
       });
       main.appendChild(tbl);
     }
 
-    else if(STATE.clinicView==="chat"){
-      main.appendChild(h("h1",{style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"16px"}},"💬 Patient Chats"));
-      const listDiv=h("div");const replyDiv=h("div",{style:{display:"none"}});
-      main.appendChild(listDiv);main.appendChild(replyDiv);
-
-      async function loadChatList(){
-        listDiv.innerHTML="<p style='color:"+C.mu+";font-size:14px;'>Loading chats...</p>";
-        const snap=await getDocs(collection(db,"chats"));
-        const chats=snap.docs.map(d=>({id:d.id,...d.data()}));
-        listDiv.innerHTML="";
-        if(chats.length===0){listDiv.appendChild(h("div",{style:{background:C.wh,borderRadius:"14px",padding:"28px",textAlign:"center",border:`1.5px solid ${C.bd}`}},h("div",{style:{fontSize:"36px",marginBottom:"8px"}},"💬"),h("p",{style:{color:C.mu,fontSize:"14px"}},"No patient messages yet.")));return;}
-        chats.forEach(chat=>{
-          listDiv.appendChild(h("div",{onClick:()=>openChat(chat),style:{background:C.wh,borderRadius:"12px",padding:"14px",marginBottom:"8px",border:`1.5px solid ${chat.unreadByDoctor?C.p6:C.bd}`,cursor:"pointer",borderLeft:`4px solid ${chat.unreadByDoctor?C.p6:C.bd}`}},
-            h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
-              h("div",{},h("p",{style:{margin:"0 0 3px",fontSize:"14px",fontWeight:"700",color:C.dk}},chat.patientName||"Patient"),h("p",{style:{margin:"0",fontSize:"12px",color:C.mu}},chat.lastMsg?chat.lastMsg.substring(0,50)+"...":"No messages")),
-              chat.unreadByDoctor&&h("span",{style:{background:C.p1,color:C.p6,borderRadius:"20px",padding:"2px 9px",fontSize:"11px",fontWeight:"700"}},"NEW")
-            )
-          ));
-        });
-      }
-
-      async function openChat(chat){
-        listDiv.style.display="none";replyDiv.style.display="block";replyDiv.innerHTML="";
-        replyDiv.appendChild(h("button",{onClick:()=>{listDiv.style.display="block";replyDiv.style.display="none";replyDiv.innerHTML="";loadChatList();},style:{background:"none",border:"none",color:C.p6,fontWeight:"700",fontSize:"13px",cursor:"pointer",marginBottom:"14px"}},"← Back to chats"));
-        replyDiv.appendChild(h("h3",{style:{fontSize:"16px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},chat.patientName||"Patient"));
-        await setDoc(doc(db,"chats",chat.patientId||chat.id),{unreadByDoctor:false},{merge:true});
-        const box=h("div",{style:{background:C.wh,borderRadius:"14px",border:`1.5px solid ${C.bd}`,overflow:"hidden"}});
-        const msgsDiv=h("div",{style:{padding:"12px",maxHeight:"350px",overflowY:"auto",display:"flex",flexDirection:"column",gap:"8px"}});
-        const snap=await getDocs(query(collection(db,"chats",chat.patientId||chat.id,"messages"),orderBy("createdAt","asc")));
-        const msgList=snap.docs.map(d=>({id:d.id,...d.data()}));
-        msgList.forEach(m=>{
-          const isDoc=m.senderRole==="doctor";
-          msgsDiv.appendChild(h("div",{style:{display:"flex",justifyContent:isDoc?"flex-end":"flex-start"}},
-            h("div",{style:{maxWidth:"75%",background:isDoc?`linear-gradient(135deg,${C.g6},${C.g9})`:C.bg,borderRadius:isDoc?"13px 13px 4px 13px":"4px 13px 13px 13px",padding:"9px 11px"}},
-              h("p",{style:{margin:"0 0 2px",fontSize:"10px",fontWeight:"700",color:isDoc?"rgba(255,255,255,.7)":C.mu}},isDoc?(STATE.userDoc?.name||"Doctor"):"Patient"),
-              h("p",{style:{margin:"0",fontSize:"13px",color:isDoc?"#fff":C.dk,lineHeight:"1.5"}},m.text),
-              h("p",{style:{margin:"2px 0 0",fontSize:"9px",color:isDoc?"rgba(255,255,255,.6)":C.mu,textAlign:"right"}},m.time||"")
-            )
-          ));
-        });
-        msgsDiv.scrollTop=msgsDiv.scrollHeight;
-        box.appendChild(msgsDiv);
-        const ir=h("div",{style:{borderTop:`1px solid ${C.bd}`,padding:"9px",display:"flex",gap:"7px",alignItems:"flex-end"}});
-        const ta=h("textarea",{rows:"2",placeholder:"Reply to "+(chat.patientName||"patient")+"...",style:{flex:"1",padding:"9px 11px",borderRadius:"9px",border:`1.5px solid ${C.bd}`,fontSize:"13px",resize:"none",fontFamily:"'Outfit',sans-serif",color:C.dk,background:C.bg}});
-        let cv="";ta.addEventListener("input",e=>cv=e.target.value);
-        async function send(){
-          if(!cv.trim())return;
-          const docName=STATE.userDoc?.name||"Doctor";
-          const msg={text:cv,senderId:STATE.user.uid,senderName:docName,senderRole:"doctor",time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),createdAt:serverTimestamp()};
-          ta.value="";cv="";
-          await addDoc(collection(db,"chats",chat.patientId||chat.id,"messages"),msg);
-          await setDoc(doc(db,"chats",chat.patientId||chat.id),{lastMsg:msg.text,lastTime:serverTimestamp(),unreadByDoctor:false},{merge:true});
-          // Reload messages
-          const s2=await getDocs(query(collection(db,"chats",chat.patientId||chat.id,"messages"),orderBy("createdAt","asc")));
-          msgsDiv.innerHTML="";
-          s2.docs.map(d=>({id:d.id,...d.data()})).forEach(m=>{
-            const isDoc=m.senderRole==="doctor";
-            msgsDiv.appendChild(h("div",{style:{display:"flex",justifyContent:isDoc?"flex-end":"flex-start"}},h("div",{style:{maxWidth:"75%",background:isDoc?`linear-gradient(135deg,${C.g6},${C.g9})`:C.bg,borderRadius:isDoc?"13px 13px 4px 13px":"4px 13px 13px 13px",padding:"9px 11px"}},h("p",{style:{margin:"0 0 2px",fontSize:"10px",fontWeight:"700",color:isDoc?"rgba(255,255,255,.7)":C.mu}},isDoc?(STATE.userDoc?.name||"Doctor"):"Patient"),h("p",{style:{margin:"0",fontSize:"13px",color:isDoc?"#fff":C.dk,lineHeight:"1.5"}},m.text),h("p",{style:{margin:"2px 0 0",fontSize:"9px",color:isDoc?"rgba(255,255,255,.6)":C.mu,textAlign:"right"}},m.time||""))));
-          });
-          msgsDiv.scrollTop=msgsDiv.scrollHeight;
-        }
-        ta.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}});
-        ir.appendChild(ta);ir.appendChild(btn("Send",send,{sm:true,v:"green"}));
-        box.appendChild(ir);replyDiv.appendChild(box);
-      }
-      // Auto-open if coming from patient row chat button
-      if(STATE.chatOpenPatient){
-        const p=STATE.chatOpenPatient;
-        STATE.chatOpenPatient=null;
-        openChat({patientId:p.id,patientName:p.name,id:p.id});
-      }else{
-        loadChatList();
-      }
-    }
-
-    else if(STATE.clinicView==="approvals"){
-      main.appendChild(h("h1",{style:{fontSize:"24px",fontWeight:"900",color:C.dk,marginBottom:"18px"}},"✅ Pending Approvals"));
-      const pendingDiv=h("div",{id:"pendingList"});
-      main.appendChild(pendingDiv);
-      async function loadPending(){
-        pendingDiv.innerHTML="<p style='color:"+C.mu+";font-size:14px;'>Loading...</p>";
-        const snap=await getDocs(query(collection(db,"users"),where("role","==","patient"),where("status","==","pending")));
-        const pending=snap.docs.map(d=>({id:d.id,...d.data()}));
-        pendingDiv.innerHTML="";
-        if(pending.length===0){
-          pendingDiv.appendChild(h("div",{style:{background:C.wh,borderRadius:"16px",padding:"32px",textAlign:"center",border:`1.5px solid ${C.bd}`}},
-            h("div",{style:{fontSize:"40px",marginBottom:"10px"}},"✅"),
-            h("p",{style:{color:C.mu,fontSize:"14px"}},"No pending approvals.")
-          ));return;
-        }
-        pending.forEach(p=>{
-          const card=h("div",{style:{background:C.wh,borderRadius:"16px",padding:"18px",marginBottom:"12px",border:`1.5px solid ${C.o5}30`,borderLeft:`4px solid ${C.o5}`}});
-          card.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"12px"}},
-            h("div",{},
-              h("h3",{style:{fontSize:"16px",fontWeight:"800",color:C.dk,margin:"0 0 4px"}},p.name),
-              h("p",{style:{margin:"0 0 2px",fontSize:"13px",color:C.mu}},"📍 "+(p.city||"?")+" · "+(p.diabType||"?")),
-              h("p",{style:{margin:"0 0 2px",fontSize:"13px",color:C.mu}},"📞 "+(p.phone||"?")),
-              h("p",{style:{margin:"0 0 2px",fontSize:"13px",color:C.mu}},"✉️ "+(p.email||"?")),
-              h("p",{style:{margin:"0",fontSize:"12px",color:C.mu}},"Age: "+(p.age||"?")+" · Sex: "+(p.sex||"?"))
-            ),
-            h("span",{style:{background:C.o1,color:C.o5,borderRadius:"20px",padding:"3px 10px",fontSize:"12px",fontWeight:"700"}},"PENDING")
-          ));
-          card.appendChild(h("div",{style:{display:"flex",gap:"10px"}},
-            btn("✓ Approve",async()=>{
-              await setDoc(doc(db,"users",p.id),{status:"active"},{merge:true});
-              toast("✓ "+p.name+" approved!");
-              loadPatientsAndRender();
-              loadPending();
-            },{v:"green",sm:true}),
-            btn("✗ Reject",async()=>{
-              if(confirm("Reject "+p.name+"? This will mark them as rejected.")){
-                await setDoc(doc(db,"users",p.id),{status:"rejected"},{merge:true});
-                toast(p.name+" rejected.","warn");
-                loadPending();
-              }
-            },{v:"danger",sm:true})
-          ));
-          pendingDiv.appendChild(card);
-        });
-      }
-      loadPending();
-    }
-
-    else if(STATE.clinicView==="payments"){
-      main.appendChild(h("h1",{style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"16px"}},"💳 Payment Verification"));
-      const pending=REAL_PTS.filter(p=>p.planStatus==="pending_verification");
-      const active=REAL_PTS.filter(p=>p.planStatus==="active");
-      const unpaid=REAL_PTS.filter(p=>!p.planStatus||p.planStatus==="unpaid");
-
-      if(pending.length>0){
-        main.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.o5,marginBottom:"10px"}},"⏳ Pending Verification ("+pending.length+")"));
-        pending.forEach(p=>{
-          const card=h("div",{style:{background:C.wh,borderRadius:"12px",padding:"15px",marginBottom:"9px",
-            border:`1.5px solid ${C.o5}30`,borderLeft:`4px solid ${C.o5}`}});
-          card.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}},
-            h("div",{},
-              h("p",{style:{margin:"0 0 2px",fontSize:"14px",fontWeight:"700",color:C.dk}},p.name),
-              h("p",{style:{margin:"0 0 2px",fontSize:"12px",color:C.mu}},"Plan: "+(p.plan||"basic")+" · $"+(p.plan==="premium"?12:p.plan==="standard"?7:3)+"/mo ≈ "+Math.round((p.plan==="premium"?12:p.plan==="standard"?7:3)*57)+" ETB"),
-              h("p",{style:{margin:"0",fontSize:"11px",color:C.mu}},(p.city||"?")+" · "+(p.phone||"?"))
-            ),
-            h("span",{style:{background:C.o1,color:C.o5,borderRadius:"20px",padding:"3px 10px",fontSize:"11px",fontWeight:"700"}},"PENDING")
-          ));
-          card.appendChild(h("p",{style:{fontSize:"12px",color:C.mu,marginBottom:"9px"}},"Patient sent Telebirr payment to 0930563960. Check your Telebirr app and verify."));
-          card.appendChild(h("div",{style:{display:"flex",gap:"8px"}},
-            h("button",{onClick:async()=>{
-              await setDoc(doc(db,"users",p.id),{planStatus:"active",planActivatedAt:new Date().toISOString(),planActivatedBy:STATE.userDoc?.name||"Doctor"},{merge:true});
-              await addDoc(collection(db,"chats",p.id,"messages"),{
-                text:"✅ Your "+p.plan+" plan payment has been verified and is now ACTIVE! You now have full access to all your plan benefits. Thank you for choosing Mizan! 🎉",
-                senderId:STATE.user.uid,senderName:STATE.userDoc?.name||"Doctor",senderRole:"doctor",
-                time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),createdAt:serverTimestamp()
-              });
-              await setDoc(doc(db,"chats",p.id),{lastMsg:"Plan activated!",lastTime:serverTimestamp(),unreadByDoctor:false},{merge:true});
-              toast("✓ "+p.name+"'s payment verified & plan activated!");
-              loadPatientsAndRender();
-            },style:{flex:"1",padding:"9px",background:`linear-gradient(135deg,${C.g6},${C.g9})`,border:"none",color:"#fff",borderRadius:"9px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}},"✓ Verify & Activate"),
-            h("button",{onClick:async()=>{
-              if(confirm("Reject payment for "+p.name+"?")){
-                await setDoc(doc(db,"users",p.id),{planStatus:"unpaid"},{merge:true});
-                await addDoc(collection(db,"chats",p.id,"messages"),{
-                  text:"❌ We could not verify your payment. Please ensure you sent the correct amount to Telebirr 0930563960 (Ayenachew Nigus) and tap 'I Have Paid' again.",
-                  senderId:STATE.user.uid,senderName:STATE.userDoc?.name||"Doctor",senderRole:"doctor",
-                  time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),createdAt:serverTimestamp()
-                });
-                await setDoc(doc(db,"chats",p.id),{lastMsg:"Payment verification failed",lastTime:serverTimestamp(),unreadByDoctor:false},{merge:true});
-                toast(p.name+"'s payment rejected. Patient notified.","warn");
-                loadPatientsAndRender();
-              }
-            },style:{padding:"9px 14px",background:C.r1,border:"none",color:C.r5,borderRadius:"9px",fontWeight:"700",fontSize:"13px",cursor:"pointer"}},"✗ Reject")
-          ));
-          main.appendChild(card);
-        });
-      }
-
-      if(active.length>0){
-        main.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.g7,margin:"18px 0 10px"}},"✅ Active Subscriptions ("+active.length+")"));
-        active.forEach(p=>{
-          main.appendChild(h("div",{style:{background:C.wh,borderRadius:"12px",padding:"13px",marginBottom:"8px",
-            border:`1.5px solid ${C.g2}`,display:"flex",justifyContent:"space-between",alignItems:"center"}},
-            h("div",{},
-              h("p",{style:{margin:"0 0 2px",fontSize:"13px",fontWeight:"700",color:C.dk}},p.name),
-              h("p",{style:{margin:"0",fontSize:"11px",color:C.mu}},(p.plan||"basic")+" · $"+(p.plan==="premium"?12:p.plan==="standard"?7:3)+"/mo")
-            ),
-            h("span",{style:{background:C.g1,color:C.g7,borderRadius:"20px",padding:"3px 10px",fontSize:"11px",fontWeight:"700"}},"ACTIVE")
-          ));
-        });
-      }
-
-      if(unpaid.length>0){
-        main.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.mu,margin:"18px 0 10px"}},"⭕ Unpaid ("+unpaid.length+")"));
-        unpaid.forEach(p=>{
-          main.appendChild(h("div",{style:{background:C.wh,borderRadius:"12px",padding:"13px",marginBottom:"8px",
-            border:`1.5px solid ${C.bd}`,display:"flex",justifyContent:"space-between",alignItems:"center"}},
-            h("div",{},
-              h("p",{style:{margin:"0 0 2px",fontSize:"13px",fontWeight:"700",color:C.dk}},p.name),
-              h("p",{style:{margin:"0",fontSize:"11px",color:C.mu}},(p.city||"?")+" · "+(p.phone||"?"))
-            ),
-            h("span",{style:{background:C.bg,color:C.mu,borderRadius:"20px",padding:"3px 10px",fontSize:"11px",fontWeight:"700"}},"UNPAID")
-          ));
-        });
-      }
-
-      if(pending.length===0&&active.length===0&&unpaid.length===0){
-        main.appendChild(h("div",{style:{background:C.wh,borderRadius:"14px",padding:"28px",textAlign:"center",border:`1.5px solid ${C.bd}`}},
-          h("div",{style:{fontSize:"36px",marginBottom:"8px"}},"💳"),
-          h("p",{style:{color:C.mu,fontSize:"14px"}},"No patients enrolled yet.")
-        ));
-      }
-    }
-
     else if(STATE.clinicView==="analytics"){
       main.appendChild(h("h1",{style:{fontSize:"22px",fontWeight:"900",color:C.dk,marginBottom:"18px"}},"📈 Analytics"));
-      const totalRev=REAL_PTS.reduce((s,p)=>s+(p.sub==="premium"?12:p.sub==="standard"?7:3),0);
+      const totalRev=MOCK_PTS.reduce((s,p)=>s+(p.sub==="premium"?12:p.sub==="standard"?7:3),0);
       const twoCol=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"14px"}});
       const rd=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"18px",border:`1.5px solid ${C.bd}`}});
       rd.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"14px"}},"Risk Distribution"));
-      [{l:t.highRisk,n:REAL_PTS.filter(p=>p.level==="high").length,c:C.r5},
-       {l:t.medRisk,n:REAL_PTS.filter(p=>p.level==="medium").length,c:C.o5},
-       {l:t.lowRisk,n:REAL_PTS.filter(p=>p.level==="low").length,c:C.g6}
+      [{l:t.highRisk,n:MOCK_PTS.filter(p=>p.level==="high").length,c:C.r5},
+       {l:t.medRisk,n:MOCK_PTS.filter(p=>p.level==="medium").length,c:C.o5},
+       {l:t.lowRisk,n:MOCK_PTS.filter(p=>p.level==="low").length,c:C.g6}
       ].forEach(r=>{
-        const pct=Math.round(r.n/REAL_PTS.length*100);
+        const pct=Math.round(r.n/MOCK_PTS.length*100);
         rd.appendChild(h("div",{style:{marginBottom:"11px"}},
           h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"4px"}},
             h("span",{style:{fontSize:"12px",fontWeight:"700",color:C.dk}},r.l),
@@ -1355,7 +994,7 @@ function renderClinic(){
         h("h1",{style:{fontSize:"22px",fontWeight:"900",color:C.dk,margin:"0"}},"🔔 Follow-up Monitor"),
         h("p",{style:{color:C.mu,fontSize:"12px",margin:"3px 0 0"}},"AI-powered follow-up")
       ));
-      REAL_PTS.forEach(p=>{
+      MOCK_PTS.forEach(p=>{
         const lvl=p.level;
         const rec=lvl==="high"?"Urgent: Consider insulin or referral.":p.adherence<50?"Poor adherence. Schedule counseling.":"Continue current care plan.";
         main.appendChild(h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",marginBottom:"9px",
@@ -1373,8 +1012,8 @@ function renderClinic(){
                 borderRadius:"7px",padding:"7px 10px",fontSize:"12px",color:C.dk,fontWeight:"600"}},"🤖 "+rec)
             ),
             h("div",{style:{display:"flex",flexDirection:"column",gap:"5px"}},
-              h("button",{onClick:()=>openPatientChat(p),
-                style:{padding:"6px 11px",background:`linear-gradient(135deg,${C.g6},${C.g9})`,border:"none",color:"#fff",borderRadius:"7px",fontSize:"11px",fontWeight:"700"}},"💬 Chat"),
+              h("button",{onClick:()=>toast("SMS sent to "+p.name),
+                style:{padding:"6px 11px",background:`linear-gradient(135deg,${C.p6},${C.p9})`,border:"none",color:"#fff",borderRadius:"7px",fontSize:"11px",fontWeight:"700"}},"📱 SMS"),
               h("button",{onClick:()=>{STATE.selectedPt=p;STATE.ptDetailTab="overview";renderMain();},
                 style:{padding:"6px 11px",background:C.p1,border:"none",color:C.p6,borderRadius:"7px",fontSize:"11px",fontWeight:"700"}},"View")
             )
@@ -1405,15 +1044,14 @@ function renderClinic(){
       )
     ));
     ph.appendChild(h("div",{style:{display:"flex",gap:"6px"}},
-      h("button",{onClick:()=>{openPatientChat(p);},style:{padding:"7px 12px",background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:"9px",fontWeight:"700",fontSize:"11px"}},"💬 Chat"),
+      h("button",{onClick:()=>toast("SMS sent"),style:{padding:"7px 12px",background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:"9px",fontWeight:"700",fontSize:"11px"}},"📱 SMS"),
       h("button",{onClick:()=>toast("Appointment booked!"),style:{padding:"7px 12px",background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.3)",color:"#fff",borderRadius:"9px",fontWeight:"700",fontSize:"11px"}},"📅 Book")
     ));
     main.appendChild(ph);
 
     // Tabs
     const ptTabs=h("div",{style:{display:"flex",gap:"5px",marginBottom:"14px",overflowX:"auto",paddingBottom:"3px"}});
-    [["overview","📊 Overview"],["history","📋 History"],["investigations","🔬 Labs"],
-     ["imaging","🖼️ Imaging"],["meds","💊 Meds"],["actions","⚡ Actions"]].forEach(([id,label])=>{
+    [["overview","📊 Overview"],["actions","⚡ Actions"]].forEach(([id,label])=>{
       const active=STATE.ptDetailTab===id;
       ptTabs.appendChild(h("button",{onClick:()=>{STATE.ptDetailTab=id;renderMain();},
         style:{padding:"6px 13px",borderRadius:"9px",border:active?"none":`1.5px solid ${C.bd}`,
@@ -1453,150 +1091,64 @@ function renderClinic(){
       ));
     }
 
-    else if(STATE.ptDetailTab==="history"){
-      const notesDiv=h("div");main.appendChild(notesDiv);
-      async function loadNotes(){
-        notesDiv.innerHTML="";
-        const snap=await getDocs(query(collection(db,"users",p.id,"notes"),orderBy("createdAt","desc")));
-        const notes=snap.docs.map(d=>({id:d.id,...d.data()}));
-        const nc=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",marginBottom:"12px",border:`1.5px solid ${C.bd}`}});
-        nc.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"📋 Clinical History"));
-        if(notes.length===0)nc.appendChild(h("p",{style:{color:C.mu,fontSize:"13px",textAlign:"center",padding:"14px 0"}},"No clinical notes yet."));
-        notes.forEach((n,i,arr)=>{
-          nc.appendChild(h("div",{style:{padding:"11px 0",borderBottom:i<arr.length-1?`1px solid ${C.bd}`:"none"}},
-            h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"4px"}},
-              h("span",{style:{fontSize:"12px",fontWeight:"800",color:C.p6}},n.date||""),
-              h("span",{style:{fontSize:"11px",color:C.mu}},"👨‍⚕️ "+(n.doctor||"Doctor"))
-            ),
-            h("p",{style:{margin:"0",fontSize:"13px",color:C.dk,lineHeight:"1.6"}},n.text||"")
-          ));
-        });
-        notesDiv.appendChild(nc);
-        let noteText="";
-        const af=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",border:`1.5px solid ${C.bd}`}});
-        af.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"11px"}},"➕ Add Clinical Note"));
-        af.appendChild(field("Clinical Note",{rows:4,placeholder:"Enter clinical observations, plan...",onChange:v=>noteText=v}));
-        af.appendChild(btn("Save Note",async()=>{
-          if(!noteText.trim()){toast("Enter a note","error");return;}
-          await addDoc(collection(db,"users",p.id,"notes"),{text:noteText,date:new Date().toLocaleDateString(),doctor:STATE.userDoc?.name||"Doctor",createdAt:serverTimestamp()});
-          toast("Note saved! ☁️");loadNotes();
-        },{full:true}));
-        notesDiv.appendChild(af);
-      }
-      loadNotes();
+    else if(STATE.ptDetailTab==="actions"){
+      const ag=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}});
+      [{l:"📅 Book Appointment",fn:()=>toast("Appointment booked!")},
+       {l:"📱 Send SMS",fn:()=>toast("SMS sent to "+p.name)},
+       {l:"💊 Update Medications",fn:()=>toast("Medication editor opening...")},
+       {l:"📊 Request Lab Work",fn:()=>toast("Lab request sent!")},
+       {l:"🖼️ Request Imaging",fn:()=>toast("Imaging request sent!")},
+       {l:"📤 Refer to Specialist",fn:()=>toast("Referral sent!")},
+       {l:"📞 Call Patient",fn:()=>toast("Opening phone...")},
+       {l:"🚨 Flag Emergency",fn:()=>toast("Patient flagged!","warn"),danger:true}
+      ].forEach(a=>{
+        ag.appendChild(h("button",{onClick:a.fn,
+          style:{padding:"13px",background:a.danger?C.r1:C.wh,border:`1.5px solid ${a.danger?C.r5:C.bd}`,
+            borderRadius:"11px",color:a.danger?C.r5:C.dk,fontWeight:"700",fontSize:"13px",
+            cursor:"pointer",textAlign:"left"}},a.l));
+      });
+      main.appendChild(ag);
     }
+  }
 
-    else if(STATE.ptDetailTab==="investigations"){
-      const invDiv=h("div");main.appendChild(invDiv);
-      async function loadInv(){
-        invDiv.innerHTML="";
-        const snap=await getDocs(query(collection(db,"users",p.id,"investigations"),orderBy("createdAt","desc")));
-        const invs=snap.docs.map(d=>({id:d.id,...d.data()}));
-        const ic=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",marginBottom:"12px",border:`1.5px solid ${C.bd}`,overflowX:"auto"}});
-        ic.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"🔬 Investigation Results"));
-        if(invs.length===0)ic.appendChild(h("p",{style:{color:C.mu,fontSize:"13px",textAlign:"center",padding:"14px 0"}},"No investigations yet."));
-        invs.forEach(inv=>{
-          const sc=inv.status==="high"?C.r5:inv.status==="elevated"?C.o5:C.g6;
-          const sbg=inv.status==="high"?C.r1:inv.status==="elevated"?C.o1:C.g1;
-          ic.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${C.bd}`}},
-            h("div",{},
-              h("p",{style:{margin:"0 0 2px",fontSize:"13px",fontWeight:"700",color:C.dk}},inv.test||""),
-              h("p",{style:{margin:"0",fontSize:"11px",color:C.mu}},inv.date+" · Ref: "+(inv.ref||""))
-            ),
-            h("div",{style:{textAlign:"right"}},
-              h("p",{style:{margin:"0 0 2px",fontSize:"14px",fontWeight:"800",color:sc}},inv.result||""),
-              pill((inv.status||"normal").toUpperCase(),sc,sbg)
-            )
-          ));
-        });
-        invDiv.appendChild(ic);
-        let iv={test:"",result:"",ref:"",status:"normal"};
-        const af=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",border:`1.5px solid ${C.bd}`}});
-        af.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"11px"}},"➕ Add Investigation Result"));
-        af.appendChild(field("Test Name",{placeholder:"e.g. HbA1c, Fasting Glucose, Creatinine",onChange:v=>iv.test=v}));
-        af.appendChild(field("Result",{placeholder:"e.g. 8.5%",onChange:v=>iv.result=v}));
-        af.appendChild(field("Reference Range",{placeholder:"e.g. <7%",onChange:v=>iv.ref=v}));
-        af.appendChild(field("Status",{type:"select",options:[["normal","Normal"],["elevated","Elevated"],["high","High / Abnormal"]],onChange:v=>iv.status=v}));
-        af.appendChild(btn("Save Result",async()=>{
-          if(!iv.test||!iv.result){toast("Enter test and result","error");return;}
-          await addDoc(collection(db,"users",p.id,"investigations"),{...iv,date:new Date().toLocaleDateString(),addedBy:STATE.userDoc?.name||"Doctor",createdAt:serverTimestamp()});
-          toast("Investigation saved! ☁️");loadInv();
-        },{full:true}));
-        invDiv.appendChild(af);
-      }
-      loadInv();
-    }
+  renderMain();
+  return wrap;
+}
 
-    else if(STATE.ptDetailTab==="imaging"){
-      const imgDiv=h("div");main.appendChild(imgDiv);
-      async function loadImaging(){
-        imgDiv.innerHTML="";
-        const snap=await getDocs(query(collection(db,"users",p.id,"imaging"),orderBy("createdAt","desc")));
-        const imgs=snap.docs.map(d=>({id:d.id,...d.data()}));
-        const ic=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",marginBottom:"12px",border:`1.5px solid ${C.bd}`}});
-        ic.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"🖼️ Imaging Reports"));
-        if(imgs.length===0)ic.appendChild(h("p",{style:{color:C.mu,fontSize:"13px",textAlign:"center",padding:"14px 0"}},"No imaging reports yet."));
-        imgs.forEach(img=>{
-          ic.appendChild(h("div",{style:{background:C.bg,borderRadius:"10px",padding:"12px",marginBottom:"8px",border:`1px solid ${C.bd}`}},
-            h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"5px"}},
-              h("span",{style:{fontSize:"13px",fontWeight:"800",color:C.dk}},"🖼️ "+(img.type||"")),
-              h("span",{style:{fontSize:"11px",color:C.mu}},img.date||"")
-            ),
-            h("p",{style:{margin:"0 0 3px",fontSize:"12px",color:C.dk,lineHeight:"1.6"}},img.finding||""),
-            h("p",{style:{margin:"0",fontSize:"10px",color:C.mu}},"Reported by: "+(img.rep||"Doctor"))
-          ));
-        });
-        imgDiv.appendChild(ic);
-        let imgv={type:"",finding:""};
-        const af=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",border:`1.5px solid ${C.bd}`}});
-        af.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"11px"}},"➕ Add Imaging Report"));
-        af.appendChild(field("Imaging Type",{placeholder:"e.g. Chest X-Ray, Fundoscopy, Renal Ultrasound",onChange:v=>imgv.type=v}));
-        af.appendChild(field("Finding",{rows:3,placeholder:"Enter radiologist report finding...",onChange:v=>imgv.finding=v}));
-        af.appendChild(btn("Save Report",async()=>{
-          if(!imgv.type||!imgv.finding){toast("Enter type and finding","error");return;}
-          await addDoc(collection(db,"users",p.id,"imaging"),{...imgv,date:new Date().toLocaleDateString(),rep:STATE.userDoc?.name||"Doctor",createdAt:serverTimestamp()});
-          toast("Imaging report saved! ☁️");loadImaging();
-        },{full:true}));
-        imgDiv.appendChild(af);
-      }
-      loadImaging();
-    }
+// ── MAIN RENDER ───────────────────────────────────────────────────────
+function render(){
+  const app=document.getElementById("app");
+  app.innerHTML="";
+  if(STATE.screen==="auth")app.appendChild(renderAuth());
+  else if(STATE.role==="patient")app.appendChild(renderPatient());
+  else app.appendChild(renderClinic());
+}
 
-    else if(STATE.ptDetailTab==="meds"){
-      const medsDiv=h("div");main.appendChild(medsDiv);
-      async function loadMeds(){
-        medsDiv.innerHTML="";
-        const snap=await getDocs(collection(db,"users",p.id,"medications"));
-        const meds=snap.docs.map(d=>({id:d.id,...d.data()}));
-        const mc=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",marginBottom:"12px",border:`1.5px solid ${C.bd}`}});
-        mc.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"💊 Current Medications"));
-        if(meds.length===0){mc.appendChild(h("p",{style:{color:C.mu,fontSize:"13px",textAlign:"center",padding:"14px 0"}},"No medications added yet."));}
-        meds.forEach(m=>{
-          mc.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${C.bd}`}},
-            h("div",{},
-              h("p",{style:{margin:"0 0 2px",fontSize:"13px",fontWeight:"700",color:C.dk}},m.name),
-              h("p",{style:{margin:"0",fontSize:"11px",color:C.mu}},m.dose+" · "+m.frequency)
-            ),
-            h("div",{style:{display:"flex",gap:"5px",alignItems:"center"}},
-              pill(m.active!==false?"Active":"Paused",m.active!==false?C.g7:C.mu,m.active!==false?C.g1:C.bg),
-              h("button",{onClick:async()=>{
-                if(confirm("Remove "+m.name+"?")){
-                  await deleteDoc(doc(db,"users",p.id,"medications",m.id));
-                  toast(m.name+" removed.");loadMeds();
-                }
-              },style:{background:C.r1,border:"none",color:C.r5,borderRadius:"7px",padding:"4px 8px",fontSize:"11px",fontWeight:"700",cursor:"pointer"}},"✕")
-            )
-          ));
-        });
-        medsDiv.appendChild(mc);
-        // Add medication form
-        let mv={name:"",dose:"",frequency:"",instructions:""};
-        const af=h("div",{style:{background:C.wh,borderRadius:"14px",padding:"16px",border:`1.5px solid ${C.bd}`}});
-        af.appendChild(h("h3",{style:{fontSize:"14px",fontWeight:"800",color:C.dk,marginBottom:"12px"}},"➕ Add Medication"));
-        af.appendChild(field("Medication Name",{placeholder:"e.g. Metformin",required:true,onChange:v=>mv.name=v}));
-        af.appendChild(field("Dose",{placeholder:"e.g. 500mg",required:true,onChange:v=>mv.dose=v}));
-        af.appendChild(field("Frequency",{placeholder:"e.g. Twice daily with meals",required:true,onChange:v=>mv.frequency=v}));
-        af.appendChild(field("Instructions (optional)",{placeholder:"e.g. Take with food",onChange:v=>mv.instructions=v}));
-        af.appendChild(btn("Add Medication",async()=>{
-          if(!mv.name||!mv.dose||!mv.frequency){toast("Fill all required fields","error");return;}
-          a
+// ── AUTH STATE LISTENER ───────────────────────────────────────────────
+// Show immediately
+document.getElementById("loadingScreen").style.display="none";
+document.getElementById("app").style.display="block";
+STATE.screen="auth";
+render();
+
+onAuthStateChanged(auth,async(user)=>{
+  document.getElementById("loadingScreen").style.display="none";
+  document.getElementById("app").style.display="block";
+  if(user){
+    STATE.user=user;
+    const profile=await getUserProfile(user.uid);
+    STATE.userDoc=profile;
+    STATE.role=profile?.role||"patient";
+    STATE.screen="app";
+  }else{
+    STATE.user=null;STATE.userDoc=null;STATE.role=null;STATE.screen="auth";
+  }
+  render();
+});
+
+window.addEventListener("online",()=>{STATE.online=true;render();});
+window.addEventListener("offline",()=>{STATE.online=false;render();});
+
+</script>
+</body>
+</html>
