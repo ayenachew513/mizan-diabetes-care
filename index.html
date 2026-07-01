@@ -44,27 +44,190 @@ setTimeout(function(){
 },3000);
 </script>
 
-<!-- Firebase SDKs -->
-<script type="module">
-import { initializeApp } from "https://cdn.jsdelivr.net/npm/firebase@10.12.0/app/dist/index.esm2017.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
-  from "https://cdn.jsdelivr.net/npm/firebase@10.12.0/auth/dist/index.esm2017.js";
-import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, collection, query, where, getDocs, orderBy, serverTimestamp }
-  from "https://cdn.jsdelivr.net/npm/firebase@10.12.0/firestore/dist/index.esm2017.js";
+<script>
+// ── FIREBASE REST API (No SDK needed - works everywhere) ──────────────
+const FB_API_KEY = "AIzaSyAAWi24LMEen73-Ae2C7Azfvlqz0RdeLbU";
+const FB_PROJECT = "mizan-diabetes-care-70136";
+const FB_AUTH_URL = "https://identitytoolkit.googleapis.com/v1/accounts";
+const FB_DB_URL = `https://firestore.googleapis.com/v1/projects/${FB_PROJECT}/databases/(default)/documents`;
 
-// ── FIREBASE CONFIG ──────────────────────────────────────────────────
-const firebaseConfig = {
-  apiKey: "AIzaSyAAWi24LMEen73-Ae2C7Azfvlqz0RdeLbU",
-  authDomain: "mizan-diabetes-care-70136.firebaseapp.com",
-  projectId: "mizan-diabetes-care-70136",
-  storageBucket: "mizan-diabetes-care-70136.firebasestorage.app",
-  messagingSenderId: "355457671885",
-  appId: "1:355457671885:web:9a98368119b5865e133f84"
-};
+let _idToken = null;
+let _uid = null;
+let _authCallbacks = [];
 
-const firebaseApp = initializeApp(firebaseConfig);
-const auth = getAuth(firebaseApp);
-const db = getFirestore(firebaseApp);
+// Auth state
+function onAuthStateChanged(auth, cb) {
+  _authCallbacks.push(cb);
+  // Check localStorage for saved session
+  const saved = localStorage.getItem("mz_session");
+  if (saved) {
+    try {
+      const s = JSON.parse(saved);
+      _idToken = s.idToken;
+      _uid = s.uid;
+      cb({ uid: s.uid, email: s.email });
+    } catch(e) { cb(null); }
+  } else { cb(null); }
+}
+
+async function signInWithEmailAndPassword(auth, email, password) {
+  const r = await fetch(`${FB_AUTH_URL}:signInWithPassword?key=${FB_API_KEY}`, {
+    method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ email, password, returnSecureToken: true })
+  });
+  const d = await r.json();
+  if (!r.ok) throw { code: "auth/" + (d.error?.message?.toLowerCase().replace(/ /g,"_") || "unknown") };
+  _idToken = d.idToken; _uid = d.localId;
+  localStorage.setItem("mz_session", JSON.stringify({ idToken: d.idToken, uid: d.localId, email }));
+  _authCallbacks.forEach(cb => cb({ uid: d.localId, email }));
+  return d;
+}
+
+async function createUserWithEmailAndPassword(auth, email, password) {
+  const r = await fetch(`${FB_AUTH_URL}:signUp?key=${FB_API_KEY}`, {
+    method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ email, password, returnSecureToken: true })
+  });
+  const d = await r.json();
+  if (!r.ok) {
+    const msg = d.error?.message || "unknown";
+    if (msg.includes("EMAIL_EXISTS")) throw { code: "auth/email-already-in-use" };
+    if (msg.includes("WEAK_PASSWORD")) throw { code: "auth/weak-password" };
+    throw { code: "auth/" + msg.toLowerCase().replace(/ /g,"_") };
+  }
+  _idToken = d.idToken; _uid = d.localId;
+  localStorage.setItem("mz_session", JSON.stringify({ idToken: d.idToken, uid: d.localId, email }));
+  return { user: { uid: d.localId, email } };
+}
+
+async function signOut(auth) {
+  _idToken = null; _uid = null;
+  localStorage.removeItem("mz_session");
+  _authCallbacks.forEach(cb => cb(null));
+}
+
+// Firestore helpers
+function toFirestore(obj) {
+  const fields = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === null || v === undefined) fields[k] = { nullValue: null };
+    else if (typeof v === "boolean") fields[k] = { booleanValue: v };
+    else if (typeof v === "number") fields[k] = { doubleValue: v };
+    else if (typeof v === "string") fields[k] = { stringValue: v };
+    else if (v && v._serverTimestamp) fields[k] = { timestampValue: new Date().toISOString() };
+    else if (typeof v === "object") fields[k] = { stringValue: JSON.stringify(v) };
+    else fields[k] = { stringValue: String(v) };
+  }
+  return { fields };
+}
+
+function fromFirestore(doc) {
+  if (!doc.fields) return {};
+  const obj = { id: doc.name?.split("/").pop() };
+  for (const [k, v] of Object.entries(doc.fields)) {
+    if (v.stringValue !== undefined) obj[k] = v.stringValue;
+    else if (v.doubleValue !== undefined) obj[k] = v.doubleValue;
+    else if (v.integerValue !== undefined) obj[k] = parseInt(v.integerValue);
+    else if (v.booleanValue !== undefined) obj[k] = v.booleanValue;
+    else if (v.nullValue !== undefined) obj[k] = null;
+    else if (v.timestampValue !== undefined) obj[k] = v.timestampValue;
+  }
+  return obj;
+}
+
+function docPath(...segments) {
+  return segments.join("/");
+}
+
+const auth = {};
+const db = {};
+const serverTimestamp = () => ({ _serverTimestamp: true });
+
+async function fsGet(path) {
+  const r = await fetch(`${FB_DB_URL}/${path}`, {
+    headers: _idToken ? { "Authorization": "Bearer " + _idToken } : {}
+  });
+  if (!r.ok) return null;
+  return fromFirestore(await r.json());
+}
+
+async function fsSet(path, data, merge = false) {
+  const url = `${FB_DB_URL}/${path}`;
+  const body = toFirestore({...data, updatedAt: new Date().toISOString()});
+  if (merge) {
+    // PATCH for merge
+    const fields = Object.keys(body.fields).join(",");
+    const r = await fetch(`${url}?updateMask.fieldPaths=${Object.keys(body.fields).join("&updateMask.fieldPaths=")}`, {
+      method: "PATCH", headers: {"Content-Type":"application/json", ..._idToken?{"Authorization":"Bearer "+_idToken}:{}},
+      body: JSON.stringify(body)
+    });
+    return r.ok;
+  } else {
+    const r = await fetch(url, {
+      method: "PATCH", headers: {"Content-Type":"application/json", ..._idToken?{"Authorization":"Bearer "+_idToken}:{}},
+      body: JSON.stringify(body)
+    });
+    return r.ok;
+  }
+}
+
+async function fsAdd(colPath, data) {
+  const body = toFirestore({...data, createdAt: new Date().toISOString()});
+  const r = await fetch(`${FB_DB_URL}/${colPath}`, {
+    method: "POST", headers: {"Content-Type":"application/json", ..._idToken?{"Authorization":"Bearer "+_idToken}:{}},
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) return null;
+  const d = await r.json();
+  return d.name?.split("/").pop();
+}
+
+async function fsList(colPath) {
+  const r = await fetch(`${FB_DB_URL}/${colPath}?pageSize=100`, {
+    headers: _idToken ? { "Authorization": "Bearer " + _idToken } : {}
+  });
+  if (!r.ok) return [];
+  const d = await r.json();
+  return (d.documents || []).map(fromFirestore);
+}
+
+async function fsDelete(path) {
+  const r = await fetch(`${FB_DB_URL}/${path}`, {
+    method: "DELETE", headers: _idToken ? { "Authorization": "Bearer " + _idToken } : {}
+  });
+  return r.ok;
+}
+
+async function fsQuery(colPath, filters = []) {
+  // Use list and filter client-side for simplicity
+  const docs = await fsList(colPath);
+  return docs.filter(doc => filters.every(([field, op, val]) => {
+    if (op === "==") return doc[field] === val;
+    if (op === "!=") return doc[field] !== val;
+    return true;
+  }));
+}
+
+// Wrap to match old API
+async function saveUserProfile(uid, data) { return fsSet(`users/${uid}`, data, true); }
+async function getUserProfile(uid) { return fsGet(`users/${uid}`); }
+async function saveReading(uid, data) { return fsAdd(`users/${uid}/readings`, data); }
+async function saveVitals(uid, data) { return fsAdd(`users/${uid}/vitals`, data); }
+async function loadReadings(uid) { const d = await fsList(`users/${uid}/readings`); return d.reverse(); }
+async function loadVitals(uid) { const d = await fsList(`users/${uid}/vitals`); return d.reverse(); }
+
+// Firestore compat shims
+const doc = (db, ...args) => args.join("/");
+const collection = (db, ...args) => args.join("/");
+const setDoc = (path, data, opts) => fsSet(path, data, opts?.merge);
+const getDoc = async (path) => { const d = await fsGet(path); return { exists: () => !!d, data: () => d, id: path.split("/").pop(), ...d }; };
+const addDoc = (path, data) => fsAdd(path, data);
+const deleteDoc = (path) => fsDelete(path);
+const getDocs = async (path) => { const docs = await fsList(path); return { docs: docs.map(d => ({ id: d.id, data: () => d, ...d })) }; };
+const where = (f, op, v) => [f, op, v];
+const orderBy = () => null;
+const query = (path) => path;
+
 
 // ── COLORS ───────────────────────────────────────────────────────────
 const C={
