@@ -46,11 +46,11 @@ setTimeout(function(){
 
 <!-- Firebase SDKs -->
 <script type="module">
-import { initializeApp } from "https://cdn.jsdelivr.net/npm/firebase@10.12.0/app/+esm";
+import { initializeApp } from "https://cdn.jsdelivr.net/npm/firebase@10.12.0/app/dist/index.esm2017.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
-  from "https://cdn.jsdelivr.net/npm/firebase@10.12.0/auth/+esm";
-import { getFirestore, doc, setDoc, getDoc, addDoc, collection, query, where, getDocs, orderBy, serverTimestamp }
-  from "https://cdn.jsdelivr.net/npm/firebase@10.12.0/firestore/+esm";
+  from "https://cdn.jsdelivr.net/npm/firebase@10.12.0/auth/dist/index.esm2017.js";
+import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, collection, query, where, getDocs, orderBy, serverTimestamp }
+  from "https://cdn.jsdelivr.net/npm/firebase@10.12.0/firestore/dist/index.esm2017.js";
 
 // ── FIREBASE CONFIG ──────────────────────────────────────────────────
 const firebaseConfig = {
